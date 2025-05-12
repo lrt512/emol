@@ -1,11 +1,12 @@
 import logging
 
-from cards.mail import send_waiver_expiry, send_waiver_reminder
-from cards.utility.time import DATE_FORMAT, add_years, today
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
+from cards.mail import send_waiver_expiry, send_waiver_reminder
+from cards.utility.time import DATE_FORMAT, add_years, today
 
 from .reminder import Reminder
 from .reminder_mixin import DirtyModelReminderMeta, ReminderMixin

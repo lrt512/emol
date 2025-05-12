@@ -11,16 +11,21 @@ from datetime import date
 from urllib.parse import urljoin
 from uuid import uuid4
 
-from cards.mail import send_card_url, send_privacy_policy
-from cards.utility.names import generate_name
 from django.conf import settings
 from django.db import models
 from django.dispatch import receiver
 from django.urls import reverse
 
-from .permissioned_db_fields import (PermissionedCharField,
-                                     PermissionedDateField,
-                                     PermissionedIntegerField)
+from cards.mail import send_card_url, send_privacy_policy
+from cards.utility.names import generate_name
+
+from .card import Card
+from .discipline import Discipline
+from .permissioned_db_fields import (
+    PermissionedCharField,
+    PermissionedDateField,
+    PermissionedIntegerField,
+)
 
 __all__ = ["Combatant"]
 
@@ -111,7 +116,6 @@ class Combatant(models.Model):
         null=False,
         default="ON",
         permissions=["read_combatant_info", "write_combatant_info"],
-        help_text="Region code (state/province)",
     )
     postal_code = PermissionedCharField(
         max_length=7,
@@ -194,7 +198,7 @@ class Combatant(models.Model):
                 break
 
         self.save()
-        return send_card_url(self)
+        send_card_url(self)
 
 
 def membership_valid(self, on_date=None):

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.forms import ModelForm
+
 from sso_user.models import SSOUser
 
 

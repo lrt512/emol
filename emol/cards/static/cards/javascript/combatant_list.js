@@ -70,15 +70,7 @@
                     populate(data, null);
                     $("#edit-combatant-form").validate({ ignore: "" });
                     $("#combatant-title").text(data.sca_name || data.legal_name);
-                    $(".datepicker").datepicker({
-                        format: "yyyy-mm-dd",
-                        autoclose: true,
-                        todayHighlight: true,
-                        clearBtn: true
-                    }).on('changeDate', function(e) {
-                        // Trigger validation when date changes
-                        $(this).valid();
-                    });
+                    $(".datepicker").datepicker({ format: "yyyy-mm-dd", autoclose: true });
                     $combatant_detail.modal("show");
                     fetch_combatant_cards();
                     fetch_waiver_date();
@@ -99,26 +91,14 @@
             return;
         }
 
-        var $dateSignedField = $("#date_signed"),
-            $expirationField = $("#expiration_date");
-
-        // Clear fields before fetch
-        $dateSignedField.val("");
-        $expirationField.val("");
-
         $.ajax({
             url: waiver_url(uuid),
             method: "GET",
             success: function (data, status, jqXHR) {
-                if (data && data.date_signed) {
-                    populate(data, null);
-                    $("#waiver-date-form").validate({ ignore: "" });
-                }
+                populate(data, null);
+                $("#waiver-date-form").validate({ ignore: "" });
             },
             error: function (jqXHR, status, error) {
-                if (jqXHR.status === 404) {
-                    return; // Fields already cleared
-                }
                 toastr.error("Error fetching waiver date: " + error);
             }
         });
@@ -179,22 +159,8 @@
     function serialize_form($form) {
         var data = {};
 
-        $form.find("input, select, textarea").each(function (index, element) {
-            var $element = $(element);
-            var name = $element.attr("name");
-            
-            if (!name) return;
-            
-            // Clean up phone number before submission
-            if (name === 'phone') {
-                data[name] = cleanPhoneNumber($element.val());
-            } else if ($element.is(":checkbox")) {
-                data[name] = $element.is(":checked");
-            } else if ($element.is("select[multiple]")) {
-                data[name] = $element.val() || [];
-            } else {
-                data[name] = $element.val();
-            }
+        $form.find("input").each(function (index, input) {
+            data[$(input).attr("name")] = $(input).val();
         });
 
         return JSON.stringify(data);
@@ -206,13 +172,7 @@
      */
     function submit_combatant_info(callback) {
         var $form = $("#edit-combatant-form"),
-            $submitButton = $form.find(".btn-save"),
             validation_error = $("#validation-error-notice");
-
-        // Prevent double submission
-        if ($submitButton.prop('disabled')) {
-            return;
-        }
 
         validation_error.hide();
         if (false === $form.valid()) {
@@ -221,10 +181,6 @@
         }
 
         var uuid = $("#uuid").val();
-        
-        // Show loading state
-        $submitButton.prop('disabled', true);
-        $submitButton.html('<i class="fa fa-spinner fa-spin"></i> Saving...');
 
         $.ajax({
             url: combatant_url(uuid),
@@ -237,33 +193,10 @@
                 toastr.success("Combatant information saved");
                 $("#uuid").val(xhr.responseJSON.uuid);
                 callback();
-                fetch_waiver_date();
+                // fetch_waiver_date();
             },
             error: function (xhr, status, error) {
-                var errorMessage = "Error saving combatant information";
-                
-                try {
-                    var response = JSON.parse(xhr.responseText);
-                    if (response.detail) {
-                        errorMessage += ": " + response.detail;
-                    } else if (typeof response === 'object') {
-                        // Handle field-specific errors
-                        var errors = [];
-                        Object.keys(response).forEach(function(field) {
-                            errors.push(field + ": " + response[field].join(", "));
-                        });
-                        errorMessage += ":\n" + errors.join("\n");
-                    }
-                } catch (e) {
-                    errorMessage += ": " + error;
-                }
-                
-                toastr.error(errorMessage);
-            },
-            complete: function() {
-                // Reset button state
-                $submitButton.prop('disabled', false);
-                $submitButton.html('Save');
+                toastr.error("Error saving combatant information: " + error);
             }
         });
     }
@@ -422,121 +355,12 @@
             responsive: false,
             buttons: ["new_combatant"],
         });
-
-        // Add custom validation methods
-        $.validator.addMethod("postal_code", function(value, element) {
-            if (!value) return true; // Optional
-            // Canadian or US postal code
-            return /^[ABCEGHJ-NPRSTVXY]\d[ABCEGHJ-NPRSTV-Z][ -]?\d[ABCEGHJ-NPRSTV-Z]\d$/i.test(value) ||
-                   /^\d{5}(-\d{4})?$/.test(value);
-        }, "Please enter a valid postal/zip code");
-
-        $.validator.addMethod("phone", function(value, element) {
-            if (!value) return true; // Optional
-            
-            // Strip all non-digits
-            var digits = value.replace(/\D/g, '');
-            
-            // Must have 10 or 11 digits (with optional +1 prefix)
-            return digits.length === 10 || 
-                   (digits.length === 11 && digits.charAt(0) === '1');
-        }, "Please enter a valid phone number");
-
-        // Add validation rules to the form
-        $("#edit-combatant-form").validate({
-            rules: {
-                legal_name: "required",
-                email: {
-                    required: true,
-                    email: true
-                },
-                phone: {
-                    required: true,
-                    phone: true
-                },
-                address1: "required",
-                city: "required",
-                province: "required",
-                postal_code: {
-                    required: true,
-                    postal_code: true
-                },
-                member_number: {
-                    required: function(element) {
-                        return $("#edit-combatant-member-expiry").val() !== "";
-                    }
-                },
-                member_expiry: {
-                    required: function(element) {
-                        return $("#edit-combatant-member-number").val() !== "";
-                    },
-                    date: true
-                }
-            },
-            messages: {
-                member_number: {
-                    required: "Required when expiry date is set"
-                },
-                member_expiry: {
-                    required: "Required when member number is set"
-                }
-            }
-        });
-
-        // Format phone numbers as they're typed
-        $("#edit-combatant-phone").on('input', function() {
-            var phone = $(this).val();
-            
-            // Strip everything except digits
-            phone = phone.replace(/\D/g, '');
-            
-            // Remove leading 1 if present
-            if (phone.length > 10 && phone.charAt(0) === '1') {
-                phone = phone.substr(1);
-            }
-            
-            // Format the number as we go
-            if (phone.length > 0) {
-                if (phone.length <= 3) {
-                    phone = phone;
-                } else if (phone.length <= 6) {
-                    phone = '(' + phone.substr(0,3) + ') ' + phone.substr(3);
-                } else {
-                    phone = '(' + phone.substr(0,3) + ') ' + phone.substr(3,3) + '-' + phone.substr(6,4);
-                }
-            }
-            
-            $(this).val(phone);
-        });
-
-        // Format postal codes as they're typed
-        $("#edit-combatant-postal-code").on('input', function() {
-            var val = $(this).val().toUpperCase();
-            if (val.length > 3 && !val.includes(' ')) {
-                $(this).val(val.substr(0, 3) + ' ' + val.substr(3));
-            }
-        });
-
-        // Add a cleanup function for form submission
-        function cleanPhoneNumber(phone) {
-            // Strip to just digits
-            return phone.replace(/\D/g, '');
-        }
     });
 
     // Resend the privacy policy email to a combatant
     $(document).on("click", ".btn-resend-privacy", function () {
         var row = $(this).parents("tr"),
-            data = $("#combatant-list").DataTable().row(row).data(),
-            name = data.sca_name || data.legal_name;
-
-        if (!confirm("Resend privacy policy email to " + name + "?")) {
-            return;
-        }
-
-        var $button = $(this);
-        $button.prop('disabled', true);
-        $button.find('i').addClass('fa-spin');
+            data = $("#combatant-list").DataTable().row(row).data();
 
         $.ajax({
             method: "POST",
@@ -545,14 +369,10 @@
             data: { combatant_uuid: data.uuid },
             headers: { "X-CSRFToken": csrf_token() },
             success: function (response) {
-                toastr.success("Privacy policy email sent to " + name);
+                toastr.success("Privacy policy email sent");
             },
             error: function (xhr, status, error) {
                 toastr.error("Error sending privacy policy email: " + error);
-            },
-            complete: function() {
-                $button.prop('disabled', false);
-                $button.find('i').removeClass('fa-spin');
             }
         });
     });
@@ -602,19 +422,4 @@
         "showMethod": "fadeIn",
         "hideMethod": "fadeOut"
     }
-
-    $("#combatant-detail").on('shown.bs.modal', function () {
-        // Focus first input when modal opens
-        $(this).find('input:visible:first').focus();
-        
-        // Handle enter key in form fields
-        $(this).find('input').keypress(function (e) {
-            if (e.which === 13) {  // Enter key
-                if ($("#info-tab").hasClass("active")) {
-                    $(".btn-save").click();
-                }
-                return false;
-            }
-        });
-    });
 })(jQuery);

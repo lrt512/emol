@@ -9,8 +9,8 @@ https://docs.djangoproject.com/en/4.0/howto/deployment/wsgi/
 
 import os
 
-from django.core.management.base import CommandError
 from django.core.wsgi import get_wsgi_application
+from django.core.management.base import CommandError
 
 from emol.secrets import get_secret
 

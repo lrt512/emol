@@ -1,10 +1,11 @@
 import logging
 from datetime import date
 
-from cards.models import UpdateCode
-from cards.utility.time import DATE_FORMAT
 from django.core.management.base import BaseCommand
 from django.utils import timezone
+
+from cards.models import UpdateCode
+from cards.utility.time import DATE_FORMAT
 
 logger = logging.getLogger("cards")
 

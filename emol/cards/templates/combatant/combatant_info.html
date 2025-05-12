@@ -65,14 +65,11 @@
         </div>
     </div>
     <div class="form-group row">
-        <label for="edit-combatant-province" class="col-md-4 col-form-label">Province/State</label>
+        <label for="edit-combatant-province" class="col-md-4 col-form-label">Province</label>
         <div class="col-md-8">
-            <select id="edit-combatant-province" name="province" class="form-control"
-                    required {% if not write_combatant_info %}disabled{% endif %}>
-                {% for region in regions %}
-                    <option value="{{ region.code }}" {% if combatant.province == region.code %}selected{% endif %}>{{ region.name }}</option>
-                {% endfor %}
-            </select>
+                <input type="text" id="edit-combatant-province" name="province" class="form-control"
+                   value="{% firstof combatant.province '' %}"
+                   required {% if not write_combatant_info %}disabled{% endif %}/>
         </div>
     </div>
     <div class="form-group row">
@@ -96,7 +93,7 @@
         <div class="col-md-5">
                 <input type="text" id="edit-combatant-member-expiry" name="member_expiry" class="form-control datepicker"
                    value="{% firstof combatant.member_expiry|date:'Y-m-d' or '' %}"
-                   {% if not write_combatant_info %}disabled{% endif %}/>
+                   readonly {% if not write_combatant_info %}disabled{% endif %}/>
         </div>
     </div>
 </div>

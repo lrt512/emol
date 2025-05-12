@@ -1,6 +1,7 @@
-from cards.models.permission import PermissionDenied
-from current_user import get_current_user
 from django.db import models
+
+from current_user import get_current_user
+from cards.models.permission import PermissionDenied
 
 
 class PermissionEnforcedField(models.Field):

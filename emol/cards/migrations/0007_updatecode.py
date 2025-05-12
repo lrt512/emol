@@ -2,9 +2,10 @@
 
 import uuid
 
-import cards.utility.time
 import django.db.models.deletion
 from django.db import migrations, models
+
+import cards.utility.time
 
 
 class Migration(migrations.Migration):

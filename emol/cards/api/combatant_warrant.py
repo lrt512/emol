@@ -1,5 +1,10 @@
 import logging
 
+from django.shortcuts import get_object_or_404
+from rest_framework import serializers, status
+from rest_framework.response import Response
+from rest_framework.viewsets import GenericViewSet
+
 from cards.api.permissions import CombatantMarshalPermission
 from cards.models.card import Card
 from cards.models.combatant import Combatant
@@ -7,10 +12,6 @@ from cards.models.combatant_warrant import CombatantWarrant
 from cards.models.discipline import Discipline
 from cards.models.marshal import Marshal
 from cards.utility.time import today
-from django.shortcuts import get_object_or_404
-from rest_framework import serializers, status
-from rest_framework.response import Response
-from rest_framework.viewsets import GenericViewSet
 
 
 class CombatantWarrantSerializer(serializers.ModelSerializer):

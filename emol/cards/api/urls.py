@@ -23,8 +23,8 @@ api_router.register(
 )
 api_router.register(r"combatant-cards", CardViewSet, basename="combatant-cards")
 api_router.register(r"waiver", WaiverViewSet, basename="waiver")
-
 api_router.register(r"card-date", CardDateViewSet, basename="card-date")
+
 # We have some non-model API views, so let's create urlpatterns manaully
 urlpatterns = [
     path("", include(api_router.urls)),

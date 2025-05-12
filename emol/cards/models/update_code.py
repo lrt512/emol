@@ -2,11 +2,12 @@ import uuid
 from datetime import datetime
 from urllib.parse import urljoin
 
-from cards.utility.time import utc_tomorrow
 from django.conf import settings
 from django.db import models
 from django.urls import reverse
 from django.utils import timezone
+
+from cards.utility.time import utc_tomorrow
 
 from .combatant import Combatant
 

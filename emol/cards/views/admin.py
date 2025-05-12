@@ -1,6 +1,7 @@
+from django.http import JsonResponse
+
 from cards.models.card import Card
 from cards.models.waiver import Waiver
-from django.http import JsonResponse
 
 
 def get_valid_objects(request):

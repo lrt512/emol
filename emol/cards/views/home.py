@@ -2,23 +2,21 @@
 import logging
 from typing import Any, Dict
 
-from cards.mail import send_card_url, send_info_update, send_privacy_policy
-from cards.models import Combatant, CombatantWarrant, Discipline, UpdateCode
-from cards.utility.throttle import throttle
-from current_user import get_current_user
-from django.db.models import Prefetch
 from django.shortcuts import render
 from django.template.defaulttags import register
 from django.views.decorators.http import require_http_methods
 
-logger = logging.getLogger("cards")
+from cards.mail import send_card_url, send_info_update, send_privacy_policy
+from cards.models import Combatant, UpdateCode, Discipline, CombatantWarrant
+from cards.utility.throttle import throttle
+from current_user import get_current_user
 
+logger = logging.getLogger("cards")
 
 @register.filter
 def get_item(dictionary: Dict[Any, Any], key: Any) -> Any:
     """Template filter to get dictionary item by key."""
     return dictionary.get(key)
-
 
 def index(request):
     context = {
@@ -88,7 +86,6 @@ def message(request):
     """Render the message view."""
     return render(request, "message/message_embed.html")
 
-
 def marshal_list(request):
     """Display the list of marshals by discipline.
 
@@ -129,3 +126,4 @@ def marshal_list(request):
         "home/marshal_list.html",
         context,
     )
+

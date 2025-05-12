@@ -1,11 +1,10 @@
 import logging
-
-from cards.models import Combatant, Region, UpdateCode
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
-from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
+
+from cards.models import Combatant, UpdateCode
 
 logger = logging.getLogger("cards")
 
@@ -29,20 +28,7 @@ class SelfServeUpdateSerializer(ModelSerializer):
         ]
 
         extra_kwargs = {
-            "member_expiry": {
-                "format": "%Y-%m-%d",
-                "allow_null": True,
-                "required": False,
-            },
-            "member_number": {"required": False},
-            "address2": {"required": False},
-            "sca_name": {"required": False},
-            "legal_name": {"required": True},
-            "phone": {"required": True},
-            "address1": {"required": True},
-            "city": {"required": True},
-            "province": {"required": True},
-            "postal_code": {"required": True},
+            "member_expiry": {"format": "%Y-%m-%d", "allow_null": True},
         }
 
     # Fields that should be cleaned up if they are blank strings
@@ -51,6 +37,7 @@ class SelfServeUpdateSerializer(ModelSerializer):
         "member_expiry",
         "member_number",
         "address2",
+        "dob",
     ]
 
     def validate(self, data):
@@ -59,9 +46,7 @@ class SelfServeUpdateSerializer(ModelSerializer):
         """
         if data.get("member_expiry") and not data.get("member_number"):
             raise serializers.ValidationError(
-                {
-                    "member_number": "Member number is required when specifying an expiry date."
-                }
+                "If member_expiry is specified, member_number must also be specified."
             )
         return data
 
@@ -92,56 +77,22 @@ def serializer_errors_to_strings(serializer):
 @require_http_methods(["GET", "POST"])
 def self_serve_update(request, code):
     """Handle self-serve updates"""
-    try:
-        update_code = UpdateCode.objects.get(code=code)
-        context = {
-            "self_serve": True,
-            "code": code,
-            "combatant": update_code.combatant,
-            "regions": Region.objects.all(),
-        }
 
-        if request.method == "GET":
-            return render(request, "combatant/self_serve_update.html", context)
-
+    update_code = get_object_or_404(UpdateCode, code=code)
+    context = {"self_serve": True, "code": code, "combatant": update_code.combatant}
+    if request.method == "GET":
+        return render(request, "combatant/self_serve_update.html", context)
+    elif request.method == "POST":
         serializer = SelfServeUpdateSerializer(
             instance=update_code.combatant, data=request.POST, partial=True
         )
-
         if not serializer.is_valid():
             context["message"] = "There was an error updating your information."
             context["errors"] = serializer_errors_to_strings(serializer)
-            logger.error(
-                "Self-serve update failed for code %s with errors: %s",
-                code,
-                serializer.errors,
-            )
             return render(request, "combatant/self_serve_update.html", context)
 
         serializer.save()
-        logger.info(
-            "Successfully updated combatant information for code %s, combatant_id: %s",
-            code,
-            update_code.combatant.id,
-        )
+        logger.info("Consumed self-serve update code %s", code)
         update_code.delete()
-        return render(
-            request,
-            "message/message.html",
-            {"message": "Your information has been updated successfully."},
-        )
-    except UpdateCode.DoesNotExist:
-        return render(
-            request,
-            "message/message.html",
-            {
-                "message": "The update code provided is invalid or has already been used."
-            },
-        )
-    except Exception as e:
-        logger.exception("Unexpected error in self_serve_update for code %s", code)
-        return render(
-            request,
-            "message/message.html",
-            {"message": "An unexpected error occurred. Please try again later."},
-        )
+        context = {"message": "Your information has been updated."}
+        return render(request, "message/message.html", context)

@@ -1,6 +1,7 @@
+from django import template
+
 from cards.models.user_permission import UserPermission
 from current_user import get_current_user
-from django import template
 
 register = template.Library()
 

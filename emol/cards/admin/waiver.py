@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from cards.models.waiver import Waiver
 from django.contrib import admin
+
+from cards.models.waiver import Waiver
 
 __all__ = ["WaiverAdmin"]
 

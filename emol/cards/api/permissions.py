@@ -1,7 +1,8 @@
 """Proxy UserPermission checks as DRF permissions"""
 
-from cards.models.user_permission import UserPermission
 from rest_framework import permissions
+
+from cards.models.user_permission import UserPermission
 
 
 class CombatantInfoPermission(permissions.BasePermission):

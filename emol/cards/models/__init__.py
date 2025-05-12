@@ -8,7 +8,6 @@ from .marshal import Marshal
 from .permission import Permission
 from .privacy_acceptance import PrivacyAcceptance
 from .privacy_policy import PrivacyPolicy
-from .region import Region
 from .reminder import Reminder
 from .update_code import UpdateCode
 from .user_permission import UserPermission

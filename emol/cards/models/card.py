@@ -20,13 +20,14 @@
 import logging
 from uuid import uuid4
 
-from cards.mail import send_card_expiry, send_card_reminder
-from cards.utility.named_tuples import NameSlugTuple
-from cards.utility.time import DATE_FORMAT, add_years, today
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
+
+from cards.mail import send_card_expiry, send_card_reminder
+from cards.utility.named_tuples import NameSlugTuple
+from cards.utility.time import DATE_FORMAT, add_years, today
 
 from .authorization import Authorization
 from .discipline import Discipline

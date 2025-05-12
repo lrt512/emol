@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
+from django.contrib import admin
+
 from cards.models.card import Card
 from cards.models.combatant_authorization import CombatantAuthorization
 from cards.models.combatant_warrant import CombatantWarrant
-from django.contrib import admin
 
 __all__ = ["CardAdmin"]
 

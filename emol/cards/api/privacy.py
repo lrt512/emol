@@ -1,11 +1,12 @@
 import logging
 
-from cards.mail import send_privacy_policy
-from cards.models.combatant import Combatant
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from cards.mail import send_privacy_policy
+from cards.models.combatant import Combatant
 
 logger = logging.getLogger("cards")
 

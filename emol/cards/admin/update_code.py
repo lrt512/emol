@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from cards.models import UpdateCode
 from django.contrib import admin
+
+from cards.models import UpdateCode
 
 __all__ = ["UpdateCodeAdmin"]
 

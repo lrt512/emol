@@ -3,9 +3,10 @@
 
 from functools import wraps
 
-from current_user.middleware import get_current_user
 from django.http import HttpResponse, HttpResponseRedirect
 from django.urls import reverse
+
+from current_user.middleware import get_current_user
 
 from . import views
 

@@ -13,7 +13,7 @@ checking is provided here.
 
 # Template for waiver expiry reminder email
 WAIVER_REMINDER_SUBJECT = "Waiver expiry reminder"
-WAIVER_REMINDER_EMAIL = """Greetings, {combatant_name}!
+WAIVER_REMINDER_EMAIL = """Greetings!
 
 The waiver you have on file with the Minister of the Lists will expire in
 {expiry_days} days, on {expiry_date}. If your waiver expires, you will not
@@ -32,7 +32,7 @@ Ealdormere eMoL
 """
 
 WAIVER_EXPIRY_SUBJECT = "Waiver expiry notice"
-WAIVER_EXPIRY_EMAIL = """Greetings, {combatant_name}!
+WAIVER_EXPIRY_EMAIL = """Greetings!
 
 The waiver you have on file with the Minister of the Lists has expired.
 Until you file a new waiver with the Minister of the Lists, you will not
@@ -52,7 +52,7 @@ Ealdormere eMoL
 
 # Template for card expiry reminder email
 CARD_REMINDER_SUBJECT = "Card expiry reminder"
-CARD_REMINDER_EMAIL = """Greetings, {combatant_name}!
+CARD_REMINDER_EMAIL = """Greetings!
 
 Your Ealdormere authorizations for {discipline} will expire in {expiry_days}
 days, on {expiry_date}. To renew them, please see your local marshal to fill
@@ -67,7 +67,7 @@ Ealdormere eMoL
 
 # Template for card expiry reminder email
 CARD_EXPIRY_SUBJECT = "Card expiry notice"
-CARD_EXPIRY_EMAIL = """Greetings, {combatant_name}!
+CARD_EXPIRY_EMAIL = """Greetings!
 
 Your Ealdormere authorizations for {discipline} have expired as of today.
 To renew them, please see your local marshal or contact the Minister of
@@ -79,7 +79,7 @@ Ealdormere eMoL
 
 # Template for authorizaton card URL email
 CARD_URL_SUBJECT = "Your authorization card"
-CARD_URL_EMAIL = """Greetings, {combatant_name}!
+CARD_URL_EMAIL = """Greetings!
 
 Here is where you can view your authorization card online:
 {card_url}
@@ -91,7 +91,7 @@ Ealdormere eMoL
 
 # Template for combatant self-serve info update email
 INFO_UPDATE_SUBJECT = "Information update request"
-INFO_UPDATE_EMAIL = """Greetings, {combatant_name}!
+INFO_UPDATE_EMAIL = """Greetings!
 
 We have received a request to update your information.
 If you did not make the request, you can safely ignore this email.
@@ -107,13 +107,13 @@ Ealdormere eMoL
 
 # Template for welcome/privacy policy email
 PRIVACY_POLICY_SUBJECT = "Welcome to Ealdormere eMoL!"
-PRIVACY_POLICY_EMAIL = """Greetings, {combatant_name}!
+PRIVACY_POLICY_EMAIL = """Greetings!
 
 Congratulations on your authorization!
 
 Now, let's get your authorization card in order...
 
-Ealdormere has moved to a fully-online card management system, the
+In late 2022, Ealdormere moved to a fully-online card management system, the
 Electronic Minister of the Lists, or eMoL.
 
 However, by Canadian law, before we finalize you in the eMoL database you must

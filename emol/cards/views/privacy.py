@@ -1,10 +1,11 @@
 import logging
 
-from cards.models.combatant import Combatant
-from cards.models.privacy_policy import PrivacyPolicy
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
+
+from cards.models.combatant import Combatant
+from cards.models.privacy_policy import PrivacyPolicy
 
 logger = logging.getLogger("cards")
 

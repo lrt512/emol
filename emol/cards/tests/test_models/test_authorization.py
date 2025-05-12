@@ -1,6 +1,7 @@
+from django.test import TestCase
+
 from cards.models.authorization import Authorization
 from cards.models.discipline import Discipline
-from django.test import TestCase
 
 
 class AuthorizationModelTest(TestCase):

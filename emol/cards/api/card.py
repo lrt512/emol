@@ -1,15 +1,16 @@
 import logging
 
-from cards.models.card import Card
-from cards.models.combatant_authorization import CombatantAuthorization
-from cards.models.combatant_warrant import CombatantWarrant
-from cards.models.discipline import Discipline
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
+
+from cards.models.card import Card
+from cards.models.combatant_authorization import CombatantAuthorization
+from cards.models.combatant_warrant import CombatantWarrant
+from cards.models.discipline import Discipline
 
 from .permissions import CardDatePermission
 

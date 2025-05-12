@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from cards.models.permission import Permission
 from django.contrib import admin
 from django.contrib.messages import ERROR, add_message
 from django.http import HttpResponseRedirect
 from django.urls import path
+
+from cards.models.permission import Permission
 
 
 @admin.register(Permission)

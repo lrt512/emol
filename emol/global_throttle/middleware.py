@@ -5,7 +5,6 @@ from django.core.cache import cache
 from django.shortcuts import render
 from django.urls import resolve
 
-
 class GlobalThrottleMiddleware:
     """Global throttle middleware
 
@@ -32,29 +31,25 @@ class GlobalThrottleMiddleware:
         self.get_response = get_response
         self.request_limit = getattr(settings, "GLOBAL_THROTTLE_LIMIT", 10)
         self.request_window = getattr(settings, "GLOBAL_THROTTLE_WINDOW", 3600)
-        self.whitelist = getattr(
-            settings, "GLOBAL_THROTTLE_WHITELIST", ["127.0.0.1", "localhost", "::1"]
-        )
 
     def maybe_throttle(self, request):
-        """Determine if we should throttle the calling IP address"""
+        """Determine if we should throttle the calling IP address
+
+        Returns True if the IP address should be throttled, False otherwise.
+        """
+        return False
+
         if request.user.is_authenticated:
-            return False
-
-        ip_address = request.META.get("REMOTE_ADDR")
-
-        if ip_address in self.whitelist:
             return False
 
         view_func = resolve(request.path).func
         if getattr(view_func, "exempt_from_throttling", False):
             return False
 
+        ip_address = request.META.get("REMOTE_ADDR")
         cache_key = f"throttle:global:{ip_address}"
+
         request_count = cache.get(cache_key, 0)
-
-        request.throttle_remaining = max(0, self.request_limit - request_count)
-
         if request_count >= self.request_limit:
             return True
 
@@ -63,17 +58,9 @@ class GlobalThrottleMiddleware:
 
     def __call__(self, request):
         """Handle the request and throttle if necessary"""
-        throttled = self.maybe_throttle(request)
+        if self.maybe_throttle(request):
+            return render(request, "429.html", status=429)
 
-        if throttled:
-            response = render(request, "429.html", status=429)
-        else:
-            response = self.get_response(request)
-
-        response["X-RateLimit-Limit"] = str(self.request_limit)
-        response["X-RateLimit-Remaining"] = str(
-            getattr(request, "throttle_remaining", 0)
-        )
-        response["X-RateLimit-Window"] = f"{self.request_window}s"
+        response = self.get_response(request)
 
         return response

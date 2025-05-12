@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-from cards.models.authorization import Authorization
 from django.contrib import admin
+
+from cards.models.authorization import Authorization
 
 __all__ = ["AuthorizationAdmin"]
 

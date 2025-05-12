@@ -48,7 +48,7 @@ class AWSEmailer:
         from_email = from_email or settings.MAIL_DEFAULT_SENDER
         reply_to = reply_to or settings.MOL_EMAIL
         sender = f"Ealdormere eMoL <{from_email}>"
-
+        
         session = get_aws_session()
         client = session.client("ses")
         try:

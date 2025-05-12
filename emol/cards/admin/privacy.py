@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
-from cards.models import PrivacyAcceptance, PrivacyPolicy
 from django import forms
 from django.contrib import admin, messages
 from django.db import models
 from django.forms import ValidationError
+
+from cards.models import PrivacyAcceptance, PrivacyPolicy
 
 __all__ = ["PrivacyAcceptanceAdmin"]
 

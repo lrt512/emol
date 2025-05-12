@@ -66,16 +66,26 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "app",
         },
+        "file": {
+            "class": "logging.handlers.RotatingFileHandler",
+            "filename": "/var/log/emol/django.log",
+            "maxBytes": 1024 * 1024 * 10,  # 10 MB
+            "backupCount": 5,
+            "formatter": "app",
+        },
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {
+        "level": "INFO",
+        "handlers": ["console", "file"]
+    },
     "loggers": {
         "": {
-            "handlers": ["console"],
+            "handlers": ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
         "cards": {
-            "handlers": ["console"],
+            "handlers": ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
@@ -88,7 +98,6 @@ LOGGING = {
         },
     },
 }
-
 
 CACHES = {
     "default": {

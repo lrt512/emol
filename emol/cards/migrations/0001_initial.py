@@ -2,11 +2,12 @@
 
 import uuid
 
-import cards.models.permissioned_db_fields
-import cards.utility.crypto
 import django.db.models.deletion
 from django.conf import settings
 from django.db import migrations, models
+
+import cards.models.permissioned_db_fields
+import cards.utility.crypto
 
 
 class Migration(migrations.Migration):

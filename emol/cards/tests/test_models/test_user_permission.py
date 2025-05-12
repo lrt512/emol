@@ -1,9 +1,10 @@
-from cards.models.discipline import Discipline
-from cards.models.permission import Permission
-from cards.models.user_permission import UserPermission
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase
+
+from cards.models.discipline import Discipline
+from cards.models.permission import Permission
+from cards.models.user_permission import UserPermission
 
 User = get_user_model()
 

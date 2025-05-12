@@ -3,9 +3,10 @@
 
 from functools import wraps
 
+from django.http import HttpResponse
+
 from cards.models.user_permission import UserPermission
 from current_user.middleware import get_current_user
-from django.http import HttpResponse
 
 
 def permission_required(permission, related=None):

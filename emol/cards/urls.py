@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
-from cards.api.urls import urlpatterns as api_urlpatterns
-from cards.views import combatant, home, privacy, self_serve_update
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.admin import site
-from django.urls import include, path, re_path
+from django.urls import include, path
 from django.views.generic import TemplateView
+
+from cards.api.urls import urlpatterns as api_urlpatterns
+from cards.views import combatant, home, privacy, self_serve_update
 
 site.site_header = "Ealdormere eMoL"
 site.site_title = "eMoL Admin"
@@ -16,8 +17,8 @@ urlpatterns = [
     path("request-card", home.request_card, name="request-card"),
     path("update-info", home.update_info, name="update-info"),
     path("marshal-list", home.marshal_list, name="marshal-list"),
-    re_path(
-        r"^self-serve-update/(?P<code>[a-zA-Z0-9-]+)$",
+    path(
+        "self-serve-update/<str:code>",
         self_serve_update.self_serve_update,
         name="self-serve-update",
     ),
