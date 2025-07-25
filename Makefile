@@ -21,14 +21,14 @@ help: ## Show this help message
 # Docker Compose Operations
 # =============================================================================
 
-up: ## Start all services with build
-	docker compose up --build
+up: ## Start existing services (daily use - no rebuild)
+	docker compose up
 
 down: ## Stop all services
 	docker compose down
 
-up-detached: prune ## Start all services in background with build
-	docker compose up --build -d
+up-detached: ## Start existing services in background (no rebuild)
+	docker compose up -d
 
 restart-app: ## Restart just the app container
 	@echo "Cycling app container..."
@@ -161,47 +161,56 @@ format: install ## Format code with black and isort
 # Environment Setup
 # =============================================================================
 
-bootstrap: ## Complete environment setup for new developers (production parity)
-	@echo "🚀 Setting up development environment for new developers..."
-	@echo "📦 Building containers from scratch for production parity..."
+bootstrap: ## FIRST-TIME SETUP: Complete environment setup for new developers
+	@echo "🚀 FIRST-TIME SETUP: Building and configuring development environment..."
+	@echo "📦 Building containers from scratch..."
 	docker compose down -v
 	docker compose build --no-cache
-	@echo "🔧 Starting services..."
-	docker compose up -d
-	@echo "⏳ Waiting for app container to be ready..."
-	@for i in $$(seq 1 12); do \
-		if docker exec $(APP_CONTAINER) echo "Container is ready" >/dev/null 2>&1; then \
-			echo "✅ App container is ready"; \
-			break; \
-		fi; \
-		echo "Waiting for app container... ($$i/12)"; \
-		sleep 5; \
-	done
-	@echo "⏳ Waiting for database to be ready..."
-	@for i in $$(seq 1 20); do \
-		if docker exec $(DB_CONTAINER) mysqladmin ping -h localhost -u $(DB_USER) -p$(DB_PASSWORD) >/dev/null 2>&1; then \
-			echo "✅ Database is ready"; \
-			break; \
-		fi; \
-		echo "Waiting for database... ($$i/20)"; \
-		sleep 3; \
-	done
-	@echo "🔧 Running production bootstrap script in dev mode..."
-	@echo "   (This ensures production parity in the development environment)"
-	docker exec -it $(APP_CONTAINER) bash -c "cd /opt/emol && EMOL_DEV=1 ./setup_files/bootstrap.sh"
+	@echo "🔧 Starting services with health checks..."
+	docker compose up -d --wait
+	@echo "✅ All services are healthy and ready!"
+	@echo "🗄️  Running database migrations..."
+	docker exec -it $(APP_CONTAINER) poetry run python manage.py migrate
+	@echo "📊 Creating cache table..."
+	docker exec -it $(APP_CONTAINER) poetry run python manage.py createcachetable
+	@echo "📁 Collecting static files..."
+	docker exec -it $(APP_CONTAINER) poetry run python manage.py collectstatic --noinput
+	@echo "👤 Creating superuser..."
+	docker exec -it $(APP_CONTAINER) poetry run python manage.py ensure_superuser --non-interactive
 	@echo "🎯 Importing disciplines (if available)..."
 	@docker exec -it $(APP_CONTAINER) poetry run python manage.py import_disciplines || echo "No disciplines to import or command not available"
 	@echo ""
 	@echo "🎉 Bootstrap complete! Your development environment is ready."
-	@echo "📋 Production parity achieved using setup_files/bootstrap.sh"
-	@echo "📋 Quick commands:"
-	@echo "   make up          - Start services"
+	@echo "📋 Daily development commands:"
+	@echo "   make up          - Start services (daily use)"
 	@echo "   make down        - Stop services"
 	@echo "   make shell       - Open container shell"
 	@echo "   make test        - Run tests"
 	@echo "   make logs        - View application logs"
 	@echo ""
+	@echo "📋 Code changes are live-mounted (no rebuild needed!)"
+	@echo "📋 Only use 'make rebuild' for dependency/structural changes"
+	@echo ""
 	@echo "🌐 Application available at: http://localhost:8000"
+
+rebuild: ## Rebuild app container for structural changes (preserves database)
+	@echo "🔄 Rebuilding app container for structural changes..."
+	@echo "💾 Database and volumes will be preserved"
+	@echo "ℹ️  Note: Code changes don't need rebuild (live-mounted)"
+	docker compose stop app
+	docker compose build app
+	docker compose up -d app --wait
+	@echo "✅ App container is healthy and ready!"
+	@echo "📁 Collecting static files..."
+	@docker exec $(APP_CONTAINER) poetry run python manage.py collectstatic --noinput || echo "Static collection skipped"
+	@echo "🗄️  Running any new migrations..."
+	@docker exec $(APP_CONTAINER) poetry run python manage.py migrate || echo "Migration skipped"
+	@echo ""
+	@echo "✅ Rebuild complete! Structural changes applied."
+	@echo "💡 Remember: Code changes are live-mounted, rebuild only needed for:"
+	@echo "   📦 Dependency changes (poetry.lock, requirements)"
+	@echo "   🐳 Dockerfile changes"
+	@echo "   ⚙️  System package changes"
 
 setup: ## Quick setup for existing environment (production parity)
 	@echo "⚡ Quick setup using production scripts..."
@@ -237,4 +246,4 @@ bootstrap-test: ## Run bootstrap.sh and deploy.sh in a local Ubuntu container
 .PHONY: help up down up-detached restart-app prune shell manage migrate logs \
         nginx-logs app-logs restart-services status db db-root db-dump db-restore \
         install test check check-format check-types check-lint check-test lint \
-        pylint types format bootstrap setup bootstrap-script bootstrap-test 
+        pylint types format bootstrap rebuild setup bootstrap-script bootstrap-test 

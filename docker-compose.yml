@@ -20,8 +20,10 @@ services:
       - nginx_logs:/var/log/nginx
       - nginx_run:/run/nginx
     depends_on:
-      - db
-      - localstack
+      db:
+        condition: service_healthy
+      localstack:
+        condition: service_healthy
     networks:
       - emol-network
 
@@ -51,7 +53,12 @@ services:
       - mysql_data:/var/lib/mysql
     networks:
       - emol-network
-
+    healthcheck:
+          test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_password"]
+          interval: 10s
+          timeout: 5s
+          retries: 5
+          start_period: 30s
 networks:
   emol-network:
     driver: bridge

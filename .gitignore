@@ -172,4 +172,5 @@ static/
 .env_dev
 dev.py
 emol/settings/dev.py
-mock_oauth_config.json
+
+.cursor/

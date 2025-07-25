@@ -27,10 +27,36 @@ touch /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/lo
 chown www-data:www-data /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/log/emol/emol.log
 chmod 644 /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/log/emol/emol.log
 
-# Run bootstrap script in dev mode
-echo "Running bootstrap script..."
-EMOL_DEV=1 /opt/emol/setup_files/bootstrap.sh
-echo "Bootstrap script completed with status $?"
+# Configure services for startup
+echo "Configuring services for startup..."
+
+# Source asdf and set up environment  
+source ${ASDF_DIR}/asdf.sh
+cd /opt/emol/emol
+
+# Always configure services (container filesystem doesn't persist)
+echo "Configuring nginx and gunicorn services..."
+
+# Configure nginx
+export NGINX_LOG_PATH="/var/log/nginx"
+export STATIC_ROOT="/opt/emol/static"
+export SOCKET_PATH="/opt/emol/emol.sock"
+
+if [ "$EMOL_DEV" = "1" ]; then
+    template_file="/opt/emol/setup_files/configs/nginx.dev.conf"
+else
+    template_file="/opt/emol/setup_files/configs/nginx.prod.conf"
+fi
+
+mkdir -p /etc/nginx/sites-enabled
+envsubst < "$template_file" > /etc/nginx/sites-enabled/emol.conf
+cp /opt/emol/setup_files/configs/proxy_params /etc/nginx/proxy_params
+
+# Configure gunicorn service
+cp /opt/emol/setup_files/configs/emol /etc/init.d/emol
+chmod +x /etc/init.d/emol
+
+echo "Services configured successfully"
 
 echo "Testing nginx configuration..."
 if ! nginx -t; then
