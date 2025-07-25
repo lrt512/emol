@@ -16,6 +16,7 @@ case "$1" in
   start)
     echo "Starting eMoL"
     cd $ROOT
+    
     poetry run gunicorn \
         --pid $PID \
         --workers 2 \

@@ -203,6 +203,9 @@ environment_specific_setup() {
         aws ssm put-parameter --name "/emol/db_name" --value "emol" --type "SecureString" --endpoint-url "http://localstack:4566" --overwrite
         aws ssm put-parameter --name "/emol/db_user" --value "emol_db_user" --type "SecureString" --endpoint-url "http://localstack:4566" --overwrite
         aws ssm put-parameter --name "/emol/db_password" --value "emol_db_password" --type "SecureString" --endpoint-url "http://localstack:4566" --overwrite
+        
+        # Grant test database permissions for Django tests
+        echo "Setting up test database permissions..."
     else
         # In the real world, www-data needs to own the files    
         chown -R www-data:www-data /opt/emol

@@ -27,6 +27,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     systemd \
     unzip \
     gettext-base \
+    libffi-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy .tool-versions first to read Python version

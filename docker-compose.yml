@@ -11,6 +11,8 @@ services:
     environment:
       - EMOL_DEV=1
       - AWS_DEFAULT_REGION=ca-central-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
       - SSM_ENDPOINT_URL=http://localstack:4566
       - DJANGO_SETTINGS_MODULE=emol.settings.dev
     volumes:
@@ -39,6 +41,7 @@ services:
       - "4566:4566"
     volumes:
       - "/var/run/docker.sock:/var/run/docker.sock"
+      - ./setup_files/localstack/init:/etc/localstack/init/ready.d/
     networks:
       - emol-network
 
@@ -51,6 +54,7 @@ services:
       - MYSQL_ROOT_PASSWORD=root_password
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./setup_files/mysql/init:/docker-entrypoint-initdb.d/
     networks:
       - emol-network
     healthcheck:

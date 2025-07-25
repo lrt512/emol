@@ -21,22 +21,22 @@ help: ## Show this help message
 # Docker Compose Operations
 # =============================================================================
 
-up: ## Start existing services (daily use - no rebuild)
-	docker compose up
-
-down: ## Stop all services
-	docker compose down
-
-up-detached: ## Start existing services in background (no rebuild)
+up:
 	docker compose up -d
 
-restart-app: ## Restart just the app container
+down:
+	docker compose down
+
+up-foreground: 
+	docker compose up
+
+restart-app: 
 	@echo "Cycling app container..."
 	docker compose stop app
 	docker compose rm -f app
-	docker compose up -d --build app
+	docker compose up -d app
 	@echo "Waiting for services to start..."
-	@sleep 10
+	@sleep 5
 	@echo "Checking container logs..."
 	@docker compose logs --tail=50 app
 	@echo "\nChecking service status..."
@@ -62,11 +62,20 @@ migrate: ## Run Django migrations in container
 logs: ## View app container logs (follow)
 	docker compose logs -f app
 
-nginx-logs: ## View nginx logs
+django-logs: ## View Django application logs (follow)
+	docker exec -it $(APP_CONTAINER) tail -f /var/log/emol/django.log
+
+access-logs: ## View HTTP access logs (follow)
+	docker exec -it $(APP_CONTAINER) tail -f /var/log/emol/gunicorn-access.log
+
+error-logs: ## View error logs (follow)
+	docker exec -it $(APP_CONTAINER) tail -f /var/log/emol/gunicorn-error.log
+
+nginx-logs: ## View nginx logs (follow)
 	docker exec -it $(APP_CONTAINER) tail -f /var/log/nginx/error.log /var/log/nginx/access.log
 
-app-logs: ## View application logs
-	docker exec -it $(APP_CONTAINER) tail -f /var/log/emol/gunicorn.log
+all-logs: ## View all application logs (follow)
+	docker exec -it $(APP_CONTAINER) tail -f /var/log/emol/*.log
 
 restart-services: ## Restart application services inside container
 	@echo "Restarting application..."
@@ -244,6 +253,7 @@ bootstrap-test: ## Run bootstrap.sh and deploy.sh in a local Ubuntu container
 # =============================================================================
 
 .PHONY: help up down up-detached restart-app prune shell manage migrate logs \
-        nginx-logs app-logs restart-services status db db-root db-dump db-restore \
-        install test check check-format check-types check-lint check-test lint \
-        pylint types format bootstrap rebuild setup bootstrap-script bootstrap-test 
+        django-logs access-logs error-logs nginx-logs all-logs restart-services status \
+        db db-root db-dump db-restore install test check check-format check-types \
+        check-lint check-test lint pylint types format bootstrap rebuild setup \
+        bootstrap-script bootstrap-test 

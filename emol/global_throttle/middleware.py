@@ -45,7 +45,7 @@ class GlobalThrottleMiddleware:
             logger.error("GLOBAL_THROTTLE_WINDOW is not set, using default of 3600 seconds")
             self.request_window = 3600
         
-        logger.info(f"GlobalThrottleMiddleware initialized: limit={self.request_limit}, window={self.request_window}")
+        logger.debug(f"GlobalThrottleMiddleware initialized: limit={self.request_limit}, window={self.request_window}")
 
         self.whitelist = getattr(
             settings, "GLOBAL_THROTTLE_WHITELIST", ["127.0.0.1", "localhost", "::1"]
@@ -70,7 +70,7 @@ class GlobalThrottleMiddleware:
     def maybe_throttle(self, request):
         """Determine if we should throttle the calling IP address"""
         if request.user.is_authenticated:
-            logger.debug(f"User {request.user.username} is authenticated, skipping throttle")
+            logger.debug(f"User {request.user.email} is authenticated, skipping throttle")
             return False
 
         ip_address = self.get_client_ip(request)

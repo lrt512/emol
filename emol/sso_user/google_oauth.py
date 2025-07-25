@@ -56,10 +56,10 @@ class GoogleOAuth:
         self.oauth = OAuth()
 
         if os.getenv("EMOL_DEV") == "1":
-            logger.info("Using MockOAuthClient for development")
+            logger.debug("Using MockOAuthClient for development")
             self.google = MockOAuthClient()
         else:
-            logger.info("Using production Google OAuth")
+            logger.debug("Using production Google OAuth")
             self.google = self.oauth.register(
                 name="google",
                 server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",

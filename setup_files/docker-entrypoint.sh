@@ -67,6 +67,19 @@ fi
 # Start services
 echo "Starting services..."
 /etc/init.d/emol start
-nginx -g 'daemon off;'  # Run nginx in foreground
 
-# No need for tail since nginx is running in foreground 
+# In development mode, tail logs to stdout for docker logs visibility
+if [ "$EMOL_DEV" = "1" ]; then
+    echo "Development mode: tailing logs to stdout..."
+    # Start nginx in background so we can tail logs
+    nginx
+    # Tail all relevant log files to stdout
+    tail -f /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/log/emol/emol.log 2>/dev/null &
+    # Wait a moment for logs to be created
+    sleep 2
+    # Keep the container alive by tailing logs
+    tail -f /var/log/emol/*.log 2>/dev/null
+else
+    # Production mode: run nginx in foreground
+    nginx -g 'daemon off;'
+fi 

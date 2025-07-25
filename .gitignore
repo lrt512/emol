@@ -170,7 +170,5 @@ tmp/
 
 static/
 .env_dev
-dev.py
-emol/settings/dev.py
 
 .cursor/
