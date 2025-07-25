@@ -36,11 +36,6 @@ urlpatterns = [
 # Custom error handlers
 urlpatterns += [
     path(
-        "429/",
-        TemplateView.as_view(template_name="429.html"),
-        name="too_many_requests",
-    ),
-    path(
         "404/",
         TemplateView.as_view(template_name="404.html"),
         name="not_found",

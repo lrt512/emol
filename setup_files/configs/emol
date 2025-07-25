@@ -20,7 +20,10 @@ case "$1" in
         --pid $PID \
         --workers 2 \
         --bind unix:/opt/emol/emol.sock \
-        --access-logfile - \
+        --access-logfile /var/log/emol/gunicorn-access.log \
+        --error-logfile /var/log/emol/gunicorn-error.log \
+        --access-logformat '%(h)s %(l)s %(u)s %(t)s "%(r)s" %(s)s %(b)s "%(f)s" "%(a)s" %(D)s' \
+        --log-level info \
         --daemon \
         --reload \
         emol.wsgi:application

@@ -66,24 +66,53 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "formatter": "app",
         },
+        "file": {
+            "class": "logging.handlers.TimedRotatingFileHandler",
+            "filename": "/var/log/emol/emol.log",
+            "when": "D",
+            "interval": 1,
+            "backupCount": 7,
+            "formatter": "app",
+            "encoding": "utf-8",
+        },
     },
-    "root": {"level": "INFO", "handlers": ["console"]},
+    "root": {"level": "INFO", "handlers": ["console", "file"]},
     "loggers": {
         "": {
-            "handlers": ["console"],
+            "handlers": ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
         "cards": {
-            "handlers": ["console"],
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
+            "propagate": False,
+        },
+        "django.request": {
+            "handlers": ["console", "file"],
+            "level": "WARNING",
+            "propagate": False,
+        },
+        "django.db.backends": {
+            "handlers": ["console", "file"],
+            "level": "ERROR",
+            "propagate": False,
+        },
+        "global_throttle": {
+            "handlers": ["console", "file"],
             "level": "INFO",
             "propagate": False,
         },
     },
     "formatters": {
         "app": {
-            "format": "%(asctime)s [%(levelname)-8s] "
-            "(%(module)s.%(funcName)s) %(message)s",
+            "format": "%(asctime)s [%(levelname)-8s] %(name)s "
+            "(%(module)s.%(funcName)s:%(lineno)d) %(message)s",
             "datefmt": "%Y-%m-%d %H:%M:%S",
         },
     },

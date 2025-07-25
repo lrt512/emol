@@ -23,9 +23,9 @@ mkdir -p /var/log/emol /var/log/nginx /run/nginx
 chown -R www-data:www-data /var/log/emol /var/log/nginx /run/nginx
 
 # Create log files with proper permissions
-touch /var/log/emol/gunicorn.log /var/log/emol/gunicorn.error.log
-chown www-data:www-data /var/log/emol/gunicorn.log /var/log/emol/gunicorn.error.log
-chmod 644 /var/log/emol/gunicorn.log /var/log/emol/gunicorn.error.log
+touch /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/log/emol/emol.log
+chown www-data:www-data /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/log/emol/emol.log
+chmod 644 /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/log/emol/emol.log
 
 # Run bootstrap script in dev mode
 echo "Running bootstrap script..."

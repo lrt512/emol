@@ -473,10 +473,27 @@ EOF
     chmod +x /etc/init.d/emol
 }
 
+configure_logrotate() {
+    echo -e "\nConfiguring log rotation..."
+    
+    # Only set up logrotate in production (not in development containers)
+    if [ "$is_dev" = true ]; then
+        echo "Skipping logrotate configuration in development environment"
+        return
+    fi
+    
+    # Install logrotate configuration for eMoL logs
+    cp /opt/emol/setup_files/configs/emol-logrotate /etc/logrotate.d/emol
+    chmod 644 /etc/logrotate.d/emol
+    
+    echo "Log rotation configured for 7-day retention"
+}
+
 setup_services() {
     echo -e "\nSetting up services..."
     configure_gunicorn
     configure_nginx
+    configure_logrotate
 }
 
 # In the main sequence
