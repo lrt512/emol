@@ -39,7 +39,7 @@ function is_defined_not_empty(thing) {
  */
 function populate(data, frm) {
     $.each(data, function(key, value) {
-        ctrl = $('[name=' + key + ']', frm);
+        var ctrl = $('[name=' + key + ']', frm);
         switch (ctrl.prop("type")) {
             case "radio":
             case "checkbox":
