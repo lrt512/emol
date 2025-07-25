@@ -23,7 +23,13 @@
         } else {
             $("a.discipline-tab-link").addClass("disabled");
         }
-        $(".btn-save").toggleClass("hidden", !$("#info-tab").hasClass("active"));
+        
+        // Only show save button on the Info tab
+        if ($("#info-tab").hasClass("active")) {
+            $(".btn-save").removeClass("hidden").show();
+        } else {
+            $(".btn-save").addClass("hidden").hide();
+        }
     }
 
     function combatant_url(uuid) {
@@ -46,7 +52,8 @@
         $("#edit-form").load("/combatant-detail", function () {
             var $combatant_detail = $("#combatant-detail");
 
-            $combatant_detail.find(".btn-save").click(function () {
+            // Ensure the save button click event is properly bound
+            $combatant_detail.find(".btn-save").on("click", function () {
                 // Submit the form that is showing
                 if ($("#info-tab").hasClass("active")) {
                     submit_combatant_info(function () {
@@ -173,8 +180,19 @@
     }
 
     /**
-     * Serialize the combatant detail form into a JavaScript object
-     * instead of the nonsense jQuery's serialize/serializeArray gives
+     * Clean a phone number string, removing non-digit characters
+     * @param phone {string} The phone number string
+     * @returns {string} The cleaned phone number string
+     */
+    function cleanPhoneNumber(phone) {
+        // Strip to just digits
+        return phone.replace(/\D/g, '');
+    }
+
+    /**
+     * Serialize a form to JSON
+     * @param $form {jQuery} The form to serialize
+     * @returns {string} The JSON string representation of the form
      */
     function serialize_form($form) {
         var data = {};
@@ -199,6 +217,7 @@
 
         return JSON.stringify(data);
     }
+
     /**
      * Submit the form via AJAX and invoke a callback function on success
      * @param method {string} The HTTP method to use
@@ -206,17 +225,22 @@
      */
     function submit_combatant_info(callback) {
         var $form = $("#edit-combatant-form"),
-            $submitButton = $form.find(".btn-save"),
-            validation_error = $("#validation-error-notice");
+            $submitButton = $(".btn-save"),
+            $validation_error = $("#validation-error-notice");
 
         // Prevent double submission
         if ($submitButton.prop('disabled')) {
             return;
         }
 
-        validation_error.hide();
-        if (false === $form.valid()) {
-            validation_error.show();
+        $validation_error.hide();
+        
+        // Trigger validation manually
+        $form.valid();
+        
+        // Check if the form is valid
+        if (!$form.valid()) {
+            $validation_error.show();
             return;
         }
 
@@ -324,6 +348,21 @@
                 }
             });
         }
+    }
+
+    // Add a dedicated function to initialize form buttons and events
+    function initializeFormEvents() {
+        // Ensure the save button is properly bound
+        $(".btn-save").off("click").on("click", function() {
+            if ($("#info-tab").hasClass("active")) {
+                submit_combatant_info(function() {
+                    save_button();
+                });
+            }
+        });
+        
+        // Make sure the save button visibility is set correctly
+        save_button();
     }
 
     $(document).ready(function () {
@@ -517,11 +556,8 @@
             }
         });
 
-        // Add a cleanup function for form submission
-        function cleanPhoneNumber(phone) {
-            // Strip to just digits
-            return phone.replace(/\D/g, '');
-        }
+        // Initialize form events when modal is shown
+        initializeFormEvents();
     });
 
     // Resend the privacy policy email to a combatant
@@ -581,7 +617,7 @@
     );
 
     // Update the save button when the tab is changed
-    $(document).on("shown.bs.tab", function () {
+    $(document).on("shown.bs.tab", "a[data-toggle='tab']", function (e) {
         save_button();
     });
 
@@ -616,5 +652,8 @@
                 return false;
             }
         });
+        
+        // Initialize form events when modal is shown
+        initializeFormEvents();
     });
 })(jQuery);

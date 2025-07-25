@@ -203,6 +203,9 @@ environment_specific_setup() {
         aws ssm put-parameter --name "/emol/db_name" --value "emol" --type "SecureString" --endpoint-url "http://localstack:4566" --overwrite
         aws ssm put-parameter --name "/emol/db_user" --value "emol_db_user" --type "SecureString" --endpoint-url "http://localstack:4566" --overwrite
         aws ssm put-parameter --name "/emol/db_password" --value "emol_db_password" --type "SecureString" --endpoint-url "http://localstack:4566" --overwrite
+        
+        # Grant test database permissions for Django tests
+        echo "Setting up test database permissions..."
     else
         # In the real world, www-data needs to own the files    
         chown -R www-data:www-data /opt/emol
@@ -473,10 +476,27 @@ EOF
     chmod +x /etc/init.d/emol
 }
 
+configure_logrotate() {
+    echo -e "\nConfiguring log rotation..."
+    
+    # Only set up logrotate in production (not in development containers)
+    if [ "$is_dev" = true ]; then
+        echo "Skipping logrotate configuration in development environment"
+        return
+    fi
+    
+    # Install logrotate configuration for eMoL logs
+    cp /opt/emol/setup_files/configs/emol-logrotate /etc/logrotate.d/emol
+    chmod 644 /etc/logrotate.d/emol
+    
+    echo "Log rotation configured for 7-day retention"
+}
+
 setup_services() {
     echo -e "\nSetting up services..."
     configure_gunicorn
     configure_nginx
+    configure_logrotate
 }
 
 # In the main sequence

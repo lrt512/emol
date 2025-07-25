@@ -42,3 +42,9 @@ Performance Optimization
 - Implement database indexing and query optimization techniques for better performance.
 - Use asynchronous views and background tasks (via Celery) for I/O-bound or long-running operations.
 - Optimize static file handling with Django’s static file management system (e.g., WhiteNoise or CDN integration).
+
+Dev vs. Production
+- Production is an AWS Lightsail container running Ubuntu 22.04
+- Production does NOT have systemctl enabled
+- Everything except the database runs in the production Lightsail container
+- We attempt to match the development container environment in docker-compose.yml as closely as we can to the production environment

@@ -4,7 +4,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DEBIAN_FRONTEND=noninteractive \
     TZ=America/Toronto \
-    POETRY_VERSION=1.7.1 \
+    POETRY_VERSION=1.8.5 \
     POETRY_HOME="/opt/poetry" \
     POETRY_VIRTUALENVS_IN_PROJECT=true \
     POETRY_NO_INTERACTION=1 \
@@ -27,6 +27,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     systemd \
     unzip \
     gettext-base \
+    libffi-dev \
+    libbz2-dev \
+    libreadline-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy .tool-versions first to read Python version
@@ -62,13 +68,13 @@ RUN chmod +x /opt/emol/setup_files/*.sh
 # Setup AWS credentials for local development
 RUN mkdir -p ~/.aws && \
     echo "[default]\n\
-aws_access_key_id = test\n\
-aws_secret_access_key = test\n\
-region = ca-central-1\n\
-output = json" > ~/.aws/credentials && \
+    aws_access_key_id = test\n\
+    aws_secret_access_key = test\n\
+    region = ca-central-1\n\
+    output = json" > ~/.aws/credentials && \
     echo "[default]\n\
-region = ca-central-1\n\
-output = json" > ~/.aws/config
+    region = ca-central-1\n\
+    output = json" > ~/.aws/config
 
 # Copy application code
 COPY . /opt/emol/

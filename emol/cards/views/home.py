@@ -4,7 +4,7 @@ from typing import Any, Dict
 
 from cards.mail import send_card_url, send_info_update, send_privacy_policy
 from cards.models import Combatant, CombatantWarrant, Discipline, UpdateCode
-from cards.utility.throttle import throttle
+
 from current_user import get_current_user
 from django.db.models import Prefetch
 from django.shortcuts import render
@@ -27,7 +27,7 @@ def index(request):
     return render(request, "home/index.html", context)
 
 
-@throttle(limit=2, window=60, key="request_card")
+
 @require_http_methods(["GET", "POST"])
 def request_card(request):
     """Handle GET and POST methods for card requests."""
@@ -52,7 +52,7 @@ def request_card(request):
         return render(request, "message/message.html", context)
 
 
-@throttle(limit=2, window=60, key="update_info")
+
 @require_http_methods(["GET", "POST"])
 def update_info(request):
     """Handle GET and POST methods for info update requests."""

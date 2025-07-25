@@ -170,5 +170,5 @@ tmp/
 
 static/
 .env_dev
-dev.py
-mock_oauth_config.json
+
+.cursor/

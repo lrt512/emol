@@ -22,16 +22,18 @@ def combatant_list(request):
 
 @permission_required("read_combatant_info")
 def combatant_detail(request):
-    """Render the combatant detail form.
+    """Render the combatant detail form skeleton.
 
     A subsequent GET to /api/combatant/<uuid> should follow to populate
-
+    the form fields if editing an existing combatant.
     """
     context = {
         "user": get_current_user(),
         "disciplines": Discipline.objects.all(),
         "authorizations": Authorization.objects.all(),
         "regions": Region.objects.all(),
+        "combatant": {},  # Pass an empty dict for initial render
+        "uuid": "",  # Add explicit empty uuid to avoid template errors
     }
     return render(request, "combatant/combatant_detail.html", context)
 

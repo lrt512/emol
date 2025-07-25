@@ -21,7 +21,7 @@
           {% endfor %}
         </ul>
         <div class="tab-content">
-          <input type="hidden" id="uuid" name="uuid" value="{% firstof combatant.uuid '' %}" />
+          <input type="hidden" id="uuid" name="uuid" value="{{ uuid }}" />
           <div id="info" class="tab-pane fade in active">
             <form id="edit-combatant-form">
               {% include 'combatant/combatant_info.html' %}
