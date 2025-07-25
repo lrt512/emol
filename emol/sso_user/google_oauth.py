@@ -26,6 +26,10 @@ class MockOAuthClient:
             "given_name": "Development",
             "family_name": "User",
         }
+        # Mock the client_kwargs structure expected by tests
+        self.client_kwargs = {
+            "scope": "openid email profile"
+        }
 
     def authorize_redirect(
         self, request: Any, redirect_uri: str, **kwargs: Any
@@ -52,6 +56,9 @@ class GoogleOAuth:
     In production, uses real Google OAuth.
     """
 
+    # Configuration URL for Google OpenID Connect
+    CONF_URL = "https://accounts.google.com/.well-known/openid-configuration"
+
     def __init__(self) -> None:
         self.oauth = OAuth()
 
@@ -62,6 +69,6 @@ class GoogleOAuth:
             logger.debug("Using production Google OAuth")
             self.google = self.oauth.register(
                 name="google",
-                server_metadata_url="https://accounts.google.com/.well-known/openid-configuration",
+                server_metadata_url=self.CONF_URL,
                 client_kwargs={"scope": "openid email profile"},
             )

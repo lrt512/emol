@@ -4,6 +4,7 @@ from cards.models.user_permission import UserPermission
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.test import TestCase
+from django.test.utils import override_settings
 
 User = get_user_model()
 
@@ -37,11 +38,13 @@ class UserPermissionTestCase(TestCase):
             )
         )
 
+    @override_settings(NO_ENFORCE_PERMISSIONS=False)
     def test_user_has_permission_invalid_permission(self):
         self.assertFalse(
             UserPermission.user_has_permission(self.user, "invalid_permission")
         )
 
+    @override_settings(NO_ENFORCE_PERMISSIONS=False)
     def test_user_has_permission_invalid_discipline(self):
         self.assertFalse(
             UserPermission.user_has_permission(
@@ -70,11 +73,13 @@ class UserPermissionTestCase(TestCase):
                 )
             )
 
+    @override_settings(NO_ENFORCE_PERMISSIONS=False)
     def test_user_has_permission_no_permission(self):
         self.assertFalse(
             UserPermission.user_has_permission(self.user, self.global_permission.name)
         )
 
+    @override_settings(NO_ENFORCE_PERMISSIONS=False)
     def test_user_has_permission_no_permission_non_global(self):
         self.assertFalse(
             UserPermission.user_has_permission(

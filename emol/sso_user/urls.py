@@ -1,5 +1,6 @@
 """URLs for the SSO user, supporting OAuth"""
 
+import os
 from django.conf import settings
 from django.urls import path, re_path
 
@@ -12,7 +13,8 @@ urlpatterns = [
     re_path(r"^admin/oauth/$", views.admin_oauth, name="admin_oauth"),
 ]
 
-if settings.DEBUG is True:
+# Include mock OAuth callback in development or testing environments
+if settings.DEBUG is True or os.getenv("EMOL_DEV") == "1":
     urlpatterns.append(
         path(
             "mock_oauth_callback/",

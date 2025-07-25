@@ -48,3 +48,9 @@ DATABASES = {
 CORS_ORIGIN_WHITELIST = [
     "http://localhost",
 ]
+
+# Mock OAuth user configuration for development/testing
+MOCK_OAUTH_USER = {
+    "is_superuser": True,
+    "is_staff": True,
+}
