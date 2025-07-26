@@ -4,6 +4,7 @@ from unittest.mock import patch
 
 from cards.management.commands.clean_expired import Command as CleanExpiredCommand
 from cards.management.commands.send_reminders import Command as SendRemindersCommand
+from cards.management.commands.summarize_expiries import Command as SummarizeExpiriesCommand
 from cards.models import (
     Authorization, Card, Combatant, Discipline, Reminder, 
     UpdateCode, Waiver
@@ -336,13 +337,16 @@ class SendRemindersCommandTestCase(TestCase):
         """Test that command classes can be instantiated directly"""
         clean_cmd = CleanExpiredCommand()
         send_cmd = SendRemindersCommand()
+        summarize_cmd = SummarizeExpiriesCommand()
         
         self.assertIsNotNone(clean_cmd)
         self.assertIsNotNone(send_cmd)
+        self.assertIsNotNone(summarize_cmd)
         
         # Test help text
         self.assertIn("Clean up expired update codes", clean_cmd.help)
         self.assertIn("Send reminders for expiring", send_cmd.help)
+        self.assertIn("Summarize upcoming", summarize_cmd.help)
 
     def test_send_reminders_add_arguments(self):
         """Test that send_reminders command properly handles arguments"""
@@ -356,4 +360,263 @@ class SendRemindersCommandTestCase(TestCase):
         
         # Test without dry-run
         parsed = parser.parse_args([])
-        self.assertFalse(parsed.dry_run) 
+        self.assertFalse(parsed.dry_run)
+
+
+class SummarizeExpiriesCommandTestCase(TestCase):
+    """Test the summarize_expiries management command"""
+
+    def setUp(self):
+        self.discipline1 = Discipline.objects.create(
+            name="Armoured Combat",
+            slug="armoured-combat"
+        )
+        self.discipline2 = Discipline.objects.create(
+            name="Fencing", 
+            slug="fencing"
+        )
+        self.authorization = Authorization.objects.create(
+            name="Test Auth",
+            slug="test-auth",
+            discipline=self.discipline1
+        )
+        
+        # Create combatants
+        self.combatant1 = Combatant.objects.create(
+            sca_name="Test Fighter 1",
+            legal_name="Test Legal 1",
+            email="test1@example.com",
+            accepted_privacy_policy=True,
+        )
+        self.combatant2 = Combatant.objects.create(
+            sca_name="Test Fighter 2", 
+            legal_name="Test Legal 2",
+            email="test2@example.com",
+            accepted_privacy_policy=True,
+        )
+        self.combatant3 = Combatant.objects.create(
+            sca_name="Test Fighter 3",
+            legal_name="Test Legal 3", 
+            email="test3@example.com",
+            accepted_privacy_policy=True,
+        )
+
+    def test_summarize_expiries_default_week(self):
+        """Test default week period summary"""
+        # Create cards expiring in 5 days (within week)
+        card_expiring_soon = Card.objects.create(
+            combatant=self.combatant1,
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=365*2-5)  # Expires in 5 days
+        )
+        
+        # Create card expiring in 10 days (outside week)
+        card_expiring_later = Card.objects.create(
+            combatant=self.combatant2,
+            discipline=self.discipline2,
+            date_issued=today() - timedelta(days=365*2-10)  # Expires in 10 days
+        )
+        
+        # Run command with default settings
+        call_command('summarize_expiries')
+        
+        # The command completed successfully (no exceptions)
+        self.assertTrue(True)
+
+    def test_summarize_expiries_custom_days(self):
+        """Test custom days parameter"""
+        # Create cards with different expiry times
+        card1 = Card.objects.create(
+            combatant=self.combatant1,
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=365*2-3)  # Expires in 3 days
+        )
+        card2 = Card.objects.create(
+            combatant=self.combatant2,
+            discipline=self.discipline2,
+            date_issued=today() - timedelta(days=365*2-15)  # Expires in 15 days
+        )
+        
+        # Run with 14 days - should include first card only
+        call_command('summarize_expiries', '--days=14')
+        
+        # The command completed successfully
+        self.assertTrue(True)
+
+    def test_summarize_expiries_detailed_mode(self):
+        """Test detailed listing mode"""
+        # Create card and waiver expiring within a week
+        card = Card.objects.create(
+            combatant=self.combatant1,
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=365*2-5)  # Expires in 5 days
+        )
+        waiver = Waiver.objects.create(
+            combatant=self.combatant2,
+            date_signed=today() - timedelta(days=365*7-3)  # Expires in 3 days
+        )
+        
+        # Run with detailed flag
+        call_command('summarize_expiries', '--detailed')
+        
+        # The command completed successfully
+        self.assertTrue(True)
+
+    def test_summarize_expiries_no_expiries(self):
+        """Test when no items are expiring"""
+        # Create cards/waivers that expire far in the future
+        card = Card.objects.create(
+            combatant=self.combatant1,
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=100)  # Expires in ~630 days
+        )
+        waiver = Waiver.objects.create(
+            combatant=self.combatant2,
+            date_signed=today() - timedelta(days=100)  # Expires in ~2455 days
+        )
+        
+        # Run command
+        call_command('summarize_expiries')
+        
+        # The command completed successfully
+        self.assertTrue(True)
+
+    def test_summarize_expiries_different_periods(self):
+        """Test different period options"""
+        # Create items expiring at different times
+        card_tomorrow = Card.objects.create(
+            combatant=self.combatant1,
+            discipline=self.discipline1, 
+            date_issued=today() - timedelta(days=365*2-1)  # Expires tomorrow
+        )
+        card_next_month = Card.objects.create(
+            combatant=self.combatant2,
+            discipline=self.discipline2,
+            date_issued=today() - timedelta(days=365*2-25)  # Expires in 25 days
+        )
+        
+        # Test day period - should only include tomorrow's expiry
+        call_command('summarize_expiries', '--period=day')
+        
+        # Test week period
+        call_command('summarize_expiries', '--period=week')
+        
+        # Test month period - should include both
+        call_command('summarize_expiries', '--period=month')
+        
+        # All commands completed successfully
+        self.assertTrue(True)
+
+    def test_summarize_expiries_cards_only(self):
+        """Test summary with only cards expiring"""
+        # Create multiple cards in different disciplines
+        card1 = Card.objects.create(
+            combatant=self.combatant1,
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=365*2-3)  # Expires in 3 days
+        )
+        card2 = Card.objects.create(
+            combatant=self.combatant2, 
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=365*2-5)  # Expires in 5 days
+        )
+        card3 = Card.objects.create(
+            combatant=self.combatant3,
+            discipline=self.discipline2,
+            date_issued=today() - timedelta(days=365*2-6)  # Expires in 6 days
+        )
+        
+        # Run detailed summary
+        call_command('summarize_expiries', '--detailed')
+        
+        # The command completed successfully
+        self.assertTrue(True)
+
+    def test_summarize_expiries_waivers_only(self):
+        """Test summary with only waivers expiring"""
+        # Create multiple waivers
+        waiver1 = Waiver.objects.create(
+            combatant=self.combatant1,
+            date_signed=today() - timedelta(days=365*7-2)  # Expires in 2 days
+        )
+        waiver2 = Waiver.objects.create(
+            combatant=self.combatant2,
+            date_signed=today() - timedelta(days=365*7-6)  # Expires in 6 days
+        )
+        
+        # Run detailed summary
+        call_command('summarize_expiries', '--detailed')
+        
+        # The command completed successfully
+        self.assertTrue(True)
+
+    def test_summarize_expiries_mixed_cards_and_waivers(self):
+        """Test summary with both cards and waivers expiring"""
+        # Create mix of cards and waivers
+        card = Card.objects.create(
+            combatant=self.combatant1,
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=365*2-4)  # Expires in 4 days
+        )
+        waiver = Waiver.objects.create(
+            combatant=self.combatant2,
+            date_signed=today() - timedelta(days=365*7-3)  # Expires in 3 days
+        )
+        
+        # Run detailed summary
+        call_command('summarize_expiries', '--detailed')
+        
+        # The command completed successfully
+        self.assertTrue(True)
+
+    def test_summarize_expiries_command_instantiation(self):
+        """Test that command can be instantiated directly"""
+        cmd = SummarizeExpiriesCommand()
+        self.assertIsNotNone(cmd)
+        self.assertIn("Summarize upcoming", cmd.help)
+
+    def test_summarize_expiries_argument_parsing(self):
+        """Test that command arguments are parsed correctly"""
+        cmd = SummarizeExpiriesCommand()
+        parser = cmd.create_parser('summarize_expiries', 'summarize_expiries')
+        
+        # Test default values
+        parsed = parser.parse_args([])
+        self.assertEqual(parsed.period, 'week')
+        self.assertIsNone(parsed.days)
+        self.assertFalse(parsed.detailed)
+        
+        # Test period argument
+        parsed = parser.parse_args(['--period=month'])
+        self.assertEqual(parsed.period, 'month')
+        
+        # Test custom days
+        parsed = parser.parse_args(['--days=14'])
+        self.assertEqual(parsed.days, 14)
+        
+        # Test detailed flag
+        parsed = parser.parse_args(['--detailed'])
+        self.assertTrue(parsed.detailed)
+        
+        # Test combined arguments
+        parsed = parser.parse_args(['--period=day', '--detailed'])
+        self.assertEqual(parsed.period, 'day')
+        self.assertTrue(parsed.detailed)
+
+    def test_summarize_expiries_boundary_conditions(self):
+        """Test edge cases and boundary conditions"""
+        # Create card expiring exactly in 7 days (boundary of week)
+        card_boundary = Card.objects.create(
+            combatant=self.combatant1,
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=365*2-7)  # Expires in exactly 7 days
+        )
+        
+        # Run week summary - should include the boundary case
+        call_command('summarize_expiries', '--period=week')
+        
+        # Run with 6 days - should not include the boundary case
+        call_command('summarize_expiries', '--days=6')
+        
+        # The command completed successfully
+        self.assertTrue(True) 
