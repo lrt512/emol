@@ -6,7 +6,7 @@ from cards.mail import send_card_url, send_info_update, send_privacy_policy
 from cards.models import Combatant, CombatantWarrant, Discipline, UpdateCode
 
 from current_user import get_current_user
-from django.db.models import Prefetch
+from django.views.decorators.csrf import csrf_protect
 from django.shortcuts import render
 from django.template.defaulttags import register
 from django.views.decorators.http import require_http_methods
@@ -28,6 +28,7 @@ def index(request):
 
 
 
+@csrf_protect
 @require_http_methods(["GET", "POST"])
 def request_card(request):
     """Handle GET and POST methods for card requests."""
@@ -52,7 +53,7 @@ def request_card(request):
         return render(request, "message/message.html", context)
 
 
-
+@csrf_protect
 @require_http_methods(["GET", "POST"])
 def update_info(request):
     """Handle GET and POST methods for info update requests."""
@@ -110,12 +111,18 @@ def marshal_list(request):
     marshal_lists = {}
     for warrant in warrants:
         try:
+            if warrant.marshal is None:
+                logger.warning(f"Warrant {warrant.id} has no associated marshal")
+                continue
+
             discipline_id = warrant.marshal.discipline_id
             if discipline_id not in marshal_lists:
                 marshal_lists[discipline_id] = []
             marshal_lists[discipline_id].append(warrant)
-        except Exception as e:
-            logger.error(f"Error processing warrant {warrant.id}: {str(e)}")
+        except AttributeError as e:
+            logger.error(f"Missing attribute for warrant {warrant.id}: {str(e)}")
+        except ValueError as e:
+            logger.error(f"Invalid data for warrant {warrant.id}: {str(e)}")
 
     logger.debug(f"Organized warrants into {len(marshal_lists)} discipline groups")
 

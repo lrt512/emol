@@ -25,9 +25,6 @@ class UpdateCode(models.Model):
 
         return f"<UpdateCode: {email} ({code_str}) {expires_at_str}>"
 
-    def is_valid(self):
-        return datetime.utcnow() < self.expires_at
-
     @property
     def url(self):
         """The URL for this update code."""
