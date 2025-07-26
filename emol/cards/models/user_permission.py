@@ -1,6 +1,7 @@
 import logging
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from sso_user.models import SSOUser
 
@@ -32,6 +33,26 @@ class UserPermission(models.Model):
                 f"<UserPermission: {self.user.email} - {self.permission.name} (global)>"
             )
 
+    def clean(self):
+        """Validate that global permissions don't have disciplines assigned"""
+        super().clean()
+        
+        if self.permission and self.permission.is_global and self.discipline is not None:
+            raise ValidationError({
+                'discipline': f"Global permission '{self.permission.name}' cannot be assigned to a specific discipline. "
+                           f"Global permissions must be discipline-independent."
+            })
+        
+        if self.permission and not self.permission.is_global and self.discipline is None:
+            raise ValidationError({
+                'discipline': f"Non-global permission '{self.permission.name}' requires a discipline to be specified."
+            })
+
+    def save(self, *args, **kwargs):
+        """Override save to ensure validation is run"""
+        self.full_clean()
+        super().save(*args, **kwargs)
+
     @classmethod
     def user_has_permission(cls, user, permission, discipline=None):
         """Check if the given user has a permission
@@ -58,7 +79,12 @@ class UserPermission(models.Model):
             "permission": permission,
         }
 
-        if not permission.is_global:
+        if permission.is_global:
+            # Global permissions must have discipline=None
+            # We don't consider the discipline parameter for global permissions
+            filters["discipline"] = None
+        else:
+            # Non-global permissions require a specific discipline
             try:
                 discipline = Discipline.find(discipline)
                 filters["discipline"] = discipline

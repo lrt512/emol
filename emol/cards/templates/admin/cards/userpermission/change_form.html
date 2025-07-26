@@ -1,0 +1,10 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block extrahead %}
+    {{ block.super }}
+    <script type="text/javascript">
+        // Make permission data available to JavaScript
+        window.PERMISSIONS_DATA = JSON.parse('{{ permissions_data|escapejs }}');
+    </script>
+{% endblock %} 
