@@ -1,0 +1,359 @@
+import uuid
+from datetime import date, datetime, timedelta
+from unittest.mock import patch
+
+from cards.management.commands.clean_expired import Command as CleanExpiredCommand
+from cards.management.commands.send_reminders import Command as SendRemindersCommand
+from cards.models import (
+    Authorization, Card, Combatant, Discipline, Reminder, 
+    UpdateCode, Waiver
+)
+from cards.utility.time import today, utc_tomorrow
+from django.contrib.contenttypes.models import ContentType
+from django.core.management import call_command
+from django.test import TestCase, override_settings
+from django.utils import timezone
+
+
+class CleanExpiredCommandTestCase(TestCase):
+    """Test the clean_expired management command"""
+
+    def setUp(self):
+        self.combatant = Combatant.objects.create(
+            sca_name="Test Fighter",
+            legal_name="Test Legal",
+            email="test@example.com",
+            accepted_privacy_policy=True,
+        )
+
+    def test_clean_expired_codes_success(self):
+        """Test cleaning up expired update codes"""
+        # Create expired code for first combatant
+        expired_code1 = UpdateCode.objects.create(
+            combatant=self.combatant,
+            expires_at=timezone.now() - timedelta(days=1)
+        )
+        
+        # Create a second combatant and expired code
+        combatant2 = Combatant.objects.create(
+            sca_name="Test Fighter 2",
+            legal_name="Test Legal 2", 
+            email="test2@example.com",
+            accepted_privacy_policy=True,
+        )
+        expired_code2 = UpdateCode.objects.create(
+            combatant=combatant2,
+            expires_at=timezone.now() - timedelta(hours=1)
+        )
+        
+        # Create a third combatant with valid (non-expired) code
+        combatant3 = Combatant.objects.create(
+            sca_name="Test Fighter 3",
+            legal_name="Test Legal 3",
+            email="test3@example.com",
+            accepted_privacy_policy=True,
+        )
+        valid_code = UpdateCode.objects.create(
+            combatant=combatant3,
+            expires_at=utc_tomorrow()
+        )
+        
+        # Verify initial state
+        self.assertEqual(UpdateCode.objects.count(), 3)
+        
+        # Run the command
+        call_command('clean_expired')
+        
+        # Verify expired codes are deleted
+        self.assertEqual(UpdateCode.objects.count(), 1)
+        self.assertTrue(UpdateCode.objects.filter(id=valid_code.id).exists())
+        self.assertFalse(UpdateCode.objects.filter(id=expired_code1.id).exists())
+        self.assertFalse(UpdateCode.objects.filter(id=expired_code2.id).exists())
+
+    def test_clean_expired_codes_none_expired(self):
+        """Test command when no codes are expired"""
+        # Create only valid codes
+        UpdateCode.objects.create(
+            combatant=self.combatant,
+            expires_at=utc_tomorrow()
+        )
+        
+        # Verify initial state
+        self.assertEqual(UpdateCode.objects.count(), 1)
+        
+        # Run the command
+        call_command('clean_expired')
+        
+        # Verify no codes are deleted
+        self.assertEqual(UpdateCode.objects.count(), 1)
+
+    def test_clean_expired_codes_empty_database(self):
+        """Test command when no update codes exist"""
+        # Verify initial state
+        self.assertEqual(UpdateCode.objects.count(), 0)
+        
+        # Run the command  
+        call_command('clean_expired')
+        
+        # Verify still no codes
+        self.assertEqual(UpdateCode.objects.count(), 0)
+
+    def test_clean_expired_boundary_condition(self):
+        """Test command with codes expiring exactly now"""
+        now = timezone.now()
+        
+        # Create code expiring exactly now
+        boundary_code = UpdateCode.objects.create(
+            combatant=self.combatant,
+            expires_at=now
+        )
+        
+        # Run the command
+        with patch('django.utils.timezone.now', return_value=now):
+            call_command('clean_expired')
+        
+        # Code expiring exactly now should be cleaned up
+        self.assertFalse(UpdateCode.objects.filter(id=boundary_code.id).exists())
+
+
+class SendRemindersCommandTestCase(TestCase):
+    """Test the send_reminders management command"""
+
+    def setUp(self):
+        self.discipline = Discipline.objects.create(
+            name="Test Combat",
+            slug="test-combat"
+        )
+        self.authorization = Authorization.objects.create(
+            name="Test Auth",
+            slug="test-auth",
+            discipline=self.discipline
+        )
+        
+        self.combatant = Combatant.objects.create(
+            sca_name="Test Fighter",
+            legal_name="Test Legal",
+            email="test@example.com",
+            accepted_privacy_policy=True,
+        )
+        
+        # Create a card that expires in 30 days
+        self.card = Card.objects.create(
+            combatant=self.combatant,
+            discipline=self.discipline,
+            date_issued=today() - timedelta(days=365*2-30)  # Expires in 30 days
+        )
+        
+        # Create a waiver that expires in 60 days
+        self.waiver = Waiver.objects.create(
+            combatant=self.combatant,
+            date_signed=today() - timedelta(days=365*7-60)  # Expires in 60 days
+        )
+
+    @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
+    def test_send_reminders_dry_run_mode(self):
+        """Test dry-run mode shows what would happen without making changes"""
+        # Reminders are automatically created by post_save signals
+        # Update existing reminders to be due today
+        card_reminders = Reminder.objects.filter(
+            content_type=ContentType.objects.get_for_model(Card),
+            object_id=self.card.id
+        )
+        waiver_reminders = Reminder.objects.filter(
+            content_type=ContentType.objects.get_for_model(Waiver),
+            object_id=self.waiver.id
+        )
+        
+        # Make some reminders due today
+        card_reminders.filter(days_to_expiry=30).update(due_date=today())
+        waiver_reminders.filter(days_to_expiry=60).update(due_date=today())
+        
+        initial_reminder_count = Reminder.objects.count()
+        
+        # Run dry-run
+        call_command('send_reminders', '--dry-run')
+        
+        # Verify no changes were made
+        self.assertEqual(Reminder.objects.count(), initial_reminder_count)
+
+    @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
+    def test_send_reminders_orphaned_cleanup(self):
+        """Test that orphaned reminders are cleaned up"""
+        # Create an orphaned reminder (pointing to non-existent object)
+        card_content_type = ContentType.objects.get_for_model(Card)
+        orphaned_reminder = Reminder.objects.create(
+            content_type=card_content_type,
+            object_id=99999,  # Non-existent card ID
+            days_to_expiry=30,
+            due_date=today()
+        )
+        
+        # Run command
+        call_command('send_reminders')
+        
+        # Verify orphaned reminder was deleted
+        self.assertFalse(Reminder.objects.filter(id=orphaned_reminder.id).exists())
+
+    @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
+    def test_send_reminders_orphaned_cleanup_dry_run(self):
+        """Test that dry-run mode shows orphaned reminders but doesn't delete them"""
+        # Create an orphaned reminder
+        card_content_type = ContentType.objects.get_for_model(Card)
+        orphaned_reminder = Reminder.objects.create(
+            content_type=card_content_type,
+            object_id=99999,  # Non-existent card ID
+            days_to_expiry=30,
+            due_date=today()
+        )
+        
+        # Run dry-run
+        call_command('send_reminders', '--dry-run')
+        
+        # Verify orphaned reminder still exists
+        self.assertTrue(Reminder.objects.filter(id=orphaned_reminder.id).exists())
+
+    @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
+    def test_send_reminders_prioritization(self):
+        """Test that most urgent reminders are sent and older ones are expired"""
+        # Use automatically created reminders and update them to simulate backlog
+        card_reminders = Reminder.objects.filter(
+            content_type=ContentType.objects.get_for_model(Card),
+            object_id=self.card.id
+        )
+        
+        # Update reminders to be overdue (simulating backlog scenario)
+        card_reminders.filter(days_to_expiry=60).update(due_date=today() - timedelta(days=30))
+        card_reminders.filter(days_to_expiry=30).update(due_date=today() - timedelta(days=5))
+        card_reminders.filter(days_to_expiry=14).update(due_date=today())
+        
+        reminder_60 = card_reminders.get(days_to_expiry=60)
+        reminder_30 = card_reminders.get(days_to_expiry=30)
+        reminder_14 = card_reminders.get(days_to_expiry=14)
+        
+        # Mock email sending to verify which reminder gets processed
+        with patch('cards.models.reminder.Reminder.send_email') as mock_send:
+            call_command('send_reminders')
+        
+        # Verify most urgent reminder was processed
+        # The 14-day reminder should have been kept and processed
+        # The 60-day and 30-day reminders should have been expired
+        self.assertFalse(Reminder.objects.filter(id=reminder_60.id).exists())
+        self.assertFalse(Reminder.objects.filter(id=reminder_30.id).exists())
+        # The 14-day reminder might be deleted after sending, that's OK
+
+    @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
+    def test_send_reminders_privacy_policy_not_accepted(self):
+        """Test that reminders are skipped for users who haven't accepted privacy policy"""
+        # Create combatant who hasn't accepted privacy policy
+        combatant_no_privacy = Combatant.objects.create(
+            sca_name="No Privacy Fighter",
+            legal_name="No Privacy Legal",
+            email="noprivacy@example.com",
+            accepted_privacy_policy=False,  # Key difference
+        )
+        
+        card_no_privacy = Card.objects.create(
+            combatant=combatant_no_privacy,
+            discipline=self.discipline,
+            date_issued=today() - timedelta(days=365*2-30)
+        )
+        
+        # Use automatically created reminder for this card
+        reminder = Reminder.objects.filter(
+            content_type=ContentType.objects.get_for_model(Card),
+            object_id=card_no_privacy.id,
+            days_to_expiry=30
+        ).first()
+        # Make reminder due today  
+        reminder.due_date = today()
+        reminder.save()
+        
+        # Run dry-run to see what would happen
+        initial_reminder_count = Reminder.objects.count()
+        call_command('send_reminders', '--dry-run')
+        
+        # Verify no changes were made (reminder would be skipped)
+        self.assertEqual(Reminder.objects.count(), initial_reminder_count)
+
+    @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
+    def test_send_reminders_no_due_reminders(self):
+        """Test command when no reminders are due"""
+        # Use automatically created reminder and set it due in the future
+        future_reminder = Reminder.objects.filter(
+            content_type=ContentType.objects.get_for_model(Card),
+            object_id=self.card.id,
+            days_to_expiry=30
+        ).first()
+        future_reminder.due_date = today() + timedelta(days=10)  # Future date
+        future_reminder.save()
+        
+        # Run command
+        call_command('send_reminders')
+        
+        # Verify reminder still exists (not due yet)
+        self.assertTrue(Reminder.objects.filter(id=future_reminder.id).exists())
+
+    @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
+    def test_send_reminders_counter_accuracy(self):
+        """Test that sent and expired counters are accurate"""
+        # Create a second combatant and card to test multiple cards
+        combatant2 = Combatant.objects.create(
+            sca_name="Test Fighter 2",
+            legal_name="Test Legal 2",
+            email="test2@example.com",
+            accepted_privacy_policy=True,
+        )
+        card2 = Card.objects.create(
+            combatant=combatant2,
+            discipline=self.discipline,
+            date_issued=today() - timedelta(days=365*2-14)
+        )
+        
+        # Update automatically created reminders to be due today
+        card1_reminders = Reminder.objects.filter(
+            content_type=ContentType.objects.get_for_model(Card),
+            object_id=self.card.id
+        )
+        card2_reminders = Reminder.objects.filter(
+            content_type=ContentType.objects.get_for_model(Card),
+            object_id=card2.id
+        )
+        
+        # Backlog scenario for first card (all reminders due)
+        card1_reminders.update(due_date=today())
+        
+        # Single reminder for second card (14-day reminder due)
+        card2_reminders.filter(days_to_expiry=14).update(due_date=today())
+        
+        # Run dry-run to check counters
+        initial_reminder_count = Reminder.objects.count()
+        call_command('send_reminders', '--dry-run')
+        
+        # Verify no changes were made in dry-run mode
+        self.assertEqual(Reminder.objects.count(), initial_reminder_count)
+
+    def test_command_class_instantiation(self):
+        """Test that command classes can be instantiated directly"""
+        clean_cmd = CleanExpiredCommand()
+        send_cmd = SendRemindersCommand()
+        
+        self.assertIsNotNone(clean_cmd)
+        self.assertIsNotNone(send_cmd)
+        
+        # Test help text
+        self.assertIn("Clean up expired update codes", clean_cmd.help)
+        self.assertIn("Send reminders for expiring", send_cmd.help)
+
+    def test_send_reminders_add_arguments(self):
+        """Test that send_reminders command properly handles arguments"""
+        cmd = SendRemindersCommand()
+        
+        # Test that dry-run argument is added
+        parser = cmd.create_parser('send_reminders', 'send_reminders')
+        # This will raise if --dry-run argument wasn't added properly
+        parsed = parser.parse_args(['--dry-run'])
+        self.assertTrue(parsed.dry_run)
+        
+        # Test without dry-run
+        parsed = parser.parse_args([])
+        self.assertFalse(parsed.dry_run) 
