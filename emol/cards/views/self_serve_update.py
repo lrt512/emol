@@ -1,6 +1,7 @@
 import logging
 
 from cards.models import Combatant, Region, UpdateCode
+from django.core.exceptions import ValidationError
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
@@ -55,7 +56,7 @@ class SelfServeUpdateSerializer(ModelSerializer):
 
     def validate(self, data):
         """
-        Ensure that if member_expiry is specified, then member_number is also specified.
+        Validate that member_expiry requires member_number and province code exists.
         """
         if data.get("member_expiry") and not data.get("member_number"):
             raise serializers.ValidationError(
@@ -63,18 +64,31 @@ class SelfServeUpdateSerializer(ModelSerializer):
                     "member_number": "Member number is required when specifying an expiry date."
                 }
             )
+        
+        # Validate province code exists in Region table
+        if data.get("province"):
+            province_code = data["province"]
+            if not Region.objects.filter(code=province_code, active=True).exists():
+                raise serializers.ValidationError(
+                    {
+                        "province": f"Province code '{province_code}' is not valid. "
+                                   f"Valid codes are: {', '.join(Region.objects.filter(active=True).values_list('code', flat=True))}"
+                    }
+                )
+        
         return data
 
     def to_internal_value(self, data):
         """
         Clean up blank strings for specified fields before validation
         """
-        data = super().to_internal_value(data)
+        # Clean blank strings before parent validation
+        cleaned_data = data.copy()
         for attr in self.clean_fields:
-            if attr in data and not data[attr]:
-                data[attr] = None
+            if attr in cleaned_data and not cleaned_data[attr]:
+                cleaned_data[attr] = None
 
-        return data
+        return super().to_internal_value(cleaned_data)
 
 
 def serializer_errors_to_strings(serializer):
@@ -130,7 +144,7 @@ def self_serve_update(request, code):
             "message/message.html",
             {"message": "Your information has been updated successfully."},
         )
-    except UpdateCode.DoesNotExist:
+    except (UpdateCode.DoesNotExist, ValueError, ValidationError):
         return render(
             request,
             "message/message.html",
