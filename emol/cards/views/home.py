@@ -46,7 +46,7 @@ def request_card(request):
                 send_card_url(combatant)
             else:
                 logger.error(f"Card request for {combatant} (privacy not accepted)")
-                send_privacy_policy(combatant.privacy_acceptance)
+                send_privacy_policy(combatant)
         except Combatant.DoesNotExist:
             logger.error(f"Card URL request: No combatant for {email}")
 
@@ -61,8 +61,12 @@ def update_info(request):
         return render(request, "home/update_info.html")
     elif request.method == "POST":
         email = request.POST.get("update-info-email", None)
+        context = {
+            "message": (
+                "If a combatant with this email exists, an email has been sent"
+            )
+        }
         try:
-            context = {}
             combatant = Combatant.objects.get(email=email)
             if combatant.accepted_privacy_policy:
                 code, created = UpdateCode.objects.get_or_create(combatant=combatant)
@@ -72,13 +76,8 @@ def update_info(request):
                 send_info_update(combatant, code)
             else:
                 logger.error(f"Card request for {combatant} (privacy not accepted)")
-                send_privacy_policy(combatant.privacy_acceptance)
+                send_privacy_policy(combatant)
 
-            context["message"] = (
-                "If a combatant with this email exists, "
-                "an email has been sent with instructions for "
-                "updating your information"
-            )
         except Combatant.DoesNotExist:
             logger.warning("No combatant found with email %s", email)
 

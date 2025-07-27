@@ -279,20 +279,21 @@ class SendRemindersCommandTestCase(TestCase):
     @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
     def test_send_reminders_no_due_reminders(self):
         """Test command when no reminders are due"""
-        # Use automatically created reminder and set it due in the future
-        future_reminder = Reminder.objects.filter(
-            content_type=ContentType.objects.get_for_model(Card),
-            object_id=self.card.id,
-            days_to_expiry=30
-        ).first()
-        future_reminder.due_date = today() + timedelta(days=10)  # Future date
-        future_reminder.save()
-        
-        # Run command
+        # Ensure a clean slate by deleting all reminders created in setUp
+        Reminder.objects.all().delete()
+
+        # Create a single reminder that is not due
+        future_date = timezone.now() + timedelta(days=30)
+        Reminder.objects.create(
+            content_object=self.card, # It doesn't matter which object it's for
+            days_to_expiry=90,
+            due_date=future_date
+        )
+
         call_command('send_reminders')
-        
-        # Verify reminder still exists (not due yet)
-        self.assertTrue(Reminder.objects.filter(id=future_reminder.id).exists())
+
+        # Check that the future reminder was not deleted and it's the only one
+        self.assertEqual(Reminder.objects.count(), 1)
 
     @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
     def test_send_reminders_counter_accuracy(self):
