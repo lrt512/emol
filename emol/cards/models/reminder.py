@@ -27,6 +27,8 @@ class Reminder(models.Model):
             if self.days_to_expiry == 0
             else f"{self.days_to_expiry} day reminder"
         )
+        if self.content_object is None:
+            return f"<Orphaned Reminder: object_id={self.object_id} - {s}>"
         return f"<{self.content_object.__class__.__name__}: {self.content_object.combatant.name} - {s}>"
 
     @classmethod
@@ -49,6 +51,10 @@ class Reminder(models.Model):
 
     @property
     def should_send_email(self) -> bool:
+        if self.content_object is None:
+            logger.warning("Reminder %s has no content_object (orphaned reminder)", self.id)
+            return False
+        
         combatant = self.content_object.combatant
         if not combatant.accepted_privacy_policy:
             return False

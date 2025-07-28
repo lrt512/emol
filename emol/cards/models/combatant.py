@@ -7,7 +7,7 @@ authorizations in a discipline and needs an authorization card to show for them.
 
 import logging
 from collections import namedtuple
-from datetime import date
+from datetime import date, timedelta
 from urllib.parse import urljoin
 from uuid import uuid4
 
@@ -149,6 +149,77 @@ class Combatant(models.Model):
 
         """
         return self.sca_name or self.legal_name
+
+    @property
+    def privacy_policy_code(self):
+        """Generate a privacy policy code from the combatant's SCA name.
+        
+        Returns the first letter of each word in the SCA name.
+        
+        Returns:
+            String containing initials
+        """
+        if not self.sca_name:
+            return ""
+        
+        words = self.sca_name.split()
+        return "".join(word[0] for word in words if word)
+
+    @property
+    def waiver_date(self):
+        """Get the waiver date signed.
+        
+        Returns:
+            Date when waiver was signed, or None if no waiver exists
+        """
+        try:
+            return self.waiver.date_signed
+        except AttributeError:
+            return None
+    
+    @waiver_date.setter
+    def waiver_date(self, value):
+        """Set the waiver date signed.
+        
+        Creates a new waiver if one doesn't exist, or updates the existing one.
+        
+        Args:
+            value: Date when waiver was signed
+        """
+        from .waiver import Waiver  # Import here to avoid circular imports
+        
+        try:
+            # Update existing waiver
+            self.waiver.date_signed = value
+            self.waiver.save()
+        except AttributeError:
+            # Create new waiver
+            Waiver.objects.create(combatant=self, date_signed=value)
+
+    @property 
+    def waiver_duration(self):
+        """Get the waiver validity duration.
+        
+        Returns:
+            Timedelta representing actual waiver validity period
+        """
+        if self.waiver_date and self.waiver_expires:
+            return self.waiver_expires - self.waiver_date
+        else:
+            # Default 7-year duration if no waiver exists
+            return timedelta(days=365 * 7)
+    
+    @property
+    def waiver_expires(self):
+        """Get the waiver expiration date.
+        
+        Returns:
+            Date when waiver expires, or None if no waiver exists
+        """
+        try:
+            return self.waiver.expiration_date
+        except AttributeError:
+            return None
 
     # named tuple for return values from update_info
     UpdateInfoReturn = namedtuple("UpdateInfoReturn", ["sca_name", "email"])

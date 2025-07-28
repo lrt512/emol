@@ -99,26 +99,6 @@ systemctl status nginx
 /opt/emol/setup_files/deploy.sh --force v0.1.0
 ```
 
-## Development
-
-### Local Setup
-
-1. Clone the repository:
-```bash
-git clone https://github.com/lrt512/emol.git
-cd emol
-```
-
-2. Start development environment:
-```bash
-docker-compose up -d
-```
-
-3. Run migrations:
-```bash
-docker-compose exec web python manage.py migrate
-```
-
 ### Testing
 
 The system includes features to help with testing:

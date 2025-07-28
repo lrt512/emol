@@ -30,7 +30,9 @@
   <form method="post" action="{% url 'self-serve-update' code %}">
     {% csrf_token %}
     <div class="col-md-12">
-      {% include 'combatant/combatant_info.html' %}
+      {% with self_serve=True %}
+        {% include 'combatant/combatant_info.html' %}
+      {% endwith %}
     </div>
     {% if message %}
     <div class="row top-space-md">

@@ -1,6 +1,7 @@
 {% load permissions %}
 
-{% has_global_permission request.user "write_combatant_info" as write_combatant_info %}
+{% has_global_permission request.user "write_combatant_info" self_serve "self-serve update" as write_combatant_info %}
+{% with write_combatant_info=write_combatant_info %}
 <div class="col-md-6">
     <div class="form-group row">
         <label for="edit-combatant-sca-name" class="col-md-4 col-form-label">SCA Name</label>
@@ -100,4 +101,5 @@
         </div>
     </div>
 </div>
+{% endwith %}
 

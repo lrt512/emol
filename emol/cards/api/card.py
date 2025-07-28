@@ -1,6 +1,7 @@
 import logging
 
 from cards.models.card import Card
+from cards.models.combatant import Combatant
 from cards.models.combatant_authorization import CombatantAuthorization
 from cards.models.combatant_warrant import CombatantWarrant
 from cards.models.discipline import Discipline
@@ -102,15 +103,17 @@ class CardDateViewSet(GenericViewSet):
         serializer = self.get_serializer(data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
 
-        # Retrieve card based on uuid and discipline_slug
         uuid = serializer.validated_data["uuid"]
         discipline_slug = serializer.validated_data["discipline_slug"]
-        card = get_object_or_404(
-            Card, combatant__uuid=uuid, discipline__slug=discipline_slug
-        )
+        date_issued = serializer.validated_data["date_issued"]
 
-        # Update date_issued field
-        card.date_issued = serializer.validated_data["date_issued"]
-        card.save()
+        combatant = get_object_or_404(Combatant, uuid=uuid)
+        discipline = get_object_or_404(Discipline, slug=discipline_slug)
+
+        Card.objects.update_or_create(
+            combatant=combatant,
+            discipline=discipline,
+            defaults={"date_issued": date_issued},
+        )
 
         return Response(status=status.HTTP_204_NO_CONTENT)

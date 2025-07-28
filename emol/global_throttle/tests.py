@@ -42,33 +42,39 @@ class GlobalThrottleMiddlewareTestCase(TestCase):
         request.user = self.user
         self.assertFalse(self.middleware.maybe_throttle(request))
 
+    @override_settings(GLOBAL_THROTTLE_LIMIT=10)
     def test_anonymous_user_throttled(self):
         """Test that anonymous users are throttled"""
+        middleware = GlobalThrottleMiddleware(lambda request: None)
         request = self.factory.get(reverse("non_exempt_view"))
         request.user = AnonymousUser()
-        request.META["REMOTE_ADDR"] = "127.0.0.1"
+        request.META["REMOTE_ADDR"] = "192.168.1.100"  # Non-whitelisted IP
         for _ in range(10):
-            self.assertFalse(self.middleware.maybe_throttle(request))
-        self.assertTrue(self.middleware.maybe_throttle(request))
+            self.assertFalse(middleware.maybe_throttle(request))
+        self.assertTrue(middleware.maybe_throttle(request))
 
+    @override_settings(GLOBAL_THROTTLE_LIMIT=10)
     def test_anonymous_user_throttle_reset(self):
         """Test that anonymous users are throttled and reset after a period of time"""
+        middleware = GlobalThrottleMiddleware(lambda request: None)
         request = self.factory.get(reverse("non_exempt_view"))
         request.user = AnonymousUser()
-        request.META["REMOTE_ADDR"] = "127.0.0.1"
+        request.META["REMOTE_ADDR"] = "192.168.1.101"  # Non-whitelisted IP
         for _ in range(10):
-            self.assertFalse(self.middleware.maybe_throttle(request))
-        self.assertTrue(self.middleware.maybe_throttle(request))
+            self.assertFalse(middleware.maybe_throttle(request))
+        self.assertTrue(middleware.maybe_throttle(request))
         cache.clear()
-        self.assertFalse(self.middleware.maybe_throttle(request))
+        self.assertFalse(middleware.maybe_throttle(request))
 
+    @override_settings(GLOBAL_THROTTLE_LIMIT=10)
     def test_exempt_view_not_throttled(self):
         """Test that exempt views are not throttled"""
+        middleware = GlobalThrottleMiddleware(lambda request: None)
         request = self.factory.get(reverse("exempt_view"))
         request.user = AnonymousUser()
-        request.META["REMOTE_ADDR"] = "127.0.0.1"
+        request.META["REMOTE_ADDR"] = "192.168.1.104"  # Non-whitelisted IP
         for _ in range(15):
-            self.assertFalse(self.middleware.maybe_throttle(request))
+            self.assertFalse(middleware.maybe_throttle(request))
 
     @override_settings(GLOBAL_THROTTLE_LIMIT=20)
     def test_throttle_limit_override(self):
@@ -79,12 +85,12 @@ class GlobalThrottleMiddlewareTestCase(TestCase):
         middleware = GlobalThrottleMiddleware(lambda request: None)
         request = self.factory.get(reverse("non_exempt_view"))
         request.user = AnonymousUser()
-        request.META["REMOTE_ADDR"] = "127.0.0.1"
+        request.META["REMOTE_ADDR"] = "192.168.1.102"  # Non-whitelisted IP
         for _ in range(20):
             self.assertFalse(middleware.maybe_throttle(request))
         self.assertTrue(middleware.maybe_throttle(request))
 
-    @override_settings(GLOBAL_THROTTLE_WINDOW=2)
+    @override_settings(GLOBAL_THROTTLE_LIMIT=10, GLOBAL_THROTTLE_WINDOW=2)
     def test_throttle_window(self):
         """Test that the throttle window resets after the specified time
 
@@ -94,7 +100,7 @@ class GlobalThrottleMiddlewareTestCase(TestCase):
 
         request = self.factory.get(reverse("non_exempt_view"))
         request.user = AnonymousUser()
-        request.META["REMOTE_ADDR"] = "127.0.0.1"
+        request.META["REMOTE_ADDR"] = "192.168.1.103"  # Non-whitelisted IP
 
         for _ in range(10):
             self.assertFalse(middleware.maybe_throttle(request))

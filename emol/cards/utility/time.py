@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Time and date utility functions."""
 
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from dateutil.relativedelta import relativedelta
 from django.utils import timezone
@@ -28,7 +28,7 @@ def string_to_date(date_str):
         A Date object
 
     """
-    date_time = timezone.strptime(date_str, DATE_FORMAT)
+    date_time = datetime.strptime(date_str, DATE_FORMAT)
     # return date(date_time.year, date_time.month, date_time.day)
     return date_time.date()
 
@@ -47,7 +47,7 @@ def add_years(start_date, years):
         return None
 
     if isinstance(start_date, str):
-        start_date = timezone.strptime(start_date, DATE_FORMAT)
+        start_date = datetime.strptime(start_date, DATE_FORMAT)
 
     return start_date + relativedelta(years=years)
 
