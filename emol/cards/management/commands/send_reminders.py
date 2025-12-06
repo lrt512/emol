@@ -67,30 +67,42 @@ class Command(BaseCommand):
         expired_count = 0
 
         for key, reminders_group in content_object_reminders.items():
-            # Sort by days_to_expiry (ascending) - most urgent first
             reminders_group.sort(key=lambda r: r.days_to_expiry)
-
-            # The first reminder in the sorted group is the most urgent one to send
             most_urgent = reminders_group[0]
 
+            email_sent = False
             if most_urgent.should_send_email:
-                if not dry_run:
-                    most_urgent.send_email()
-                sent_count += 1
-                logger.info(
-                    f"{'[DRY RUN] Would send' if dry_run else 'Sent'} {most_urgent.days_to_expiry}-day "
-                    f"reminder for {most_urgent.content_object}"
-                )
+                if dry_run:
+                    email_sent = True
+                    logger.info(
+                        f"[DRY RUN] Would send {most_urgent.days_to_expiry}-day "
+                        f"reminder for {most_urgent.content_object}"
+                    )
+                else:
+                    email_sent = most_urgent.send_email()
+                    if email_sent:
+                        logger.info(
+                            f"Sent {most_urgent.days_to_expiry}-day "
+                            f"reminder for {most_urgent.content_object}"
+                        )
+                    else:
+                        logger.warning(
+                            f"Failed to send {most_urgent.days_to_expiry}-day "
+                            f"reminder for {most_urgent.content_object}"
+                        )
+                sent_count += 1 if email_sent else 0
             else:
+                email_sent = True
                 logger.info(
                     f"{'[DRY RUN] Would skip' if dry_run else 'Skipped'} {most_urgent.days_to_expiry}-day "
                     f"reminder for {most_urgent.content_object} (email criteria not met)."
                 )
 
-            # 3. Clean up ALL reminders for this object now that the most urgent has been handled
+            if not email_sent:
+                logger.info(f"   - Keeping reminders for retry tomorrow")
+                continue
+
             if dry_run:
-                # In a dry run, just calculate what would be deleted.
-                # All reminders in the group would be deleted.
                 expired_count += len(reminders_group)
                 logger.info(f"   - [DRY RUN] Would delete {len(reminders_group)} reminders for this object.")
             else:
