@@ -1,0 +1,45 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=America/Toronto \
+    POETRY_VERSION=2.2.1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_NO_INTERACTION=1 \
+    PATH="/opt/poetry/bin:$PATH"
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    nginx \
+    awscli \
+    build-essential \
+    pkg-config \
+    libmariadb-dev \
+    libmariadb3 \
+    curl \
+    cron \
+    gettext-base \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /opt/emol/emol /var/log/emol /var/run/emol /etc/nginx/sites-enabled \
+    && rm -f /etc/nginx/sites-enabled/default \
+    && chown -R www-data:www-data /var/log/emol /var/run/emol
+
+RUN curl -sSL https://install.python-poetry.org | python3 - && \
+    ln -sf /opt/poetry/bin/poetry /usr/local/bin/poetry
+
+COPY setup_files /opt/emol/setup_files
+RUN chmod +x /opt/emol/setup_files/*.sh
+
+COPY . /opt/emol/
+WORKDIR /opt/emol/emol
+
+RUN cd /opt/emol && \
+    poetry install --only main && \
+    chown -R www-data:www-data /opt/emol
+
+EXPOSE 80
+
+COPY setup_files/docker-entrypoint-prod.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
