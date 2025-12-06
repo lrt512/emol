@@ -26,7 +26,7 @@ def login_required(handler_method):
         if not get_current_user():
             # Short-circuit anonymous API invocations
             if "emol.api" in args[0].__module__:
-                return HttpResponse(401)
+                return HttpResponse(status=401)
 
             return HttpResponseRedirect(reverse(views.oauth_login))
 
@@ -51,11 +51,11 @@ def admin_required(handler_method):
         """Perform the check."""
         user = get_current_user()
         if user is None:
-            return HttpResponse(401)
+            return HttpResponse(status=401)
 
-        if user.is_admin:
+        if user.is_superuser:
             return handler_method(*args, **kwargs)
 
-        return HttpResponse(401)
+        return HttpResponse(status=401)
 
     return check_admin
