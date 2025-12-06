@@ -1,6 +1,6 @@
-# eMoL (electronic Ministry of Lists)
+# eMoL (electronic Minister of Lists)
 
-A Django-based application for managing medieval combat authorizations and marshal lists.
+A Django-based application for managing SCA authorizations
 
 ## 🚀 Quick Start for New Developers
 
@@ -55,7 +55,7 @@ A Django-based application for managing medieval combat authorizations and marsh
 
 **Structural Changes** (require rebuild):
 ```bash
-make rebuild  # For dependency or Dockerfile changes
+make rebuild  # For dependency or Dockerfile.dev changes
 ```
 
 **Fresh Start** (nuclear option):
@@ -198,11 +198,9 @@ Store these production parameters:
 
 ### Application Deployment
 ```bash
-# On production server
-git clone <repository-url>
-cd emol/setup_files
-chmod +x *.sh
-./bootstrap.sh  # Production setup
+# On production server (containerized)
+# See DOCKER_ON_LIGHTSAIL_INSTANCE.md for container deployment
+# Or use build-and-push.sh + deploy-docker.sh
 ```
 
 ## 🎯 Development Features
@@ -235,7 +233,8 @@ emol/
 │   └── settings/           # Environment-specific settings
 ├── setup_files/           # Deployment and configuration
 ├── docker-compose.yml     # Development services
-├── Dockerfile             # Application container
+├── Dockerfile.dev         # Development container
+├── Dockerfile.container   # Production container
 ├── Makefile              # Development workflow
 └── README.md             # This file
 ```

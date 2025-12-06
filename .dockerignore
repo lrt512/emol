@@ -1,0 +1,88 @@
+# IDE and editor files
+.cursor/
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.venv/
+venv/
+ENV/
+env/
+*.egg-info/
+dist/
+build/
+
+# Django
+*.log
+*.pot
+*.pyc
+db.sqlite3
+db.sqlite3-journal
+/media
+/staticfiles
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+.hypothesis/
+
+# Documentation
+*.md
+!README.md
+docs/
+
+# Development files
+docker-compose.yml
+docker-compose.prod.yml
+docker-compose.prod.yml.example
+Dockerfile.dev
+.git/
+.gitignore
+.cursorrules
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+
+# Local config
+.env
+.env.local
+*.local
+config/local_prod.py
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+emol.sock
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+
+# Migration docs (not needed in container)
+CONTAINER_*.md
+DOCKER_*.md
+TESTING_*.md
+UPDATE_*.md
+DEPLOYMENT.md
+DEVELOPMENT.md
+
+# Old/legacy files
+setup_files/old/
+setup_files/deploy.sh
+setup_files/bootstrap.sh
+

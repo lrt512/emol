@@ -1,0 +1,32 @@
+"""Local production settings overrides.
+
+This file is mounted from the host and allows instance-specific
+configuration without rebuilding the container.
+
+To use:
+1. Copy this file to /opt/emol/config/local_prod.py on your Lightsail instance
+2. Customize the settings below
+3. Uncomment the volume mount in docker-compose.prod.yml
+4. Set DJANGO_SETTINGS_MODULE=emol.settings.local_prod in docker-compose.prod.yml
+"""
+
+from emol.settings.prod import *  # noqa: F403, F401
+
+# Override any production settings here
+# Examples:
+
+# ALLOWED_HOSTS = ["emol.ealdormere.ca", "localhost", "127.0.0.1", "your-custom-domain.com"]
+
+# BASE_URL = "https://your-custom-domain.com"
+
+# TIME_ZONE = "America/Toronto"
+
+# Custom logging configuration
+# LOGGING["handlers"]["file"]["filename"] = "/var/log/emol/custom.log"  # noqa: F405
+
+# Override database settings (if needed)
+# DATABASES["default"]["HOST"] = "custom-db-host"  # noqa: F405
+
+# Custom middleware or app configuration
+# INSTALLED_APPS += ["custom_app"]  # noqa: F405
+

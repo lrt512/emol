@@ -1,0 +1,69 @@
+FROM python:3.13-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=America/Toronto \
+    POETRY_VERSION=2.2.1 \
+    POETRY_HOME="/opt/poetry" \
+    POETRY_NO_INTERACTION=1 \
+    PATH="/opt/poetry/bin:$PATH"
+
+# Install system dependencies required for Django, gunicorn, and mysqlclient.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    awscli \
+    build-essential \
+    certbot \
+    curl \
+    gettext-base \
+    git \
+    libbz2-dev \
+    libffi-dev \
+    libmariadb-dev \
+    libmariadb3 \
+    libreadline-dev \
+    libsqlite3-dev \
+    libssl-dev \
+    nginx \
+    pkg-config \
+    python3-certbot-nginx \
+    python3-dev \
+    unzip \
+    zlib1g-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/emol
+
+# Copy dependency definitions first so we can cache the installation layer.
+COPY pyproject.toml poetry.lock /opt/emol/
+
+RUN curl -sSL https://install.python-poetry.org | python3 - && \
+    ln -sf /opt/poetry/bin/poetry /usr/local/bin/poetry
+
+RUN poetry install --no-root --only main
+
+# Bring the full application into the image.
+COPY . /opt/emol/
+
+RUN chmod +x /opt/emol/setup_files/*.sh
+
+RUN mkdir -p /var/log/emol /var/run/emol /etc/nginx/sites-enabled /etc/init.d && \
+    chown -R www-data:www-data /var/log/emol /var/run/emol && \
+    rm -f /etc/nginx/sites-enabled/default
+
+# AWS credentials are mocked for local development.
+RUN mkdir -p ~/.aws && \
+    printf "[default]\naws_access_key_id = test\naws_secret_access_key = test\nregion = ca-central-1\noutput = json\n" > ~/.aws/credentials && \
+    printf "[default]\nregion = ca-central-1\noutput = json\n" > ~/.aws/config
+
+RUN chown -R www-data:www-data /opt/emol
+
+EXPOSE 80
+
+# Use a custom entrypoint script.
+COPY setup_files/docker-entrypoint-dev.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+WORKDIR /opt/emol/emol
+
+ENTRYPOINT ["/docker-entrypoint.sh"]

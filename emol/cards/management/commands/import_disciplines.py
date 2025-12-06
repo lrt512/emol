@@ -28,23 +28,25 @@ class Command(BaseCommand):
             for authorization_data in discipline_data.get("authorizations", []):
                 authorization_name = authorization_data["name"]
                 is_primary = authorization_data.get("is_primary", False)
-                Authorization.objects.get_or_create(
+                _, auth_created = Authorization.objects.get_or_create(
                     name=authorization_name,
-                    is_primary=is_primary,
                     discipline=discipline,
+                    defaults={"is_primary": is_primary},
                 )
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'  Authorization `{authorization_name}` {"created" if created else "already exists"}'
+                        f'  Authorization `{authorization_name}` {"created" if auth_created else "already exists"}'
                     )
                 )
 
             for marshal_data in discipline_data.get("marshals", []):
                 marshal_name = marshal_data["name"]
-                Marshal.objects.get_or_create(name=marshal_name, discipline=discipline)
+                _, marshal_created = Marshal.objects.get_or_create(
+                    name=marshal_name, discipline=discipline
+                )
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'  Marshal `{marshal_name}` {"created" if created else "already exists"}'
+                        f'  Marshal `{marshal_name}` {"created" if marshal_created else "already exists"}'
                     )
                 )
 

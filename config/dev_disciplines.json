@@ -1,0 +1,29 @@
+[
+  {
+    "name": "Fencing",
+    "authorizations": [
+      {"name": "Heavy Rapier", "is_primary": true},
+      {"name": "Cut & Thrust", "is_primary": true},
+      {"name": "Two Weapon", "is_primary": false},
+      {"name": "Parry Device", "is_primary": false},
+      {"name": "Spear", "is_primary": false}
+    ],
+    "marshals": [
+      {"name": "Marshal"}
+    ]
+  },
+  {
+    "name": "Armoured Combat",
+    "authorizations": [
+      {"name": "Weapon & Shield", "is_primary": true},
+      {"name": "Great Weapon", "is_primary": false},
+      {"name": "Two Weapon", "is_primary": false},
+      {"name": "Siege", "is_primary": false},
+      {"name": "Combat Archery", "is_primary": false}
+    ],
+    "marshals": [
+      {"name": "Marshal"}
+    ]
+  }
+]
+
