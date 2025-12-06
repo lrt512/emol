@@ -58,6 +58,11 @@ poetry run python manage.py createcachetable 2>/dev/null || {
     echo "Cache table may already exist, continuing..."
 }
 
+echo "Running reminder hygiene..."
+poetry run python manage.py reminder_hygiene --fix || {
+    echo "Warning: Reminder hygiene failed, continuing..."
+}
+
 echo "Setting up cron jobs..."
 POETRY_BIN=$(which poetry)
 cat > /etc/cron.d/emol << EOF

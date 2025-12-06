@@ -60,26 +60,22 @@ class Reminder(models.Model):
             return False
         return True
 
-    def send_email(self):
-        """Send the appropriate email for this reminder
+    def send_email(self) -> bool:
+        """Send the appropriate email for this reminder.
 
-        If successful, mark this reminder as sent
+        Returns:
+            True if email was sent successfully, False otherwise.
+
         """
         if not self.should_send_email:
             logger.info("Not sending reminder for %s", self)
-            return
+            return False
 
         model = self.content_type.model_class()
         try:
-            sent = False
             if self.days_to_expiry == 0:
-                sent = self.content_object.send_expiry(self)
-            else:
-                sent = self.content_object.send_reminder(self)
-
-            if sent:
-                logger.debug("Delete reminder %s", self)
-                self.delete()
+                return self.content_object.send_expiry(self)
+            return self.content_object.send_reminder(self)
         except model.DoesNotExist:
             logger.error("%s instance for ID %s does not exist", model, self.object_id)
             return False
