@@ -16,11 +16,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("Privacy policy already exists"))
             return
 
-        policy_text = """# Privacy Policy
-
-**Effective Date:** [DATE]
-
-## What We Collect
+        policy_text = """## What We Collect
 
 We collect only the information necessary to manage your authorization card:
 

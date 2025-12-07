@@ -63,4 +63,10 @@ CACHES = {
 }
 
 # Production performance settings
-USE_TZ = True 
+USE_TZ = True
+
+# Load instance-specific overrides if mounted from /opt/emol_config/
+try:
+    from emol.settings import emol_production  # noqa: F401
+except ImportError:
+    pass 

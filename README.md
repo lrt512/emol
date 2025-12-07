@@ -234,7 +234,7 @@ emol/
 ├── setup_files/           # Deployment and configuration
 ├── docker-compose.yml     # Development services
 ├── Dockerfile.dev         # Development container
-├── Dockerfile.container   # Production container
+├── Dockerfile.prod        # Production container
 ├── Makefile              # Development workflow
 └── README.md             # This file
 ```

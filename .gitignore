@@ -172,3 +172,9 @@ static/
 .env_dev
 
 .cursor/
+
+# Local configuration files (may contain secrets)
+config/
+
+# Dynamically generated at build
+VERSION
