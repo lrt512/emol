@@ -7,6 +7,8 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from .permissions import ResendPrivacyPermission
+
 logger = logging.getLogger("cards")
 
 
@@ -18,6 +20,8 @@ class ResendPrivacyView(APIView):
     """
     API endpoint for resending the privacy policy email to a combatant.
     """
+
+    permission_classes = [ResendPrivacyPermission]
 
     def post(self, request):
         """
