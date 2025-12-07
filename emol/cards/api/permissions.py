@@ -7,18 +7,21 @@ from rest_framework import permissions
 class CombatantInfoPermission(permissions.BasePermission):
     """Check if user can read or write combatant info"""
 
-    def has_object_permission(self, request, view, obj):
+    READ_PERMISSION = "read_combatant_info"
+    WRITE_PERMISSION = "write_combatant_info"
+
+    def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
             return UserPermission.user_has_permission(
-                request.user, CombatantInfoPermission.READ_PERMISSION
+                request.user, self.READ_PERMISSION
             )
 
         return UserPermission.user_has_permission(
-            request.user, CombatantInfoPermission.WRITE_PERMISSION
+            request.user, self.WRITE_PERMISSION
         )
 
-    READ_PERMISSION = "read_combatant_info"
-    WRITE_PERMISSION = "write_combatant_info"
+    def has_object_permission(self, request, view, obj):
+        return self.has_permission(request, view)
 
 
 class CombatantAuthorizationPermission(permissions.BasePermission):
@@ -63,9 +66,6 @@ class WaiverDatePermission(permissions.BasePermission):
     """Check if user can read or write waiver date"""
 
     def has_permission(self, request, view):
-        if request.method in permissions.SAFE_METHODS:
-            return True
-
         return UserPermission.user_has_permission(
             request.user, WaiverDatePermission.WRITE_PERMISSION
         )
@@ -78,7 +78,9 @@ class CardDatePermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
-            return True
+            return UserPermission.user_has_permission(
+                request.user, CardDatePermission.WRITE_PERMISSION
+            )
 
         data = request.data
         discipline_slug = data.get("discipline_slug")
@@ -89,3 +91,12 @@ class CardDatePermission(permissions.BasePermission):
         )
 
     WRITE_PERMISSION = "write_card_date"
+
+
+class ResendPrivacyPermission(permissions.BasePermission):
+    """Allow resending privacy policy email for users who can read combatant info"""
+
+    def has_permission(self, request, view):
+        return UserPermission.user_has_permission(
+            request.user, CombatantInfoPermission.READ_PERMISSION
+        )

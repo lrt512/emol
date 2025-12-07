@@ -2,7 +2,7 @@ import logging
 from datetime import date
 
 from cards.models.reminder import Reminder
-from cards.utility.time import DATE_FORMAT
+from cards.utility.time import DATE_FORMAT, today
 from django.core.management.base import BaseCommand
 from django.utils import timezone
 
@@ -42,7 +42,9 @@ class Command(BaseCommand):
                 logger.info(f"Deleted {count} orphaned reminders.")
 
         # 2. Process DUE reminders
-        due_reminders = Reminder.objects.filter(due_date__lte=now)
+        # Compare against today's date using the same helper used to set due_date
+        current_date = today()
+        due_reminders = Reminder.objects.filter(due_date__lte=current_date)
         due_count = due_reminders.count()
 
         logger.info(

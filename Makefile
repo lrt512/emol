@@ -102,6 +102,12 @@ test: ## Run tests in container
 	@docker exec $(APP_CONTAINER) echo "OK" >/dev/null 2>&1 || (echo "Starting containers..." && docker compose up -d && sleep 10)
 	docker exec -it $(APP_CONTAINER) poetry run python manage.py test
 
+rebuild-test: ## Rebuild app container and run tests
+	docker compose stop app
+	docker compose build app
+	docker compose up -d app --wait
+	docker exec $(APP_CONTAINER) poetry run python manage.py test
+
 # =============================================================================
 # Environment Setup
 # =============================================================================
