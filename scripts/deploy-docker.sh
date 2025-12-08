@@ -86,23 +86,29 @@ get_current_version() {
     
     if [ -n "${registry}" ]; then
         echo -e "${YELLOW}Checking ECR for latest version...${RESET}" >&2
+        # Get all tags, prefer non-beta versions, but include beta if that's all there is
         local latest_tag=$(aws ecr describe-images \
             --repository-name ${REPO_NAME} \
             --region ${REGION} \
-            --query 'sort_by(imageDetails,&imagePushedAt)[-1].imageTags[0]' \
-            --output text 2>/dev/null | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | head -1)
+            --query 'imageDetails[*].imageTags[*]' \
+            --output text 2>/dev/null | tr '\t' '\n' | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$' | sed 's/^v//' | sort -V | tail -1)
         
         if [ -n "${latest_tag}" ] && [ "${latest_tag}" != "None" ]; then
-            echo "${latest_tag}" | sed 's/^v//'
+            echo "${latest_tag}"
             return 0
         fi
     fi
     
+    # Check for VERSION file, otherwise default to latest
     if [ -f "${EMOL_HOME}/VERSION" ]; then
-        cat "${EMOL_HOME}/VERSION"
-    else
-        echo "latest"
+        local file_version=$(cat "${EMOL_HOME}/VERSION" | tr -d '[:space:]')
+        if [ -n "${file_version}" ]; then
+            echo "${file_version}"
+            return 0
+        fi
     fi
+    
+    echo "latest"
 }
 
 check_docker() {
@@ -344,10 +350,17 @@ REGISTRY=$(build_registry_url "${ACCOUNT_ID}")
 load_aws_credentials
 
 if [ -z "${VERSION}" ]; then
+    # Try to get version from ECR or VERSION file, default to "latest"
     VERSION=$(get_current_version "${REGISTRY}")
-    echo -e "${GREEN}Using version: ${VERSION}${RESET}"
+    if [ -z "${VERSION}" ] || [ "${VERSION}" = "latest" ]; then
+        VERSION="latest"
+        echo -e "${GREEN}Using version: ${VERSION}${RESET}"
+    else
+        echo -e "${GREEN}Using version: ${VERSION}${RESET}"
+    fi
 fi
 
+# Add 'v' prefix if not "latest" and doesn't already have it
 if [ "${VERSION}" != "latest" ] && [[ ! "${VERSION}" =~ ^v ]]; then
     VERSION="v${VERSION}"
 fi

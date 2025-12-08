@@ -104,7 +104,7 @@ def main():
     parser = argparse.ArgumentParser(description='Generate docker-compose configuration files')
     parser.add_argument('mode', choices=['prod', 'test'], help='Deployment mode')
     parser.add_argument('--registry', required=True, help='ECR registry URL')
-    parser.add_argument('--version', required=True, help='Image version tag')
+    parser.add_argument('--version', default='latest', help='Image version tag (default: latest)')
     parser.add_argument('--emol-home', default=os.path.expanduser('~/emol'), help='eMoL home directory')
     parser.add_argument('--config-dir', default='/opt/emol_config', help='Configuration directory')
     parser.add_argument('--output', help='Output file path (default: docker-compose.{mode}.yml in emol-home)')
