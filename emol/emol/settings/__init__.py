@@ -1,16 +1,11 @@
-import boto3
+"""Django settings package for eMoL.
 
+Settings files:
+- defaults.py: Base settings inherited by all environments
+- dev.py: Development environment settings
+- test.py: Test environment settings (for unit tests)
+- prod.py: Production environment settings
 
-def get_parameter(key, ssm_client):
-    """Get a parameter from AWS SSM Parameter Store
-
-    Args:
-        key (str): The name of the parameter to get
-        ssm_client (boto3.client): An SSM client
-    Returns:
-        str: The value of the parameter
-    Raises:
-        botocore.exceptions.ClientError: If the parameter does not exist
-    """
-    response = ssm_client.get_parameter(Name=key, WithDecryption=True)
-    return response["Parameter"]["Value"]
+Optional override:
+- emol_production.py: Instance-specific production overrides (mounted from /opt/emol_config/)
+"""

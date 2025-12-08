@@ -24,8 +24,8 @@ def get_aws_credentials():
             "aws_access_key_id": os.environ["AWS_ACCESS_KEY_ID"],
             "aws_secret_access_key": os.environ["AWS_SECRET_ACCESS_KEY"],
         }
-    elif os.path.exists("/usr/local/etc/emol_credentials.json"):
-        with open("/usr/local/etc/emol_credentials.json", "r") as f:
+    elif os.path.exists("/opt/emol/emol_credentials.json"):
+        with open("/opt/emol/emol_credentials.json", "r") as f:
             return json.load(f)
 
     logger.error("No AWS credentials found")

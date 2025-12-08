@@ -36,14 +36,16 @@
     <nav class="navbar">
       <div class="container-fluid top-border">
         <div class="text-muted col-sm-3">
-          Copyright &copy; 2023<br>
+          Copyright &copy; 2025<br>
           Kingdom of Ealdormere
         </div>
         <div class="content-centered col-sm-6">
           {% settings_notice %}
         </div>
         <div class="text-muted right col-sm-3">
-          <a href="/privacy-policy">Privacy</a>
+          <a href="/privacy-policy">Privacy</a><br>
+          {% app_version as version %}
+          {% if version %}<small>{{ version }}</small>{% endif %}
         </div>
       </div>
     </nav>

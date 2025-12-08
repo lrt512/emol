@@ -19,6 +19,7 @@ help: ## Show this help message
 build: ## Build containers
 	docker compose build
 
+
 up: ## Start containers in background
 	docker compose up -d
 
@@ -34,7 +35,15 @@ status: ## Show container status
 prune: ## Remove unused Docker images
 	docker image prune -f
 
-full-cycle: down build up logs
+cycle-all: down build up logs
+
+down-app:
+	docker compose down app
+
+build-app:
+	docker compose build app
+
+cycle-app: down build-app up logs
 
 # =============================================================================
 # Development

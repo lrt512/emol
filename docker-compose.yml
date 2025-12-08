@@ -23,6 +23,10 @@ services:
       - emol_logs:/var/log/emol
       - nginx_logs:/var/log/nginx
       - nginx_run:/run/nginx
+      # Mount configuration files from local config/ directory (optional)
+      # Mirrors production /opt/emol_config structure
+      # - ./config/emol_production.py:/opt/emol/emol/emol/settings/emol_production.py:ro
+      # - ./config/emol_credentials.json:/opt/emol/emol_credentials.json:ro
     depends_on:
       db:
         condition: service_healthy

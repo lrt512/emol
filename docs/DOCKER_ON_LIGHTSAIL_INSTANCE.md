@@ -43,34 +43,32 @@ docker compose version
 
 ### 2. Configure AWS Access
 
-Lightsail's automatic IAM role isn't editable. Use two IAM users:
+AWS CLI v2 automatically uses the credential chain (IAM roles, SSO, environment variables, etc.).
 
-| User | Purpose | Permissions |
-|------|---------|-------------|
-| ECR user | Host pulls images | `AmazonEC2ContainerRegistryReadOnly` |
-| eMoL service user | Container reads SSM | SSM read access |
+**Option A: IAM Role (Recommended)**
 
-**Host credentials (ubuntu user, for ECR):**
+If your Lightsail instance has an IAM role attached with ECR read permissions, AWS CLI v2 will use it automatically. No credential files needed!
+
+**Option B: IAM User Credentials**
+
+If you need to use IAM user credentials, create `~/.aws/config`:
 
 ```bash
 mkdir -p ~/.aws
-cat > ~/.aws/credentials << 'EOF'
-[default]
-aws_access_key_id = ECR_USER_ACCESS_KEY
-aws_secret_access_key = ECR_USER_SECRET_KEY
-EOF
-
 cat > ~/.aws/config << 'EOF'
 [default]
 region = ca-central-1
 EOF
-
-chmod 600 ~/.aws/credentials
 ```
+
+Then configure credentials using one of:
+- `aws configure` (interactive)
+- Environment variables (`AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`)
+- SSO (`aws sso login`)
 
 **Container credentials (eMoL service, for SSM):**
 
-Create `/opt/emol/.env`:
+Create `/home/ubuntu/emol/.env`:
 
 ```bash
 AWS_ACCESS_KEY_ID=EMOL_SERVICE_ACCESS_KEY
@@ -88,9 +86,23 @@ aws ecr get-login-password --region ca-central-1 | \
     <account-id>.dkr.ecr.ca-central-1.amazonaws.com
 ```
 
-### 3. Deploy
+If this works, your AWS credentials are configured correctly.
 
-Copy `setup_files/host/deploy-docker.sh` to `/opt/emol/` on the server.
+### 3. Install AWS CLI v2 (if needed)
+
+```bash
+# Check if already installed
+aws --version
+
+# If not installed, download and install:
+curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
+unzip awscliv2.zip
+sudo ./aws/install
+```
+
+### 4. Deploy
+
+Copy `setup_files/host/deploy-docker.sh` to `/home/ubuntu/emol/` on the server.
 
 ```bash
 # Test deployment on port 8080
@@ -104,9 +116,10 @@ Copy `setup_files/host/deploy-docker.sh` to `/opt/emol/` on the server.
 
 ## docker-compose.prod.yml
 
-Create from the example:
+Create from the example in `/home/ubuntu/emol/`:
 
 ```bash
+cd /home/ubuntu/emol
 cp docker-compose.prod.yml.example docker-compose.prod.yml
 ```
 
@@ -133,12 +146,15 @@ Run certbot on the host and proxy to the container, or handle SSL at a load bala
 ## Troubleshooting
 
 **ECR access denied?**
-- Check `~/.aws/credentials` exists for ubuntu user
-- Verify ECR IAM user has `AmazonEC2ContainerRegistryReadOnly` policy
+- Verify AWS CLI v2 is installed: `aws --version`
+- Check credential chain: `aws sts get-caller-identity`
+- If using IAM role: Verify role has `AmazonEC2ContainerRegistryReadOnly` policy
+- If using IAM user: Run `aws configure` or set environment variables
+- Test ECR access: `aws ecr describe-repositories --region ca-central-1`
 
 **SSM access denied in container?**
-- Check `/opt/emol/.env` has service user credentials
-- Verify eMoL service IAM user has SSM read permissions
+- Check `/home/ubuntu/emol/.env` has service user credentials
+- Verify eMoL service IAM user/role has SSM read permissions
 
 **Container won't start?**
 ```bash
@@ -149,8 +165,10 @@ free -h
 ## Checklist
 
 - [ ] Install Docker
-- [ ] Configure ECR credentials (`~/.aws/credentials`)
-- [ ] Configure service credentials (`/opt/emol/.env`)
+- [ ] Install AWS CLI v2 (if not already installed)
+- [ ] Configure AWS access (IAM role or user credentials)
+- [ ] Verify ECR access: `aws ecr get-login-password --region ca-central-1`
+- [ ] Configure service credentials (`/home/ubuntu/emol/.env`)
 - [ ] Copy deploy script to server
 - [ ] Create docker-compose.prod.yml
 - [ ] Test on port 8080
