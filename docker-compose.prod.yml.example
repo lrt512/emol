@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   app:
     image: emol:latest
@@ -13,9 +11,8 @@ services:
       - static:/opt/emol/static
       - emol_logs:/var/log/emol
       - nginx_logs:/var/log/nginx
-      # Mount configuration files from /opt/emol_config (optional)
-      # These will be automatically mounted by deploy-docker.sh if they exist:
-      # - /opt/emol_config/emol_production.py:/opt/emol/emol/emol/settings/emol_production.py:ro
+      # Mount AWS credentials from /opt/emol_config (optional)
+      # This will be automatically mounted by deploy-docker.sh if it exists:
       # - /opt/emol_config/emol_credentials.json:/opt/emol/emol_credentials.json:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost/"]

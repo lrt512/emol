@@ -190,3 +190,6 @@ CSP_SCRIPT_SRC = (
     "https://cdn.datatables.net",
     "sha256-PhCsD9cDmNHcYlaLal8yHa4TGyayjyPy1/u4cyvSojQ=",
 )
+
+# Reminder configuration
+REMINDER_DAYS = [60, 30, 14, 0]

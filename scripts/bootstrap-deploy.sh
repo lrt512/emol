@@ -83,6 +83,7 @@ $SSH_CMD "$REMOTE_HOST" "mkdir -p ~/emol && sudo mkdir -p /opt/emol_config && su
 echo -e "Copying deployment files..."
 FILES_TO_COPY=(
     "scripts/deploy-docker.sh"
+    "scripts/generate-compose.py"
     "docker-compose.prod.yml.example"
     "docker-compose.test.yml.example"
     "docs/DEPLOYMENT.md"
@@ -98,7 +99,7 @@ done
 
 # 3. Set permissions
 echo -e "Setting permissions..."
-$SSH_CMD "$REMOTE_HOST" "chmod +x ~/emol/deploy-docker.sh"
+$SSH_CMD "$REMOTE_HOST" "chmod +x ~/emol/deploy-docker.sh ~/emol/generate-compose.py"
 
 # 4. Create config directory info
 echo -e "Configuration directory created at /opt/emol_config"

@@ -9,8 +9,17 @@ RESET='\033[0m'
 
 REPO_NAME="emol"
 REGION="ca-central-1"
-EMOL_HOME="${HOME}/emol"
+
+# Determine the actual user's home directory (handles sudo)
+if [ -n "${SUDO_USER}" ]; then
+    ACTUAL_HOME=$(getent passwd "${SUDO_USER}" | cut -d: -f6)
+else
+    ACTUAL_HOME="${HOME}"
+fi
+
+EMOL_HOME="${ACTUAL_HOME}/emol"
 CONFIG_DIR="/opt/emol_config"
+CREDENTIALS_FILE="${CONFIG_DIR}/emol_credentials.json"
 COMPOSE_PROD="${EMOL_HOME}/docker-compose.prod.yml"
 COMPOSE_TEST="${EMOL_HOME}/docker-compose.test.yml"
 COMPOSE_PROD_EXAMPLE="${EMOL_HOME}/docker-compose.prod.yml.example"
@@ -25,7 +34,7 @@ Deploys eMoL container on Lightsail instance using Docker Compose.
 Usage: $0 [options]
 
 Options:
-    --registry REGISTRY    ECR registry URL (e.g., 123456789012.dkr.ecr.ca-central-1.amazonaws.com)
+    --account ACCOUNT_ID   AWS account ID (e.g., 123456789012)
     --version VERSION      Specific version to deploy (default: latest from ECR or latest tag)
     --test                 Deploy on port 8080 for testing (keeps existing service on port 80)
     --cutover              Switch to port 80 and stop old service (final deployment)
@@ -33,18 +42,50 @@ Options:
     --help                Show this help message
 
 Examples:
-    $0 --registry 123456789012.dkr.ecr.ca-central-1.amazonaws.com --test    # Test on 8080
-    $0 --registry 123456789012.dkr.ecr.ca-central-1.amazonaws.com --cutover # Final cutover to 80
-    $0 --registry 123456789012.dkr.ecr.ca-central-1.amazonaws.com --version v1.3.0
+    $0 --account 123456789012 --test    # Test on 8080
+    $0 --account 123456789012 --cutover # Final cutover to 80
+    $0 --account 123456789012 --version v1.3.0
 EOF
     exit 0
+}
+
+load_aws_credentials() {
+    if [ ! -f "${CREDENTIALS_FILE}" ]; then
+        echo -e "${RED}Error: Credentials file not found: ${CREDENTIALS_FILE}${RESET}"
+        echo -e "${YELLOW}Please ensure emol_credentials.json exists in ${CONFIG_DIR}${RESET}"
+        exit 1
+    fi
+    
+    echo -e "${YELLOW}Loading AWS credentials from ${CREDENTIALS_FILE}...${RESET}"
+    
+    export AWS_ACCESS_KEY_ID=$(python3 -c "import json; print(json.load(open('${CREDENTIALS_FILE}'))['aws_access_key_id'])")
+    export AWS_SECRET_ACCESS_KEY=$(python3 -c "import json; print(json.load(open('${CREDENTIALS_FILE}'))['aws_secret_access_key'])")
+    
+    local file_region=$(python3 -c "import json; d=json.load(open('${CREDENTIALS_FILE}')); print(d.get('region_name', ''))" 2>/dev/null || echo "")
+    if [ -n "${file_region}" ]; then
+        REGION="${file_region}"
+        echo -e "${YELLOW}Using region from credentials file: ${REGION}${RESET}"
+    fi
+    
+    export AWS_DEFAULT_REGION="${REGION}"
+    
+    if [ -z "${AWS_ACCESS_KEY_ID}" ] || [ -z "${AWS_SECRET_ACCESS_KEY}" ]; then
+        echo -e "${RED}Error: Invalid credentials file format${RESET}"
+        echo -e "${YELLOW}Expected JSON with 'aws_access_key_id' and 'aws_secret_access_key'${RESET}"
+        exit 1
+    fi
+}
+
+build_registry_url() {
+    local account_id=$1
+    echo "${account_id}.dkr.ecr.${REGION}.amazonaws.com"
 }
 
 get_current_version() {
     local registry=$1
     
     if [ -n "${registry}" ]; then
-        echo -e "${YELLOW}Checking ECR for latest version...${RESET}"
+        echo -e "${YELLOW}Checking ECR for latest version...${RESET}" >&2
         local latest_tag=$(aws ecr describe-images \
             --repository-name ${REPO_NAME} \
             --region ${REGION} \
@@ -80,7 +121,6 @@ check_docker() {
 
 login_to_ecr() {
     local registry=$1
-    local account_id=$(echo $registry | cut -d'.' -f1)
     
     echo -e "${YELLOW}Logging in to ECR...${RESET}"
     aws ecr get-login-password --region ${REGION} | \
@@ -134,16 +174,15 @@ ensure_compose_file() {
         mkdir -p "${EMOL_HOME}"
     fi
     
-    if [ ! -f "${compose_file}" ]; then
-        if [ -f "${compose_example}" ]; then
-            echo -e "${YELLOW}Creating ${file_type} from example...${RESET}"
-            cp "${compose_example}" "${compose_file}"
-        else
-            echo -e "${RED}Error: ${compose_example} not found${RESET}"
-            echo -e "${YELLOW}Please ensure ${file_type}.example is in ${EMOL_HOME}${RESET}"
-            exit 1
-        fi
+    if [ ! -f "${compose_example}" ]; then
+        echo -e "${RED}Error: ${compose_example} not found${RESET}"
+        echo -e "${YELLOW}Please ensure ${file_type}.example is in ${EMOL_HOME}${RESET}"
+        exit 1
     fi
+    
+    # Always copy from example to ensure a clean file (avoids corruption from previous runs)
+    echo -e "${YELLOW}Creating ${file_type} from example...${RESET}"
+    cp "${compose_example}" "${compose_file}"
 }
 
 update_compose_file() {
@@ -154,37 +193,40 @@ update_compose_file() {
     
     local image_tag="${registry}/${REPO_NAME}:${version}"
     local compose_file
+    local mode
     
     if [ "${TEST_MODE}" = true ]; then
+        mode="test"
         compose_file="${COMPOSE_TEST}"
-        ensure_compose_file "${COMPOSE_TEST}" "${COMPOSE_TEST_EXAMPLE}" "docker-compose.test.yml"
     else
+        mode="prod"
         compose_file="${COMPOSE_PROD}"
-        ensure_compose_file "${COMPOSE_PROD}" "${COMPOSE_PROD_EXAMPLE}" "docker-compose.prod.yml"
     fi
     
-    sed -i "s|image:.*|image: ${image_tag}|" "${compose_file}"
-    
-    # Mount configuration files from /opt/emol_config if they exist
-    if [ -f "${CONFIG_DIR}/emol_production.py" ]; then
-        echo -e "${YELLOW}Mounting custom production settings...${RESET}"
-        # Add or update the settings mount
-        if grep -q "# - .*emol_production.py" "${compose_file}"; then
-            sed -i "s|# - .*emol_production.py|- ${CONFIG_DIR}/emol_production.py:/opt/emol/emol/emol/settings/emol_production.py:ro|" "${compose_file}"
-        elif ! grep -q "${CONFIG_DIR}/emol_production.py" "${compose_file}"; then
-            # Add it after the nginx_logs volume line
-            sed -i "/nginx_logs:/a\      - ${CONFIG_DIR}/emol_production.py:/opt/emol/emol/emol/settings/emol_production.py:ro" "${compose_file}"
-        fi
+    # Ensure example file exists
+    local example_file="${EMOL_HOME}/docker-compose.${mode}.yml.example"
+    if [ ! -f "${example_file}" ]; then
+        echo -e "${RED}Error: ${example_file} not found${RESET}"
+        exit 1
     fi
     
-    if [ -f "${CONFIG_DIR}/emol_credentials.json" ]; then
-        echo -e "${YELLOW}Mounting AWS credentials...${RESET}"
-        # Mount credentials file (application will need to handle JSON format)
-        if grep -q "# - .*emol_credentials.json" "${compose_file}"; then
-            sed -i "s|# - .*emol_credentials.json|- ${CONFIG_DIR}/emol_credentials.json:/opt/emol/emol_credentials.json:ro|" "${compose_file}"
-        elif ! grep -q "${CONFIG_DIR}/emol_credentials.json" "${compose_file}"; then
-            sed -i "/nginx_logs:/a\      - ${CONFIG_DIR}/emol_credentials.json:/opt/emol/emol_credentials.json:ro" "${compose_file}"
-        fi
+    # Use Python script to generate compose file
+    local script_dir=$(dirname "$(readlink -f "$0")")
+    local generate_script="${script_dir}/generate-compose.py"
+    
+    if [ ! -f "${generate_script}" ]; then
+        echo -e "${RED}Error: generate-compose.py not found at ${generate_script}${RESET}"
+        exit 1
+    fi
+    
+    if ! python3 "${generate_script}" "${mode}" \
+        --registry "${registry}" \
+        --version "${version}" \
+        --emol-home "${EMOL_HOME}" \
+        --config-dir "${CONFIG_DIR}" \
+        --output "${compose_file}"; then
+        echo -e "${RED}Error: Failed to generate compose file${RESET}"
+        exit 1
     fi
     
     echo -e "${GREEN}Updated image to: ${image_tag}${RESET}"
@@ -243,13 +285,13 @@ cleanup_old_images() {
 DRY_RUN=false
 TEST_MODE=false
 CUTOVER_MODE=false
-REGISTRY=""
+ACCOUNT_ID=""
 VERSION=""
 
 while [[ $# -gt 0 ]]; do
     case $1 in
-        --registry)
-            REGISTRY=$2
+        --account)
+            ACCOUNT_ID=$2
             shift 2
             ;;
         --version)
@@ -278,7 +320,7 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-    if [ "${TEST_MODE}" = true ] && [ "${CUTOVER_MODE}" = true ]; then
+if [ "${TEST_MODE}" = true ] && [ "${CUTOVER_MODE}" = true ]; then
     echo -e "${RED}Error: Cannot use --test and --cutover together${RESET}"
     exit 1
 fi
@@ -292,12 +334,17 @@ if [ ! -d "${CONFIG_DIR}" ]; then
     sudo chown ${USER}:${USER} "${CONFIG_DIR}"
 fi
 
+if [ -z "${ACCOUNT_ID}" ]; then
+    echo -e "${RED}Error: --account is required${RESET}"
+    show_help
+fi
+
+REGISTRY=$(build_registry_url "${ACCOUNT_ID}")
+
+load_aws_credentials
+
 if [ -z "${VERSION}" ]; then
-    if [ -n "${REGISTRY}" ]; then
-        VERSION=$(get_current_version "${REGISTRY}")
-    else
-        VERSION="latest"
-    fi
+    VERSION=$(get_current_version "${REGISTRY}")
     echo -e "${GREEN}Using version: ${VERSION}${RESET}"
 fi
 
@@ -307,15 +354,8 @@ fi
 
 if [ "${DRY_RUN}" = true ]; then
     echo -e "${YELLOW}[DRY RUN] Would deploy version: ${VERSION}${RESET}"
-    if [ -n "${REGISTRY}" ]; then
-        echo -e "${YELLOW}[DRY RUN] Would pull from: ${REGISTRY}/${REPO_NAME}:${VERSION}${RESET}"
-    fi
+    echo -e "${YELLOW}[DRY RUN] Would pull from: ${REGISTRY}/${REPO_NAME}:${VERSION}${RESET}"
     exit 0
-fi
-
-if [ -z "${REGISTRY}" ]; then
-    echo -e "${RED}Error: --registry is required${RESET}"
-    show_help
 fi
 
 login_to_ecr ${REGISTRY}
@@ -338,7 +378,7 @@ if [ "${TEST_MODE}" = true ]; then
     echo -e "  or"
     echo -e "  http://your-domain:8080"
     echo -e "\nWhen ready to cutover, run:"
-    echo -e "  $0 --registry ${REGISTRY:-<registry-url>} --cutover"
+    echo -e "  $0 --account ${ACCOUNT_ID} --cutover"
     echo -e "\nTo stop old service and save resources:"
     echo -e "  sudo systemctl stop emol nginx"
 elif [ "${CUTOVER_MODE}" = true ]; then

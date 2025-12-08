@@ -3,20 +3,10 @@
 from .defaults import *  # noqa: F403, F401
 from emol.secrets import get_secret
 
-# Production database configuration
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": get_secret("/emol/db_name"),
-        "USER": get_secret("/emol/db_user"),
-        "PASSWORD": get_secret("/emol/db_password"),
-        "HOST": get_secret("/emol/db_host"),
-        "PORT": "3306",
-        "OPTIONS": {
-            "sql_mode": "STRICT_TRANS_TABLES",
-        },
-    }
-}
+AWS_REGION = "ca-central-1"
+
+SECRET_KEY = get_secret("/emol/secret_key")
+BASE_URL = "https://emol.ealdormere.ca"
 
 # Security settings for production
 DEBUG = False
@@ -33,15 +23,46 @@ SECURE_BROWSER_XSS_FILTER = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
+TIME_ZONE = "America/Toronto"
+
+# Email configuration
+SEND_EMAIL = True
+MAIL_DEFAULT_SENDER = "ealdormere.emol@gmail.com"
+MOL_EMAIL = "ealdormere.mol@gmail.com"
+EMAILER = "emol.emailer.AWSEmailer"
+
 # OAuth configuration
 OAUTH_CLIENT_ID = get_secret("/emol/oauth_client_id")
 OAUTH_CLIENT_SECRET = get_secret("/emol/oauth_client_secret")
 
-# Email configuration (production)
-SEND_EMAIL = True
+AUTHLIB_OAUTH_CLIENTS = {
+    "google": {
+        "client_id": get_secret("/emol/oauth_client_id"),
+        "client_secret": get_secret("/emol/oauth_client_secret"),
+    }
+}
 
-# Throttling configuration - DISABLED
-GLOBAL_THROTTLE_LIMIT = 1000000  # Effectively disabled
+# Production database configuration
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": get_secret("/emol/db_name"),
+        "USER": get_secret("/emol/db_user"),
+        "PASSWORD": get_secret("/emol/db_password"),
+        "HOST": get_secret("/emol/db_host"),
+        "PORT": "3306",
+        "OPTIONS": {
+            "init_command": "SET sql_mode='STRICT_TRANS_TABLES'",
+            "charset": "utf8mb4",
+        },
+    }
+}
+
+# Reminder configuration
+REMINDER_DAYS = [60, 30, 14, 0]
+
+# Throttling configuration
+GLOBAL_THROTTLE_LIMIT = 1000
 GLOBAL_THROTTLE_WINDOW = 3600
 
 # Production logging goes to files
@@ -63,10 +84,4 @@ CACHES = {
 }
 
 # Production performance settings
-USE_TZ = True
-
-# Load instance-specific overrides if mounted from /opt/emol_config/
-try:
-    from emol.settings import emol_production  # noqa: F401
-except ImportError:
-    pass 
+USE_TZ = True 
