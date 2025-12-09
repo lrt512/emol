@@ -21,6 +21,8 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "global_throttle.middleware.GlobalThrottleMiddleware",
@@ -190,3 +192,6 @@ CSP_SCRIPT_SRC = (
     "https://cdn.datatables.net",
     "sha256-PhCsD9cDmNHcYlaLal8yHa4TGyayjyPy1/u4cyvSojQ=",
 )
+
+# Reminder configuration
+REMINDER_DAYS = [60, 30, 14, 0]

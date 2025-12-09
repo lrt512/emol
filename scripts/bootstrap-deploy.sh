@@ -83,14 +83,21 @@ $SSH_CMD "$REMOTE_HOST" "mkdir -p ~/emol && sudo mkdir -p /opt/emol_config && su
 echo -e "Copying deployment files..."
 FILES_TO_COPY=(
     "scripts/deploy-docker.sh"
-    "docker-compose.prod.yml.example"
-    "docker-compose.test.yml.example"
+    "scripts/generate-compose.py"
+    "setup_files/configs/nginx/prod-proxy.conf"
+    "setup_files/configs/nginx/test-proxy.conf"
     "docs/DEPLOYMENT.md"
 )
 
 for file in "${FILES_TO_COPY[@]}"; do
     if [ -f "$file" ]; then
-        $SCP_CMD "$file" "${REMOTE_HOST}:~/emol/"
+        # Preserve directory structure for nginx configs
+        if [[ "$file" == setup_files/configs/nginx/* ]]; then
+            $SSH_CMD "$REMOTE_HOST" "mkdir -p ~/emol/setup_files/configs/nginx"
+            $SCP_CMD "$file" "${REMOTE_HOST}:~/emol/$file"
+        else
+            $SCP_CMD "$file" "${REMOTE_HOST}:~/emol/"
+        fi
     else
         echo -e "${RED}Warning: Local file $file not found, skipping.${RESET}"
     fi
@@ -98,7 +105,7 @@ done
 
 # 3. Set permissions
 echo -e "Setting permissions..."
-$SSH_CMD "$REMOTE_HOST" "chmod +x ~/emol/deploy-docker.sh"
+$SSH_CMD "$REMOTE_HOST" "chmod +x ~/emol/deploy-docker.sh ~/emol/generate-compose.py"
 
 # 4. Create config directory info
 echo -e "Configuration directory created at /opt/emol_config"

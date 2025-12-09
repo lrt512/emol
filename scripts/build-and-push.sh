@@ -22,7 +22,7 @@ Usage: $0 [options]
 Options:
     --registry REGISTRY    ECR registry URL (e.g., 123456789012.dkr.ecr.ca-central-1.amazonaws.com)
     --account-id ID        AWS account ID (will construct registry URL)
-    --version VERSION      Specific version to tag (default: latest git tag)
+    --version VERSION      Specific version to tag (overrides auto-detection)
     --no-push             Build only, don't push to ECR
     --dry-run             Show what would be done without building
     --ssh-deploy          Deploy directly to Lightsail via SSH (bypasses ECR, for testing)
@@ -44,7 +44,7 @@ EOF
 }
 
 get_latest_git_tag() {
-    # Get the latest git tag, sorted by version
+    # Get the latest git tag, sorted by version (excluding beta tags)
     local latest_tag=$(git tag -l | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+$' | sed 's/^v//' | sort -t. -k1,1n -k2,2n -k3,3n | tail -1)
     
     if [ -z "${latest_tag}" ]; then
@@ -54,14 +54,64 @@ get_latest_git_tag() {
     fi
 }
 
+get_latest_beta_tag() {
+    local base_version=$1
+    # Get the latest beta tag for this base version
+    local latest_beta=$(git tag -l | grep -E "^v?${base_version}-beta\.[0-9]+$" | sed 's/^v//' | sort -t. -k4,4n | tail -1)
+    echo "${latest_beta}"
+}
+
+get_next_beta_number() {
+    local base_version=$1
+    local latest_beta=$(get_latest_beta_tag "${base_version}")
+    
+    if [ -z "${latest_beta}" ]; then
+        echo "1"
+    else
+        # Extract the beta number (e.g., "1.4.0-beta.3" -> "3")
+        local beta_num=$(echo "${latest_beta}" | sed -n 's/.*-beta\.\([0-9]\+\)/\1/p')
+        if [ -z "${beta_num}" ]; then
+            echo "1"
+        else
+            echo $((beta_num + 1))
+        fi
+    fi
+}
+
+is_feature_branch() {
+    local branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "")
+    if [ -z "${branch}" ]; then
+        return 1
+    fi
+    
+    # Check if branch is not main or master
+    if [ "${branch}" != "main" ] && [ "${branch}" != "master" ]; then
+        return 0
+    fi
+    return 1
+}
+
 get_current_version() {
-    # Get version from git tag and update VERSION file
-    local version=$(get_latest_git_tag)
+    local use_beta=false
     
-    # Write to VERSION file
-    echo "${version}" > VERSION
+    # Check if we should use beta tagging (feature branch and no explicit version)
+    if [ -z "${VERSION}" ] && is_feature_branch; then
+        use_beta=true
+    fi
     
-    echo "${version}"
+    if [ "${use_beta}" = true ]; then
+        local base_version=$(get_latest_git_tag)
+        local beta_num=$(get_next_beta_number "${base_version}")
+        local version="${base_version}-beta.${beta_num}"
+        
+        echo "${version}" > VERSION
+        echo "${version}"
+    else
+        # Get version from git tag and update VERSION file
+        local version=$(get_latest_git_tag)
+        echo "${version}" > VERSION
+        echo "${version}"
+    fi
 }
 
 check_docker() {
@@ -294,7 +344,11 @@ check_docker
 
 if [ -z "${VERSION}" ]; then
     VERSION=$(get_current_version)
-    echo -e "${GREEN}Using latest git tag: ${VERSION}${RESET}"
+    if is_feature_branch; then
+        echo -e "${GREEN}Using beta version from feature branch: ${VERSION}${RESET}"
+    else
+        echo -e "${GREEN}Using latest git tag: ${VERSION}${RESET}"
+    fi
 else
     # Remove 'v' prefix if present, then write to VERSION file
     VERSION=$(echo "${VERSION}" | sed 's/^v//')

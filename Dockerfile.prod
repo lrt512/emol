@@ -10,7 +10,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/poetry/bin:$PATH"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    nginx \
     awscli \
     build-essential \
     pkg-config \
@@ -18,10 +17,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libmariadb3 \
     curl \
     cron \
-    gettext-base \
     && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /opt/emol/emol /var/log/emol /var/run/emol /etc/nginx/sites-enabled \
-    && rm -f /etc/nginx/sites-enabled/default \
+    && mkdir -p /opt/emol/emol /var/log/emol /var/run/emol \
     && chown -R www-data:www-data /var/log/emol /var/run/emol
 
 RUN curl -sSL https://install.python-poetry.org | python3 - && \
@@ -37,7 +34,7 @@ RUN cd /opt/emol && \
     poetry install --only main && \
     chown -R www-data:www-data /opt/emol
 
-EXPOSE 80
+EXPOSE 8000
 
 COPY setup_files/docker-entrypoint-prod.sh /docker-entrypoint.sh
 RUN chmod +x /docker-entrypoint.sh
