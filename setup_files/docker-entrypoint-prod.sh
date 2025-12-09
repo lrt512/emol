@@ -10,14 +10,13 @@ cleanup() {
         kill $(cat /var/run/emol.pid) 2>/dev/null || true
         rm -f /var/run/emol.pid
     fi
-    nginx -s quit 2>/dev/null || true
     exit 0
 }
 
 trap cleanup SIGTERM SIGINT
 
-mkdir -p /var/log/emol /var/log/nginx /run/nginx
-chown -R www-data:www-data /var/log/emol /var/log/nginx /run/nginx
+mkdir -p /var/log/emol
+chown -R www-data:www-data /var/log/emol
 
 touch /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/log/emol/emol.log
 chown www-data:www-data /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /var/log/emol/emol.log
@@ -25,23 +24,7 @@ chmod 644 /var/log/emol/gunicorn-access.log /var/log/emol/gunicorn-error.log /va
 
 cd /opt/emol/emol
 
-export NGINX_LOG_PATH="/var/log/nginx"
-export STATIC_ROOT="/opt/emol/static"
-export SOCKET_PATH="/opt/emol/emol.sock"
-
-template_file="/opt/emol/setup_files/configs/nginx.prod.conf"
-
-mkdir -p /etc/nginx/sites-enabled
-envsubst < "$template_file" > /etc/nginx/sites-enabled/emol.conf
-cp /opt/emol/setup_files/configs/proxy_params /etc/nginx/proxy_params
-
-if ! nginx -t; then
-    echo "Nginx configuration test failed"
-    exit 1
-fi
-
 echo "Running database operations..."
-cd /opt/emol/emol
 
 echo "Applying migrations..."
 poetry run python manage.py migrate --noinput || {
@@ -78,15 +61,12 @@ echo "Cron jobs configured"
 
 echo "Starting gunicorn..."
 cd /opt/emol/emol
-poetry run gunicorn \
+exec poetry run gunicorn \
     --pid /var/run/emol.pid \
     --workers 2 \
-    --bind unix:/opt/emol/emol.sock \
+    --bind 0.0.0.0:8000 \
     --access-logfile /var/log/emol/gunicorn-access.log \
     --error-logfile /var/log/emol/gunicorn-error.log \
-    --daemon \
+    --forwarded-allow-ips='*' \
     emol.wsgi:application
-
-echo "Starting nginx..."
-exec nginx -g 'daemon off;'
 

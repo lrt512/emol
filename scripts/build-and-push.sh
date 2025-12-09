@@ -22,7 +22,7 @@ Usage: $0 [options]
 Options:
     --registry REGISTRY    ECR registry URL (e.g., 123456789012.dkr.ecr.ca-central-1.amazonaws.com)
     --account-id ID        AWS account ID (will construct registry URL)
-    --version VERSION      Specific version to tag (default: latest git tag)
+    --version VERSION      Specific version to tag (overrides auto-detection)
     --no-push             Build only, don't push to ECR
     --dry-run             Show what would be done without building
     --ssh-deploy          Deploy directly to Lightsail via SSH (bypasses ECR, for testing)

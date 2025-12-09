@@ -22,8 +22,6 @@ CONFIG_DIR="/opt/emol_config"
 CREDENTIALS_FILE="${CONFIG_DIR}/emol_credentials.json"
 COMPOSE_PROD="${EMOL_HOME}/docker-compose.prod.yml"
 COMPOSE_TEST="${EMOL_HOME}/docker-compose.test.yml"
-COMPOSE_PROD_EXAMPLE="${EMOL_HOME}/docker-compose.prod.yml.example"
-COMPOSE_TEST_EXAMPLE="${EMOL_HOME}/docker-compose.test.yml.example"
 
 show_help() {
     cat << EOF
@@ -36,7 +34,7 @@ Usage: $0 [options]
 Options:
     --account ACCOUNT_ID   AWS account ID (e.g., 123456789012)
     --version VERSION      Specific version to deploy (default: latest from ECR or latest tag)
-    --test                 Deploy on port 8080 for testing (keeps existing service on port 80)
+    --test                 Deploy on port 8080 for testing (allows latest beta if version unspecified)
     --cutover              Switch to port 80 and stop old service (final deployment)
     --dry-run             Show what would be done without deploying
     --help                Show this help message
@@ -83,15 +81,23 @@ build_registry_url() {
 
 get_current_version() {
     local registry=$1
+    local include_beta=$2
     
     if [ -n "${registry}" ]; then
         echo -e "${YELLOW}Checking ECR for latest version...${RESET}" >&2
-        # Get all tags, prefer non-beta versions, but include beta if that's all there is
+        
+        # Determine grep pattern based on whether we accept beta versions
+        local pattern='^v?[0-9]+\.[0-9]+\.[0-9]+$'
+        if [ "${include_beta}" = true ]; then
+            pattern='^v?[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$'
+        fi
+        
+        # Get all tags, filter by pattern, sort and take latest
         local latest_tag=$(aws ecr describe-images \
             --repository-name ${REPO_NAME} \
             --region ${REGION} \
             --query 'imageDetails[*].imageTags[*]' \
-            --output text 2>/dev/null | tr '\t' '\n' | grep -E '^v?[0-9]+\.[0-9]+\.[0-9]+(-beta\.[0-9]+)?$' | sed 's/^v//' | sort -V | tail -1)
+            --output text 2>/dev/null | tr '\t' '\n' | grep -E "${pattern}" | sed 's/^v//' | sort -V | tail -1)
         
         if [ -n "${latest_tag}" ] && [ "${latest_tag}" != "None" ]; then
             echo "${latest_tag}"
@@ -159,6 +165,11 @@ stop_old_services() {
         sudo systemctl stop emol || true
     fi
     
+    if systemctl is-active --quiet nginx 2>/dev/null; then
+        echo "Stopping nginx (container will handle requests directly)..."
+        sudo systemctl stop nginx || true
+    fi
+    
     if [ -f "${COMPOSE_PROD}" ]; then
         cd "${EMOL_HOME}"
         docker-compose -f docker-compose.prod.yml down 2>/dev/null || true
@@ -179,16 +190,6 @@ ensure_compose_file() {
         echo -e "${YELLOW}Creating ${EMOL_HOME}...${RESET}"
         mkdir -p "${EMOL_HOME}"
     fi
-    
-    if [ ! -f "${compose_example}" ]; then
-        echo -e "${RED}Error: ${compose_example} not found${RESET}"
-        echo -e "${YELLOW}Please ensure ${file_type}.example is in ${EMOL_HOME}${RESET}"
-        exit 1
-    fi
-    
-    # Always copy from example to ensure a clean file (avoids corruption from previous runs)
-    echo -e "${YELLOW}Creating ${file_type} from example...${RESET}"
-    cp "${compose_example}" "${compose_file}"
 }
 
 update_compose_file() {
@@ -207,13 +208,6 @@ update_compose_file() {
     else
         mode="prod"
         compose_file="${COMPOSE_PROD}"
-    fi
-    
-    # Ensure example file exists
-    local example_file="${EMOL_HOME}/docker-compose.${mode}.yml.example"
-    if [ ! -f "${example_file}" ]; then
-        echo -e "${RED}Error: ${example_file} not found${RESET}"
-        exit 1
     fi
     
     # Use Python script to generate compose file
@@ -244,10 +238,10 @@ start_container() {
     
     if [ "${TEST_MODE}" = true ]; then
         compose_file="docker-compose.test.yml"
-        compose_name="test"
+        compose_name="emol_test"
     else
         compose_file="docker-compose.prod.yml"
-        compose_name="production"
+        compose_name="emol_prod"
     fi
     
     echo -e "${YELLOW}Starting ${compose_name} container...${RESET}"
@@ -255,15 +249,33 @@ start_container() {
     docker-compose -f "${compose_file}" up -d
     
     echo -e "${YELLOW}Waiting for container to be healthy...${RESET}"
-    sleep 5
     
-    if docker-compose -f "${compose_file}" ps | grep -q "Up"; then
-        echo -e "${GREEN}Container started successfully${RESET}"
-    else
-        echo -e "${RED}Container failed to start${RESET}"
-        docker-compose -f "${compose_file}" logs
-        exit 1
-    fi
+    # Wait loop for healthcheck
+    local max_retries=12  # 12 * 5s = 60s
+    local count=0
+    
+    while [ $count -lt $max_retries ]; do
+        sleep 5
+        local status=$(docker-compose -f "${compose_file}" ps | grep "${compose_name}" || true)
+        
+        if echo "$status" | grep -q "healthy"; then
+            echo -e "${GREEN}Container started successfully and is healthy${RESET}"
+            return 0
+        fi
+        
+        if ! echo "$status" | grep -q "Up"; then
+             echo -e "${RED}Container failed to start or exited${RESET}"
+             docker-compose -f "${compose_file}" logs
+             exit 1
+        fi
+        
+        echo -n "."
+        count=$((count + 1))
+    done
+
+    echo -e "\n${RED}Timed out waiting for container to be healthy${RESET}"
+    docker-compose -f "${compose_file}" logs
+    exit 1
 }
 
 show_status() {
@@ -350,8 +362,14 @@ REGISTRY=$(build_registry_url "${ACCOUNT_ID}")
 load_aws_credentials
 
 if [ -z "${VERSION}" ]; then
+    # Determine if we should include beta versions (only in test mode)
+    INCLUDE_BETA=false
+    if [ "${TEST_MODE}" = true ]; then
+        INCLUDE_BETA=true
+    fi
+
     # Try to get version from ECR or VERSION file, default to "latest"
-    VERSION=$(get_current_version "${REGISTRY}")
+    VERSION=$(get_current_version "${REGISTRY}" "${INCLUDE_BETA}")
     if [ -z "${VERSION}" ] || [ "${VERSION}" = "latest" ]; then
         VERSION="latest"
         echo -e "${GREEN}Using version: ${VERSION}${RESET}"
@@ -382,25 +400,29 @@ show_status
 
 if [ "${TEST_MODE}" = true ]; then
     echo -e "\n${GREEN}Test deployment complete!${RESET}"
-    echo -e "${YELLOW}Container is running on port 8080${RESET}"
+    echo -e "${YELLOW}Container is running on port 8443${RESET}"
     echo -e "${YELLOW}Existing service is still running on port 80${RESET}"
     echo -e "\n${YELLOW}Note: Running both services uses more resources.${RESET}"
     echo -e "${YELLOW}Monitor with: docker stats && free -h${RESET}"
     echo -e "\nTest the container:"
-    echo -e "  http://your-server-ip:8080"
-    echo -e "  or"
-    echo -e "  http://your-domain:8080"
+    echo -e "  https://emol.ealdormere.ca:8443 (via nginx proxy)"
+    echo -e "  http://localhost:8080 (direct, for debugging)"
+    echo -e "\n${YELLOW}Note: Ensure nginx test proxy is configured and port 8443 is open in firewall${RESET}"
     echo -e "\nWhen ready to cutover, run:"
     echo -e "  $0 --account ${ACCOUNT_ID} --cutover"
     echo -e "\nTo stop old service and save resources:"
     echo -e "  sudo systemctl stop emol nginx"
 elif [ "${CUTOVER_MODE}" = true ]; then
-    echo -e "\n${GREEN}Cutover complete! Container is now serving on port 80${RESET}"
-    echo -e "${YELLOW}Old service has been stopped${RESET}"
+    echo -e "\n${GREEN}Cutover complete! Container is now running on port 8000${RESET}"
+    echo -e "${YELLOW}Old service and nginx have been stopped${RESET}"
     echo -e "\n${YELLOW}Next steps:${RESET}"
-    echo -e "  1. Verify the container is working correctly"
-    echo -e "  2. Archive the old installation at /opt/emol (if desired)"
-    echo -e "  3. Update any monitoring/backup scripts to use ${EMOL_HOME}"
+    echo -e "  1. Configure nginx to proxy to the container:"
+    echo -e "     sudo cp ${EMOL_HOME}/setup_files/configs/nginx/prod-proxy.conf /etc/nginx/sites-available/emol-prod"
+    echo -e "     sudo ln -s /etc/nginx/sites-available/emol-prod /etc/nginx/sites-enabled/"
+    echo -e "     sudo nginx -t && sudo systemctl reload nginx"
+    echo -e "  2. Verify the container is working correctly"
+    echo -e "  3. Archive the old installation at /opt/emol (if desired)"
+    echo -e "  4. Update any monitoring/backup scripts to use ${EMOL_HOME}"
 else
     echo -e "\n${GREEN}Deployment complete!${RESET}"
 fi

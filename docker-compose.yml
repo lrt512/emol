@@ -4,12 +4,13 @@ services:
       context: .
       dockerfile: Dockerfile.dev
     ports:
-      - "8000:80"
+      - "8000:8000"
     healthcheck:
-      test: ["CMD", "/etc/init.d/emol", "status"]
-      interval: 30s
-      timeout: 10s
+      test: ["CMD", "curl", "-f", "http://localhost:8000/"]
+      interval: 10s
+      timeout: 5s
       retries: 3
+      start_period: 10s
     environment:
       - EMOL_DEV=1
       - AWS_DEFAULT_REGION=ca-central-1
@@ -21,8 +22,6 @@ services:
       - .:/opt/emol
       - static:/opt/emol/static
       - emol_logs:/var/log/emol
-      - nginx_logs:/var/log/nginx
-      - nginx_run:/run/nginx
       # Mount configuration files from local config/ directory (optional)
       # Mirrors production /opt/emol_config structure
       # - ./config/emol_production.py:/opt/emol/emol/emol/settings/emol_production.py:ro
@@ -83,5 +82,3 @@ volumes:
   mysql_data:
   static:
   emol_logs:
-  nginx_logs:
-  nginx_run:

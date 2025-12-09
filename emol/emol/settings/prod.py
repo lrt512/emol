@@ -1,5 +1,7 @@
 """Production settings for eMoL."""
 
+import os
+
 from .defaults import *  # noqa: F403, F401
 from emol.secrets import get_secret
 
@@ -10,18 +12,18 @@ BASE_URL = "https://emol.ealdormere.ca"
 
 # Security settings for production
 DEBUG = False
-ALLOWED_HOSTS = ["emol.ealdormere.ca", "localhost", "127.0.0.1"]
+ALLOWED_HOSTS = ["emol.ealdormere.ca", "localhost", "127.0.0.1", "testserver"]
 
 # SSL/HTTPS settings
-SECURE_SSL_REDIRECT = True
+SECURE_SSL_REDIRECT = False
 SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
-SECURE_HSTS_SECONDS = 31536000
-SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-SECURE_HSTS_PRELOAD = True
+# SECURE_HSTS_SECONDS = 31536000
+# SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+# SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
-SESSION_COOKIE_SECURE = True
-CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_SECURE = False  # Allow HTTP for internal testing (behind proxy)
+CSRF_COOKIE_SECURE = False     # Allow HTTP for internal testing
 
 TIME_ZONE = "America/Toronto"
 
@@ -70,6 +72,7 @@ LOGGING["handlers"]["file"]["filename"] = "/var/log/emol/emol.log"  # noqa: F405
 
 # Static files in production
 STATIC_ROOT = "/opt/emol/static/"
+STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Cache configuration for production
 CACHES = {
