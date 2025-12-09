@@ -6,7 +6,6 @@ from cards.models import Authorization, Combatant, Discipline, Region
 from cards.utility.decorators import permission_required
 from current_user import get_current_user
 from django.shortcuts import redirect, render
-
 from feature_switches.helpers import is_enabled
 
 logger = logging.getLogger("cards")

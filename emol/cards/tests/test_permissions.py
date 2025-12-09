@@ -3,16 +3,13 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 
+from cards.api.permissions import (CardDatePermission,
+                                   CombatantAuthorizationPermission,
+                                   CombatantInfoPermission,
+                                   CombatantMarshalPermission,
+                                   ResendPrivacyPermission,
+                                   WaiverDatePermission)
 from django.test import TestCase
-
-from cards.api.permissions import (
-    CardDatePermission,
-    CombatantAuthorizationPermission,
-    CombatantInfoPermission,
-    CombatantMarshalPermission,
-    ResendPrivacyPermission,
-    WaiverDatePermission,
-)
 from sso_user.models import SSOUser
 
 
@@ -139,16 +136,12 @@ class AuthorizationMarshalPermissionTests(BasePermissionTestCase):
         mock_has_perm.return_value = True
 
         self.assertTrue(permission.has_permission(request, view=DummyView()))
-        mock_has_perm.assert_called_with(
-            self.user, "write_authorizations", "sword"
-        )
+        mock_has_perm.assert_called_with(self.user, "write_authorizations", "sword")
 
         mock_has_perm.reset_mock()
         mock_has_perm.return_value = False
         self.assertFalse(permission.has_permission(request, view=DummyView()))
-        mock_has_perm.assert_called_with(
-            self.user, "write_authorizations", "sword"
-        )
+        mock_has_perm.assert_called_with(self.user, "write_authorizations", "sword")
 
     @patch("cards.api.permissions.UserPermission.user_has_permission")
     def test_combatant_marshal_permission_requires_discipline_permission(
@@ -188,5 +181,3 @@ class ResendPrivacyPermissionTests(BasePermissionTestCase):
         mock_has_perm.return_value = False
         self.assertFalse(self.permission.has_permission(request, view=object()))
         mock_has_perm.assert_called_with(self.user, "read_combatant_info")
-
-

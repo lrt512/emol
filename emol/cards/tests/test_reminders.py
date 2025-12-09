@@ -1,22 +1,15 @@
 """Tests for reminder functionality."""
 
 from datetime import timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock, patch
 
+from cards.models import (Authorization, Card, Combatant, Discipline, Reminder,
+                          Waiver)
+from cards.utility.time import today
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.test import TestCase, override_settings
-
-from cards.models import (
-    Authorization,
-    Card,
-    Combatant,
-    Discipline,
-    Reminder,
-    Waiver,
-)
-from cards.utility.time import today
 
 
 class ReminderModelTestCase(TestCase):
@@ -233,14 +226,18 @@ class CardReminderSignalTestCase(TestCase):
             date_issued=today() - timedelta(days=100),
         )
         old_due_dates = list(
-            Reminder.objects.filter(object_id=card.id).values_list("due_date", flat=True)
+            Reminder.objects.filter(object_id=card.id).values_list(
+                "due_date", flat=True
+            )
         )
 
         card.date_issued = today()
         card.save()
 
         new_due_dates = list(
-            Reminder.objects.filter(object_id=card.id).values_list("due_date", flat=True)
+            Reminder.objects.filter(object_id=card.id).values_list(
+                "due_date", flat=True
+            )
         )
         self.assertNotEqual(old_due_dates, new_due_dates)
 
@@ -295,14 +292,18 @@ class WaiverReminderSignalTestCase(TestCase):
             date_signed=today() - timedelta(days=100),
         )
         old_due_dates = list(
-            Reminder.objects.filter(object_id=waiver.id).values_list("due_date", flat=True)
+            Reminder.objects.filter(object_id=waiver.id).values_list(
+                "due_date", flat=True
+            )
         )
 
         waiver.date_signed = today()
         waiver.save()
 
         new_due_dates = list(
-            Reminder.objects.filter(object_id=waiver.id).values_list("due_date", flat=True)
+            Reminder.objects.filter(object_id=waiver.id).values_list(
+                "due_date", flat=True
+            )
         )
         self.assertNotEqual(old_due_dates, new_due_dates)
 
@@ -335,9 +336,9 @@ class SendRemindersEmailFailureTestCase(TestCase):
             date_issued=today() - timedelta(days=365 * 2 - 30),
         )
         card_ct = ContentType.objects.get_for_model(Card)
-        Reminder.objects.filter(
-            content_type=card_ct, object_id=card.id
-        ).update(due_date=today())
+        Reminder.objects.filter(content_type=card_ct, object_id=card.id).update(
+            due_date=today()
+        )
         initial_count = Reminder.objects.filter(
             content_type=card_ct, object_id=card.id
         ).count()
@@ -362,9 +363,9 @@ class SendRemindersEmailFailureTestCase(TestCase):
             date_issued=today() - timedelta(days=365 * 2 - 30),
         )
         card_ct = ContentType.objects.get_for_model(Card)
-        Reminder.objects.filter(
-            content_type=card_ct, object_id=card.id
-        ).update(due_date=today())
+        Reminder.objects.filter(content_type=card_ct, object_id=card.id).update(
+            due_date=today()
+        )
 
         call_command("send_reminders")
 
@@ -470,4 +471,3 @@ class ReminderHygieneCommandTestCase(TestCase):
             content_type=waiver_ct, object_id=waiver.id
         )
         self.assertEqual(waiver_reminders.count(), 4)
-

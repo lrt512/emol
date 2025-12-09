@@ -7,24 +7,50 @@ class Migration(migrations.Migration):
 
     initial = True
 
-    dependencies = [
-    ]
+    dependencies = []
 
     operations = [
         migrations.CreateModel(
-            name='FeatureSwitch',
+            name="FeatureSwitch",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('name', models.CharField(help_text="Unique identifier for this switch (e.g., 'pin_required')", max_length=100, unique=True)),
-                ('description', models.TextField(blank=True, help_text='Description of what this feature switch controls')),
-                ('enabled', models.BooleanField(default=False, help_text='Whether this feature is currently enabled')),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "name",
+                    models.CharField(
+                        help_text="Unique identifier for this switch (e.g., 'pin_required')",
+                        max_length=100,
+                        unique=True,
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        blank=True,
+                        help_text="Description of what this feature switch controls",
+                    ),
+                ),
+                (
+                    "enabled",
+                    models.BooleanField(
+                        default=False,
+                        help_text="Whether this feature is currently enabled",
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
             ],
             options={
-                'verbose_name': 'Feature Switch',
-                'verbose_name_plural': 'Feature Switches',
-                'ordering': ['name'],
+                "verbose_name": "Feature Switch",
+                "verbose_name_plural": "Feature Switches",
+                "ordering": ["name"],
             },
         ),
     ]

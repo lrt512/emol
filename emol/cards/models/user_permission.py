@@ -36,17 +36,29 @@ class UserPermission(models.Model):
     def clean(self):
         """Validate that global permissions don't have disciplines assigned"""
         super().clean()
-        
-        if self.permission and self.permission.is_global and self.discipline is not None:
-            raise ValidationError({
-                'discipline': f"Global permission '{self.permission.name}' cannot be assigned to a specific discipline. "
-                           f"Global permissions must be discipline-independent."
-            })
-        
-        if self.permission and not self.permission.is_global and self.discipline is None:
-            raise ValidationError({
-                'discipline': f"Non-global permission '{self.permission.name}' requires a discipline to be specified."
-            })
+
+        if (
+            self.permission
+            and self.permission.is_global
+            and self.discipline is not None
+        ):
+            raise ValidationError(
+                {
+                    "discipline": f"Global permission '{self.permission.name}' cannot be assigned to a specific discipline. "
+                    f"Global permissions must be discipline-independent."
+                }
+            )
+
+        if (
+            self.permission
+            and not self.permission.is_global
+            and self.discipline is None
+        ):
+            raise ValidationError(
+                {
+                    "discipline": f"Non-global permission '{self.permission.name}' requires a discipline to be specified."
+                }
+            )
 
     def save(self, *args, **kwargs):
         """Override save to ensure validation is run"""

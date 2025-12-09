@@ -1,8 +1,7 @@
 """Admin configuration for OneTimeCode model."""
 
-from django.contrib import admin
-
 from cards.models import OneTimeCode
+from django.contrib import admin
 
 
 @admin.register(OneTimeCode)
@@ -34,4 +33,3 @@ class OneTimeCodeAdmin(admin.ModelAdmin):
         return f"{code_str[:4]}...{code_str[-4:]}"
 
     code_preview.short_description = "Code"
-

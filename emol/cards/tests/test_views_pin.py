@@ -3,11 +3,10 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from cards.models import Combatant, OneTimeCode
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
-
-from cards.models import Combatant, OneTimeCode
 from feature_switches.models import FeatureSwitch
 
 
@@ -180,9 +179,7 @@ class PINVerifyViewTestCase(TestCase):
 
     def test_get_verify_page(self):
         """Test GET request returns verify form."""
-        response = self.client.get(
-            reverse("pin-verify", args=["test-card-123"])
-        )
+        response = self.client.get(reverse("pin-verify", args=["test-card-123"]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Enter Your PIN")
@@ -234,9 +231,7 @@ class PINVerifyViewTestCase(TestCase):
         self.combatant.pin_locked_until = timezone.now() + timedelta(minutes=10)
         self.combatant.save()
 
-        response = self.client.get(
-            reverse("pin-verify", args=["test-card-123"])
-        )
+        response = self.client.get(reverse("pin-verify", args=["test-card-123"]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "temporarily locked")
@@ -245,9 +240,7 @@ class PINVerifyViewTestCase(TestCase):
         """Test that combatant without PIN is redirected to card."""
         self.combatant.clear_pin()
 
-        response = self.client.get(
-            reverse("pin-verify", args=["test-card-123"])
-        )
+        response = self.client.get(reverse("pin-verify", args=["test-card-123"]))
 
         self.assertRedirects(
             response,
@@ -259,9 +252,7 @@ class PINVerifyViewTestCase(TestCase):
         """Test that disabled feature redirects to card."""
         FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
 
-        response = self.client.get(
-            reverse("pin-verify", args=["test-card-123"])
-        )
+        response = self.client.get(reverse("pin-verify", args=["test-card-123"]))
 
         self.assertRedirects(
             response,
@@ -271,9 +262,7 @@ class PINVerifyViewTestCase(TestCase):
 
     def test_nonexistent_card_shows_error(self):
         """Test that nonexistent card shows error."""
-        response = self.client.get(
-            reverse("pin-verify", args=["nonexistent"])
-        )
+        response = self.client.get(reverse("pin-verify", args=["nonexistent"]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Card not found")
@@ -302,9 +291,7 @@ class CombatantCardWithPINTestCase(TestCase):
 
     def test_card_without_pin_accessible(self):
         """Test that card without PIN set is directly accessible."""
-        response = self.client.get(
-            reverse("combatant-card", args=["protected-card"])
-        )
+        response = self.client.get(reverse("combatant-card", args=["protected-card"]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Fighter")
@@ -313,9 +300,7 @@ class CombatantCardWithPINTestCase(TestCase):
         """Test that card with PIN redirects to verify."""
         self.combatant.set_pin("1234")
 
-        response = self.client.get(
-            reverse("combatant-card", args=["protected-card"])
-        )
+        response = self.client.get(reverse("combatant-card", args=["protected-card"]))
 
         self.assertRedirects(
             response,
@@ -331,9 +316,7 @@ class CombatantCardWithPINTestCase(TestCase):
         session["pin_verified_protected-card"] = True
         session.save()
 
-        response = self.client.get(
-            reverse("combatant-card", args=["protected-card"])
-        )
+        response = self.client.get(reverse("combatant-card", args=["protected-card"]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Fighter")
@@ -343,10 +326,7 @@ class CombatantCardWithPINTestCase(TestCase):
         self.combatant.set_pin("1234")
         FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
 
-        response = self.client.get(
-            reverse("combatant-card", args=["protected-card"])
-        )
+        response = self.client.get(reverse("combatant-card", args=["protected-card"]))
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Fighter")
-

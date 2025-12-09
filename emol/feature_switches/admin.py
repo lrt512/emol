@@ -18,7 +18,10 @@ class FeatureSwitchAdmin(admin.ModelAdmin):
 
     fieldsets = [
         (None, {"fields": ["name", "description", "enabled"]}),
-        ("Timestamps", {"fields": ["created_at", "updated_at"], "classes": ["collapse"]}),
+        (
+            "Timestamps",
+            {"fields": ["created_at", "updated_at"], "classes": ["collapse"]},
+        ),
     ]
 
     def save_model(self, request, obj, form, change):
@@ -31,4 +34,3 @@ class FeatureSwitchAdmin(admin.ModelAdmin):
         switch_name = obj.name
         super().delete_model(request, obj)
         clear_cache(switch_name)
-

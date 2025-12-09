@@ -4,14 +4,12 @@ from typing import Any, Dict
 
 from cards.mail import send_card_url, send_info_update, send_privacy_policy
 from cards.models import Combatant, CombatantWarrant, Discipline, OneTimeCode
-
 from current_user import get_current_user
 from django.core.exceptions import MultipleObjectsReturned
-from django.views.decorators.csrf import csrf_protect
 from django.shortcuts import render
 from django.template.defaulttags import register
+from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
-
 from feature_switches.helpers import is_enabled
 
 logger = logging.getLogger("cards")
@@ -114,9 +112,7 @@ def update_info(request):
     email = request.POST.get("update-info-email", None)
     pin = request.POST.get("update-info-pin", "") if pin_enabled else ""
     context = {
-        "message": (
-            "If a combatant with this email exists, an email has been sent"
-        )
+        "message": ("If a combatant with this email exists, an email has been sent")
     }
 
     try:

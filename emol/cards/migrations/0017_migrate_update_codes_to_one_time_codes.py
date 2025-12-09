@@ -37,7 +37,7 @@ def reverse_migration(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cards', '0016_remove_email_unique'),
+        ("cards", "0016_remove_email_unique"),
     ]
 
     operations = [

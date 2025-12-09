@@ -66,7 +66,7 @@ class CombatantSerializer(ModelSerializer):
             raise serializers.ValidationError(
                 "If member_expiry is specified, member_number must also be specified."
             )
-        
+
         # Validate province code exists in Region table
         if data.get("province"):
             province_code = data["province"]
@@ -75,7 +75,7 @@ class CombatantSerializer(ModelSerializer):
                     f"Province code '{province_code}' is not valid. "
                     f"Valid codes are: {', '.join(Region.objects.filter(active=True).values_list('code', flat=True))}"
                 )
-        
+
         return data
 
     def to_internal_value(self, data):

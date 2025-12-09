@@ -3,11 +3,10 @@
 import uuid
 from urllib.parse import urljoin
 
+from cards.utility.time import utc_tomorrow
 from django.conf import settings
 from django.db import models
 from django.utils import timezone
-
-from cards.utility.time import utc_tomorrow
 
 from .combatant import Combatant
 
@@ -143,4 +142,3 @@ class OneTimeCode(models.Model):
             combatant=combatant,
             url_template=url_template,
         )
-

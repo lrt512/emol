@@ -3,11 +3,9 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from cards.models import Combatant, OneTimeCode, Region
-from cards.views.self_serve_update import (
-    SelfServeUpdateSerializer,
-    serializer_errors_to_strings,
-    self_serve_update,
-)
+from cards.views.self_serve_update import (SelfServeUpdateSerializer,
+                                           self_serve_update,
+                                           serializer_errors_to_strings)
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import timezone
@@ -65,7 +63,14 @@ class SelfServeUpdateSerializerTestCase(TestCase):
         serializer = SelfServeUpdateSerializer(instance=self.combatant, data=data)
         self.assertFalse(serializer.is_valid())
 
-        required_fields = ["legal_name", "phone", "address1", "city", "province", "postal_code"]
+        required_fields = [
+            "legal_name",
+            "phone",
+            "address1",
+            "city",
+            "province",
+            "postal_code",
+        ]
         for field in required_fields:
             self.assertIn(field, serializer.errors)
 
@@ -102,7 +107,7 @@ class SelfServeUpdateSerializerTestCase(TestCase):
         self.assertIn("member_number", serializer.errors)
         self.assertEqual(
             str(serializer.errors["member_number"][0]),
-            "Member number is required when specifying an expiry date."
+            "Member number is required when specifying an expiry date.",
         )
 
     def test_member_number_without_expiry_allowed(self):
@@ -152,7 +157,9 @@ class SelfServeUpdateSerializerTestCase(TestCase):
             "phone": "555-9999",
         }
 
-        serializer = SelfServeUpdateSerializer(instance=self.combatant, data=data, partial=True)
+        serializer = SelfServeUpdateSerializer(
+            instance=self.combatant, data=data, partial=True
+        )
         self.assertTrue(serializer.is_valid())
 
         updated_combatant = serializer.save()
@@ -198,7 +205,9 @@ class SerializerErrorsToStringsTestCase(TestCase):
     def test_single_field_single_error(self):
         """Test conversion of single field with single error"""
         errors = {"legal_name": ["This field is required."]}
-        result = serializer_errors_to_strings(type('MockSerializer', (), {'errors': errors})())
+        result = serializer_errors_to_strings(
+            type("MockSerializer", (), {"errors": errors})()
+        )
         self.assertEqual(result, ["legal_name: This field is required."])
 
     def test_multiple_fields_multiple_errors(self):
@@ -207,9 +216,9 @@ class SerializerErrorsToStringsTestCase(TestCase):
             "legal_name": ["This field is required."],
             "phone": ["This field is required.", "Invalid format."],
         }
-        mock_serializer = type('MockSerializer', (), {'errors': errors})()
+        mock_serializer = type("MockSerializer", (), {"errors": errors})()
         result = serializer_errors_to_strings(mock_serializer)
-        
+
         expected = [
             "legal_name: This field is required.",
             "phone: This field is required.",
@@ -220,7 +229,7 @@ class SerializerErrorsToStringsTestCase(TestCase):
     def test_empty_errors(self):
         """Test handling of empty errors"""
         errors = {}
-        mock_serializer = type('MockSerializer', (), {'errors': errors})()
+        mock_serializer = type("MockSerializer", (), {"errors": errors})()
         result = serializer_errors_to_strings(mock_serializer)
         self.assertEqual(result, [])
 
@@ -241,7 +250,7 @@ class SelfServeUpdateViewTestCase(TestCase):
             postal_code="K1A 0A6",
             accepted_privacy_policy=True,
         )
-        
+
         self.region, _ = Region.objects.get_or_create(
             code="ON",
             defaults={
@@ -249,7 +258,7 @@ class SelfServeUpdateViewTestCase(TestCase):
                 "country": "Canada",
                 "postal_format": "A1A 1A1",
                 "active": True,
-            }
+            },
         )
 
         self.update_code = OneTimeCode.objects.create(
@@ -263,9 +272,9 @@ class SelfServeUpdateViewTestCase(TestCase):
     def test_get_valid_code(self):
         """Test GET request with valid update code"""
         response = self.client.get(
-            reverse('self-serve-update', args=[str(self.update_code.code)])
+            reverse("self-serve-update", args=[str(self.update_code.code)])
         )
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Fighter")
         self.assertContains(response, "Test Legal")
@@ -276,20 +285,24 @@ class SelfServeUpdateViewTestCase(TestCase):
         """Test GET request with invalid update code"""
         invalid_code = uuid4()
         response = self.client.get(
-            reverse('self-serve-update', args=[str(invalid_code)])
+            reverse("self-serve-update", args=[str(invalid_code)])
         )
-        
+
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "The update code provided is invalid or has already been used.")
+        self.assertContains(
+            response, "The update code provided is invalid or has already been used."
+        )
 
     def test_get_nonexistent_code(self):
         """Test GET request with non-existent update code"""
         response = self.client.get(
-            reverse('self-serve-update', args=["nonexistent-code"])
+            reverse("self-serve-update", args=["nonexistent-code"])
         )
-        
+
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "The update code provided is invalid or has already been used.")
+        self.assertContains(
+            response, "The update code provided is invalid or has already been used."
+        )
 
     def test_post_valid_data(self):
         """Test POST request with valid data"""
@@ -307,10 +320,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(self.update_code.code)]),
-            data=data
+            reverse("self-serve-update", args=[str(self.update_code.code)]), data=data
         )
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Your information has been updated successfully.")
 
@@ -338,10 +350,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(self.update_code.code)]),
-            data=data
+            reverse("self-serve-update", args=[str(self.update_code.code)]), data=data
         )
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "There was an error updating your information.")
 
@@ -367,10 +378,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(self.update_code.code)]),
-            data=data
+            reverse("self-serve-update", args=[str(self.update_code.code)]), data=data
         )
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "There was an error updating your information.")
         self.assertContains(response, "member_number")
@@ -391,10 +401,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(self.update_code.code)]),
-            data=data
+            reverse("self-serve-update", args=[str(self.update_code.code)]), data=data
         )
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Your information has been updated successfully.")
 
@@ -418,10 +427,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(self.update_code.code)]),
-            data=data
+            reverse("self-serve-update", args=[str(self.update_code.code)]), data=data
         )
-        
+
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Your information has been updated successfully.")
 
@@ -429,7 +437,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         self.combatant.refresh_from_db()
         self.assertEqual(self.combatant.legal_name, "Updated Legal")
         self.assertEqual(self.combatant.phone, "555-9999")
-        self.assertEqual(self.combatant.sca_name, "Test Fighter")  # Should remain unchanged
+        self.assertEqual(
+            self.combatant.sca_name, "Test Fighter"
+        )  # Should remain unchanged
 
     def test_post_invalid_code(self):
         """Test POST request with invalid update code"""
@@ -444,38 +454,41 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(invalid_code)]),
-            data=data
+            reverse("self-serve-update", args=[str(invalid_code)]), data=data
         )
-        
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "The update code provided is invalid or has already been used.")
 
-    @patch('cards.views.self_serve_update.logger')
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response, "The update code provided is invalid or has already been used."
+        )
+
+    @patch("cards.views.self_serve_update.logger")
     def test_exception_handling(self, mock_logger):
         """Test handling of unexpected exceptions"""
-        with patch('cards.views.self_serve_update.OneTimeCode.objects.get') as mock_get:
+        with patch("cards.views.self_serve_update.OneTimeCode.objects.get") as mock_get:
             mock_get.side_effect = Exception("Database error")
-            
+
             response = self.client.get(
-                reverse('self-serve-update', args=[str(self.update_code.code)])
+                reverse("self-serve-update", args=[str(self.update_code.code)])
             )
-            
+
             self.assertEqual(response.status_code, 200)
-            self.assertContains(response, "An unexpected error occurred. Please try again later.")
+            self.assertContains(
+                response, "An unexpected error occurred. Please try again later."
+            )
             mock_logger.exception.assert_called_once()
 
     def test_context_data_on_get(self):
         """Test that GET request includes proper context data"""
         response = self.client.get(
-            reverse('self-serve-update', args=[str(self.update_code.code)])
+            reverse("self-serve-update", args=[str(self.update_code.code)])
         )
-        
+
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['self_serve'], True)
-        self.assertEqual(response.context['code'], str(self.update_code.code))
-        self.assertEqual(response.context['combatant'], self.combatant)
-        self.assertIn('regions', response.context)
+        self.assertEqual(response.context["self_serve"], True)
+        self.assertEqual(response.context["code"], str(self.update_code.code))
+        self.assertEqual(response.context["combatant"], self.combatant)
+        self.assertIn("regions", response.context)
 
     def test_context_data_on_post_error(self):
         """Test that POST request with errors includes proper context data"""
@@ -491,17 +504,16 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(self.update_code.code)]),
-            data=data
+            reverse("self-serve-update", args=[str(self.update_code.code)]), data=data
         )
-        
+
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.context['self_serve'], True)
-        self.assertEqual(response.context['code'], str(self.update_code.code))
-        self.assertEqual(response.context['combatant'], self.combatant)
-        self.assertIn('regions', response.context)
-        self.assertIn('message', response.context)
-        self.assertIn('errors', response.context)
+        self.assertEqual(response.context["self_serve"], True)
+        self.assertEqual(response.context["code"], str(self.update_code.code))
+        self.assertEqual(response.context["combatant"], self.combatant)
+        self.assertIn("regions", response.context)
+        self.assertIn("message", response.context)
+        self.assertIn("errors", response.context)
 
     def test_update_code_consumed_after_successful_update(self):
         """Test that update code is consumed after successful update"""
@@ -515,10 +527,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(self.update_code.code)]),
-            data=data
+            reverse("self-serve-update", args=[str(self.update_code.code)]), data=data
         )
-        
+
         self.assertEqual(response.status_code, 200)
         self.update_code.refresh_from_db()
         self.assertTrue(self.update_code.consumed)
@@ -536,10 +547,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         }
 
         response = self.client.post(
-            reverse('self-serve-update', args=[str(self.update_code.code)]),
-            data=data
+            reverse("self-serve-update", args=[str(self.update_code.code)]), data=data
         )
-        
+
         self.assertEqual(response.status_code, 200)
         self.update_code.refresh_from_db()
         self.assertFalse(self.update_code.consumed)
@@ -617,8 +627,9 @@ class OneTimeCodeModelTestCase(TestCase):
 
     def test_one_time_code_str_expired(self):
         """Test string representation shows EXPIRED status"""
-        from django.utils import timezone
         from datetime import timedelta
+
+        from django.utils import timezone
 
         one_time_code = OneTimeCode.objects.create(
             combatant=self.combatant,
@@ -638,4 +649,4 @@ class OneTimeCodeModelTestCase(TestCase):
         one_time_code.consume()
         str_repr = str(one_time_code)
 
-        self.assertIn("[USED]", str_repr) 
+        self.assertIn("[USED]", str_repr)

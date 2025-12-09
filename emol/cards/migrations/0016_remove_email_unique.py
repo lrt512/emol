@@ -6,13 +6,13 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cards', '0015_add_pin_reset_permission'),
+        ("cards", "0015_add_pin_reset_permission"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='combatant',
-            name='email',
+            model_name="combatant",
+            name="email",
             field=models.CharField(db_index=True, max_length=255),
         ),
     ]

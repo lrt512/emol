@@ -196,4 +196,3 @@ class FeatureSwitchTemplateTagTestCase(TestCase):
 
         result = switch_enabled("nonexistent")
         self.assertFalse(result)
-

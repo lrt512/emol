@@ -25,10 +25,14 @@ def has_global_permission(user, permission_slug, override=None, reason=None):
     """
     if override:
         if not reason:
-            logger.error(f"has_global_permission: {permission_slug} override: {override} but no reason provided")
+            logger.error(
+                f"has_global_permission: {permission_slug} override: {override} but no reason provided"
+            )
             return False
 
-        logger.info(f"has_global_permission: {permission_slug} override: {override} reason: {reason}")
+        logger.info(
+            f"has_global_permission: {permission_slug} override: {override} reason: {reason}"
+        )
         return override
 
     if not user.is_authenticated:

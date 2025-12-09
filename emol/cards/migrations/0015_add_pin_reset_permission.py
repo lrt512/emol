@@ -24,7 +24,7 @@ def remove_pin_reset_permission(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cards', '0014_add_pin_fields'),
+        ("cards", "0014_add_pin_fields"),
     ]
 
     operations = [

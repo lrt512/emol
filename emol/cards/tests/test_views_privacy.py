@@ -1,9 +1,8 @@
 """Tests for privacy-related views."""
 
+from cards.models import Combatant, PrivacyPolicy
 from django.test import TestCase, override_settings
 from django.urls import reverse
-
-from cards.models import Combatant, PrivacyPolicy
 
 
 class PrivacyPolicyViewTestCase(TestCase):
@@ -28,9 +27,7 @@ class PrivacyPolicyViewTestCase(TestCase):
     def test_privacy_policy_get_with_valid_code(self):
         """GET request with valid code shows policy with accept form."""
         code = self.combatant.privacy_acceptance_code
-        response = self.client.get(
-            reverse("privacy-policy", kwargs={"code": code})
-        )
+        response = self.client.get(reverse("privacy-policy", kwargs={"code": code}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Privacy Policy")
 

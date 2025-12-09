@@ -2,16 +2,14 @@
 
 import logging
 
+from cards.mail import send_pin_reset, send_pin_setup
+from cards.models import Combatant, OneTimeCode
 from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
-
-from cards.mail import send_pin_reset, send_pin_setup
-from cards.models import Combatant, OneTimeCode
-
 from feature_switches.helpers import is_enabled
 
 logger = logging.getLogger("cards")
@@ -309,4 +307,3 @@ def send_pin_setup_email(combatant: Combatant) -> OneTimeCode:
     send_pin_setup(combatant, one_time_code)
     logger.info(f"PIN setup email sent to combatant {combatant.email}")
     return one_time_code
-

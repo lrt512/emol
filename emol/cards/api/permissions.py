@@ -16,9 +16,7 @@ class CombatantInfoPermission(permissions.BasePermission):
                 request.user, self.READ_PERMISSION
             )
 
-        return UserPermission.user_has_permission(
-            request.user, self.WRITE_PERMISSION
-        )
+        return UserPermission.user_has_permission(request.user, self.WRITE_PERMISSION)
 
     def has_object_permission(self, request, view, obj):
         return self.has_permission(request, view)

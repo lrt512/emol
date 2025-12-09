@@ -2,12 +2,11 @@
 
 import logging
 
+from cards.models import Card, Reminder, Waiver
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
 from django.utils import timezone
-
-from cards.models import Card, Reminder, Waiver
 
 logger = logging.getLogger("cards")
 
@@ -53,9 +52,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("✓ No issues found"))
         else:
             action = "Fixed" if fix else "Found"
-            self.stdout.write(
-                self.style.WARNING(f"⚠ {action} {issues_found} issues")
-            )
+            self.stdout.write(self.style.WARNING(f"⚠ {action} {issues_found} issues"))
             if not fix:
                 self.stdout.write("Run with --fix to create missing reminders")
 
@@ -135,4 +132,3 @@ class Command(BaseCommand):
             self.stdout.write("  (These will be cleaned up by send_reminders)")
 
         return len(orphaned)
-

@@ -3,7 +3,6 @@
 from unittest.mock import MagicMock, patch
 
 from django.test import TestCase, override_settings
-
 from emailer import AWSEmailer
 
 
@@ -47,9 +46,7 @@ class AWSEmailerTestCase(TestCase):
         self.assertEqual(
             call_args.kwargs["Destination"]["ToAddresses"], ["test@example.com"]
         )
-        self.assertEqual(
-            call_args.kwargs["Message"]["Subject"]["Data"], "Test Subject"
-        )
+        self.assertEqual(call_args.kwargs["Message"]["Subject"]["Data"], "Test Subject")
 
     @override_settings(
         SEND_EMAIL=True,
@@ -102,4 +99,3 @@ class AWSEmailerTestCase(TestCase):
         )
 
         self.assertFalse(result)
-

@@ -6,23 +6,32 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cards', '0013_add_one_time_code'),
+        ("cards", "0013_add_one_time_code"),
     ]
 
     operations = [
         migrations.AddField(
-            model_name='combatant',
-            name='pin_failed_attempts',
-            field=models.IntegerField(default=0, help_text='Number of consecutive failed PIN attempts'),
+            model_name="combatant",
+            name="pin_failed_attempts",
+            field=models.IntegerField(
+                default=0, help_text="Number of consecutive failed PIN attempts"
+            ),
         ),
         migrations.AddField(
-            model_name='combatant',
-            name='pin_hash',
-            field=models.CharField(blank=True, help_text='Hashed PIN for card access verification', max_length=128, null=True),
+            model_name="combatant",
+            name="pin_hash",
+            field=models.CharField(
+                blank=True,
+                help_text="Hashed PIN for card access verification",
+                max_length=128,
+                null=True,
+            ),
         ),
         migrations.AddField(
-            model_name='combatant',
-            name='pin_locked_until',
-            field=models.DateTimeField(blank=True, help_text='Datetime when PIN lockout expires', null=True),
+            model_name="combatant",
+            name="pin_locked_until",
+            field=models.DateTimeField(
+                blank=True, help_text="Datetime when PIN lockout expires", null=True
+            ),
         ),
     ]

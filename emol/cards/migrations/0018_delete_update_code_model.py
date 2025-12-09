@@ -6,11 +6,11 @@ from django.db import migrations
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cards', '0017_migrate_update_codes_to_one_time_codes'),
+        ("cards", "0017_migrate_update_codes_to_one_time_codes"),
     ]
 
     operations = [
         migrations.DeleteModel(
-            name='UpdateCode',
+            name="UpdateCode",
         ),
     ]

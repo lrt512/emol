@@ -27,9 +27,7 @@ class MockOAuthClient:
             "family_name": "User",
         }
         # Mock the client_kwargs structure expected by tests
-        self.client_kwargs = {
-            "scope": "openid email profile"
-        }
+        self.client_kwargs = {"scope": "openid email profile"}
 
     def authorize_redirect(
         self, request: Any, redirect_uri: str, **kwargs: Any

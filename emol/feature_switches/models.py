@@ -38,4 +38,3 @@ class FeatureSwitch(models.Model):
     def __str__(self) -> str:
         status = "ON" if self.enabled else "OFF"
         return f"{self.name} [{status}]"
-

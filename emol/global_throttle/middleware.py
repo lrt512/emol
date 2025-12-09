@@ -38,14 +38,20 @@ class GlobalThrottleMiddleware:
         self.request_window = getattr(settings, "GLOBAL_THROTTLE_WINDOW", None)
 
         if self.request_limit is None:
-            logger.error("GLOBAL_THROTTLE_LIMIT is not set, using default of 100 requests")
+            logger.error(
+                "GLOBAL_THROTTLE_LIMIT is not set, using default of 100 requests"
+            )
             self.request_limit = 100
 
         if self.request_window is None:
-            logger.error("GLOBAL_THROTTLE_WINDOW is not set, using default of 3600 seconds")
+            logger.error(
+                "GLOBAL_THROTTLE_WINDOW is not set, using default of 3600 seconds"
+            )
             self.request_window = 3600
-        
-        logger.debug(f"GlobalThrottleMiddleware initialized: limit={self.request_limit}, window={self.request_window}")
+
+        logger.debug(
+            f"GlobalThrottleMiddleware initialized: limit={self.request_limit}, window={self.request_window}"
+        )
 
         self.whitelist = getattr(
             settings, "GLOBAL_THROTTLE_WHITELIST", ["127.0.0.1", "localhost", "::1"]
@@ -54,23 +60,25 @@ class GlobalThrottleMiddleware:
     def get_client_ip(self, request):
         """Get the real client IP address, considering proxy headers."""
         # Check for real IP from nginx proxy
-        x_real_ip = request.META.get('HTTP_X_REAL_IP')
+        x_real_ip = request.META.get("HTTP_X_REAL_IP")
         if x_real_ip:
             return x_real_ip
-        
+
         # Check X-Forwarded-For header (get first IP)
-        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        x_forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR")
         if x_forwarded_for:
             # X-Forwarded-For can contain multiple IPs, get the first one
-            return x_forwarded_for.split(',')[0].strip()
-        
+            return x_forwarded_for.split(",")[0].strip()
+
         # Fallback to REMOTE_ADDR
-        return request.META.get('REMOTE_ADDR', 'unknown')
+        return request.META.get("REMOTE_ADDR", "unknown")
 
     def maybe_throttle(self, request):
         """Determine if we should throttle the calling IP address"""
         if request.user.is_authenticated:
-            logger.debug(f"User {request.user.email} is authenticated, skipping throttle")
+            logger.debug(
+                f"User {request.user.email} is authenticated, skipping throttle"
+            )
             return False
 
         ip_address = self.get_client_ip(request)
@@ -81,7 +89,9 @@ class GlobalThrottleMiddleware:
 
         view_func = resolve(request.path).func
         if getattr(view_func, "exempt_from_throttling", False):
-            logger.debug(f"View function {view_func.__name__} is exempt from throttling, skipping throttle")
+            logger.debug(
+                f"View function {view_func.__name__} is exempt from throttling, skipping throttle"
+            )
             return False
 
         cache_key = f"throttle:global:{ip_address}"
@@ -91,11 +101,15 @@ class GlobalThrottleMiddleware:
         logger.debug(f"Request count {request_count} for IP address {ip_address}")
 
         if request_count >= self.request_limit:
-            logger.error(f"THROTTLING: Request count {request_count} exceeds limit {self.request_limit} for {ip_address}")
+            logger.error(
+                f"THROTTLING: Request count {request_count} exceeds limit {self.request_limit} for {ip_address}"
+            )
             return True
 
         cache.set(cache_key, request_count + 1, self.request_window)
-        logger.debug(f"Request count {request_count + 1} for IP address {ip_address} after increment")
+        logger.debug(
+            f"Request count {request_count + 1} for IP address {ip_address} after increment"
+        )
         return False
 
     def __call__(self, request):
@@ -105,10 +119,14 @@ class GlobalThrottleMiddleware:
         ip_address = self.get_client_ip(request)
 
         if throttled:
-            logger.error(f"MIDDLEWARE THROTTLING: Returning 429 for {request.path} from IP {ip_address}")
+            logger.error(
+                f"MIDDLEWARE THROTTLING: Returning 429 for {request.path} from IP {ip_address}"
+            )
             response = render(request, "429.html", status=429)
         else:
-            logger.debug(f"Request to {request.path} from IP {ip_address} allowed by middleware")
+            logger.debug(
+                f"Request to {request.path} from IP {ip_address} allowed by middleware"
+            )
             response = self.get_response(request)
 
         # response["X-RateLimit-Limit"] = str(self.request_limit)

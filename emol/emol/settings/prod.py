@@ -2,8 +2,9 @@
 
 import os
 
-from .defaults import *  # noqa: F403, F401
 from emol.secrets import get_secret
+
+from .defaults import *  # noqa: F403, F401
 
 AWS_REGION = "ca-central-1"
 
@@ -23,7 +24,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 SESSION_COOKIE_SECURE = False  # Allow HTTP for internal testing (behind proxy)
-CSRF_COOKIE_SECURE = False     # Allow HTTP for internal testing
+CSRF_COOKIE_SECURE = False  # Allow HTTP for internal testing
 
 TIME_ZONE = "America/Toronto"
 
@@ -82,9 +83,9 @@ CACHES = {
         "TIMEOUT": 300,
         "OPTIONS": {
             "MAX_ENTRIES": 10000,
-        }
+        },
     }
 }
 
 # Production performance settings
-USE_TZ = True 
+USE_TZ = True

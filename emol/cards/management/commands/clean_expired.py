@@ -29,18 +29,24 @@ class Command(BaseCommand):
         consumed_count = consumed_one_time_codes.count()
 
         if expired_count > 0:
-            logger.info(f"Clean up OneTimeCodes ({today_str}): Found {expired_count} expired")
+            logger.info(
+                f"Clean up OneTimeCodes ({today_str}): Found {expired_count} expired"
+            )
             expired_one_time_codes.delete()
 
         if consumed_count > 0:
-            logger.info(f"Clean up OneTimeCodes ({today_str}): Found {consumed_count} consumed")
+            logger.info(
+                f"Clean up OneTimeCodes ({today_str}): Found {consumed_count} consumed"
+            )
             consumed_one_time_codes.delete()
 
         # Purge old codes (older than PURGE_AFTER_DAYS) regardless of status
         old_codes = OneTimeCode.objects.filter(created_at__lt=purge_cutoff)
         old_count = old_codes.count()
         if old_count > 0:
-            logger.info(f"Purge old OneTimeCodes ({today_str}): Found {old_count} older than {PURGE_AFTER_DAYS} days")
+            logger.info(
+                f"Purge old OneTimeCodes ({today_str}): Found {old_count} older than {PURGE_AFTER_DAYS} days"
+            )
             old_codes.delete()
 
         total = expired_count + consumed_count + old_count

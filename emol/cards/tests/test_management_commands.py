@@ -2,13 +2,14 @@ import uuid
 from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
-from cards.management.commands.clean_expired import Command as CleanExpiredCommand
-from cards.management.commands.send_reminders import Command as SendRemindersCommand
-from cards.management.commands.summarize_expiries import Command as SummarizeExpiriesCommand
-from cards.models import (
-    Authorization, Card, Combatant, Discipline, OneTimeCode, Reminder, 
-    Waiver
-)
+from cards.management.commands.clean_expired import \
+    Command as CleanExpiredCommand
+from cards.management.commands.send_reminders import \
+    Command as SendRemindersCommand
+from cards.management.commands.summarize_expiries import \
+    Command as SummarizeExpiriesCommand
+from cards.models import (Authorization, Card, Combatant, Discipline,
+                          OneTimeCode, Reminder, Waiver)
 from cards.utility.time import today, utc_tomorrow
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
@@ -32,7 +33,7 @@ class CleanExpiredCommandTestCase(TestCase):
         expired_code1 = OneTimeCode.objects.create(
             combatant=self.combatant,
             url_template="/test/{code}",
-            expires_at=timezone.now() - timedelta(days=1)
+            expires_at=timezone.now() - timedelta(days=1),
         )
 
         combatant2 = Combatant.objects.create(
@@ -44,7 +45,7 @@ class CleanExpiredCommandTestCase(TestCase):
         expired_code2 = OneTimeCode.objects.create(
             combatant=combatant2,
             url_template="/test/{code}",
-            expires_at=timezone.now() - timedelta(hours=1)
+            expires_at=timezone.now() - timedelta(hours=1),
         )
 
         combatant3 = Combatant.objects.create(
@@ -54,14 +55,12 @@ class CleanExpiredCommandTestCase(TestCase):
             accepted_privacy_policy=True,
         )
         valid_code = OneTimeCode.objects.create(
-            combatant=combatant3,
-            url_template="/test/{code}",
-            expires_at=utc_tomorrow()
+            combatant=combatant3, url_template="/test/{code}", expires_at=utc_tomorrow()
         )
 
         self.assertEqual(OneTimeCode.objects.count(), 3)
 
-        call_command('clean_expired')
+        call_command("clean_expired")
 
         self.assertEqual(OneTimeCode.objects.count(), 1)
         self.assertTrue(OneTimeCode.objects.filter(id=valid_code.id).exists())
@@ -76,7 +75,7 @@ class CleanExpiredCommandTestCase(TestCase):
             consumed=True,
         )
 
-        call_command('clean_expired')
+        call_command("clean_expired")
 
         self.assertFalse(OneTimeCode.objects.filter(id=consumed_code.id).exists())
 
@@ -85,12 +84,12 @@ class CleanExpiredCommandTestCase(TestCase):
         OneTimeCode.objects.create(
             combatant=self.combatant,
             url_template="/test/{code}",
-            expires_at=utc_tomorrow()
+            expires_at=utc_tomorrow(),
         )
 
         self.assertEqual(OneTimeCode.objects.count(), 1)
 
-        call_command('clean_expired')
+        call_command("clean_expired")
 
         self.assertEqual(OneTimeCode.objects.count(), 1)
 
@@ -98,7 +97,7 @@ class CleanExpiredCommandTestCase(TestCase):
         """Test command when no codes exist"""
         self.assertEqual(OneTimeCode.objects.count(), 0)
 
-        call_command('clean_expired')
+        call_command("clean_expired")
 
         self.assertEqual(OneTimeCode.objects.count(), 0)
 
@@ -107,13 +106,11 @@ class CleanExpiredCommandTestCase(TestCase):
         now = timezone.now()
 
         boundary_code = OneTimeCode.objects.create(
-            combatant=self.combatant,
-            url_template="/test/{code}",
-            expires_at=now
+            combatant=self.combatant, url_template="/test/{code}", expires_at=now
         )
 
-        with patch('django.utils.timezone.now', return_value=now):
-            call_command('clean_expired')
+        with patch("django.utils.timezone.now", return_value=now):
+            call_command("clean_expired")
 
         self.assertFalse(OneTimeCode.objects.filter(id=boundary_code.id).exists())
 
@@ -123,33 +120,30 @@ class SendRemindersCommandTestCase(TestCase):
 
     def setUp(self):
         self.discipline = Discipline.objects.create(
-            name="Test Combat",
-            slug="test-combat"
+            name="Test Combat", slug="test-combat"
         )
         self.authorization = Authorization.objects.create(
-            name="Test Auth",
-            slug="test-auth",
-            discipline=self.discipline
+            name="Test Auth", slug="test-auth", discipline=self.discipline
         )
-        
+
         self.combatant = Combatant.objects.create(
             sca_name="Test Fighter",
             legal_name="Test Legal",
             email="test@example.com",
             accepted_privacy_policy=True,
         )
-        
+
         # Create a card that expires in 30 days
         self.card = Card.objects.create(
             combatant=self.combatant,
             discipline=self.discipline,
-            date_issued=today() - timedelta(days=365*2-30)  # Expires in 30 days
+            date_issued=today() - timedelta(days=365 * 2 - 30),  # Expires in 30 days
         )
-        
+
         # Create a waiver that expires in 60 days
         self.waiver = Waiver.objects.create(
             combatant=self.combatant,
-            date_signed=today() - timedelta(days=365*7-60)  # Expires in 60 days
+            date_signed=today() - timedelta(days=365 * 7 - 60),  # Expires in 60 days
         )
 
     @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
@@ -158,23 +152,22 @@ class SendRemindersCommandTestCase(TestCase):
         # Reminders are automatically created by post_save signals
         # Update existing reminders to be due today
         card_reminders = Reminder.objects.filter(
-            content_type=ContentType.objects.get_for_model(Card),
-            object_id=self.card.id
+            content_type=ContentType.objects.get_for_model(Card), object_id=self.card.id
         )
         waiver_reminders = Reminder.objects.filter(
             content_type=ContentType.objects.get_for_model(Waiver),
-            object_id=self.waiver.id
+            object_id=self.waiver.id,
         )
-        
+
         # Make some reminders due today
         card_reminders.filter(days_to_expiry=30).update(due_date=today())
         waiver_reminders.filter(days_to_expiry=60).update(due_date=today())
-        
+
         initial_reminder_count = Reminder.objects.count()
-        
+
         # Run dry-run
-        call_command('send_reminders', '--dry-run')
-        
+        call_command("send_reminders", "--dry-run")
+
         # Verify no changes were made
         self.assertEqual(Reminder.objects.count(), initial_reminder_count)
 
@@ -187,12 +180,12 @@ class SendRemindersCommandTestCase(TestCase):
             content_type=card_content_type,
             object_id=99999,  # Non-existent card ID
             days_to_expiry=30,
-            due_date=today()
+            due_date=today(),
         )
-        
+
         # Run command
-        call_command('send_reminders')
-        
+        call_command("send_reminders")
+
         # Verify orphaned reminder was deleted
         self.assertFalse(Reminder.objects.filter(id=orphaned_reminder.id).exists())
 
@@ -205,12 +198,12 @@ class SendRemindersCommandTestCase(TestCase):
             content_type=card_content_type,
             object_id=99999,  # Non-existent card ID
             days_to_expiry=30,
-            due_date=today()
+            due_date=today(),
         )
-        
+
         # Run dry-run
-        call_command('send_reminders', '--dry-run')
-        
+        call_command("send_reminders", "--dry-run")
+
         # Verify orphaned reminder still exists
         self.assertTrue(Reminder.objects.filter(id=orphaned_reminder.id).exists())
 
@@ -219,23 +212,26 @@ class SendRemindersCommandTestCase(TestCase):
         """Test that most urgent reminders are sent and older ones are expired"""
         # Use automatically created reminders and update them to simulate backlog
         card_reminders = Reminder.objects.filter(
-            content_type=ContentType.objects.get_for_model(Card),
-            object_id=self.card.id
+            content_type=ContentType.objects.get_for_model(Card), object_id=self.card.id
         )
-        
+
         # Update reminders to be overdue (simulating backlog scenario)
-        card_reminders.filter(days_to_expiry=60).update(due_date=today() - timedelta(days=30))
-        card_reminders.filter(days_to_expiry=30).update(due_date=today() - timedelta(days=5))
+        card_reminders.filter(days_to_expiry=60).update(
+            due_date=today() - timedelta(days=30)
+        )
+        card_reminders.filter(days_to_expiry=30).update(
+            due_date=today() - timedelta(days=5)
+        )
         card_reminders.filter(days_to_expiry=14).update(due_date=today())
-        
+
         reminder_60 = card_reminders.get(days_to_expiry=60)
         reminder_30 = card_reminders.get(days_to_expiry=30)
         reminder_14 = card_reminders.get(days_to_expiry=14)
-        
+
         # Mock email sending to verify which reminder gets processed
-        with patch('cards.models.reminder.Reminder.send_email') as mock_send:
-            call_command('send_reminders')
-        
+        with patch("cards.models.reminder.Reminder.send_email") as mock_send:
+            call_command("send_reminders")
+
         # Verify most urgent reminder was processed
         # The 14-day reminder should have been kept and processed
         # The 60-day and 30-day reminders should have been expired
@@ -253,27 +249,27 @@ class SendRemindersCommandTestCase(TestCase):
             email="noprivacy@example.com",
             accepted_privacy_policy=False,  # Key difference
         )
-        
+
         card_no_privacy = Card.objects.create(
             combatant=combatant_no_privacy,
             discipline=self.discipline,
-            date_issued=today() - timedelta(days=365*2-30)
+            date_issued=today() - timedelta(days=365 * 2 - 30),
         )
-        
+
         # Use automatically created reminder for this card
         reminder = Reminder.objects.filter(
             content_type=ContentType.objects.get_for_model(Card),
             object_id=card_no_privacy.id,
-            days_to_expiry=30
+            days_to_expiry=30,
         ).first()
-        # Make reminder due today  
+        # Make reminder due today
         reminder.due_date = today()
         reminder.save()
-        
+
         # Run dry-run to see what would happen
         initial_reminder_count = Reminder.objects.count()
-        call_command('send_reminders', '--dry-run')
-        
+        call_command("send_reminders", "--dry-run")
+
         # Verify no changes were made (reminder would be skipped)
         self.assertEqual(Reminder.objects.count(), initial_reminder_count)
 
@@ -286,12 +282,12 @@ class SendRemindersCommandTestCase(TestCase):
         # Create a single reminder that is not due
         future_date = timezone.now() + timedelta(days=30)
         Reminder.objects.create(
-            content_object=self.card, # It doesn't matter which object it's for
+            content_object=self.card,  # It doesn't matter which object it's for
             days_to_expiry=90,
-            due_date=future_date
+            due_date=future_date,
         )
 
-        call_command('send_reminders')
+        call_command("send_reminders")
 
         # Check that the future reminder was not deleted and it's the only one
         self.assertEqual(Reminder.objects.count(), 1)
@@ -309,29 +305,27 @@ class SendRemindersCommandTestCase(TestCase):
         card2 = Card.objects.create(
             combatant=combatant2,
             discipline=self.discipline,
-            date_issued=today() - timedelta(days=365*2-14)
+            date_issued=today() - timedelta(days=365 * 2 - 14),
         )
-        
+
         # Update automatically created reminders to be due today
         card1_reminders = Reminder.objects.filter(
-            content_type=ContentType.objects.get_for_model(Card),
-            object_id=self.card.id
+            content_type=ContentType.objects.get_for_model(Card), object_id=self.card.id
         )
         card2_reminders = Reminder.objects.filter(
-            content_type=ContentType.objects.get_for_model(Card),
-            object_id=card2.id
+            content_type=ContentType.objects.get_for_model(Card), object_id=card2.id
         )
-        
+
         # Backlog scenario for first card (all reminders due)
         card1_reminders.update(due_date=today())
-        
+
         # Single reminder for second card (14-day reminder due)
         card2_reminders.filter(days_to_expiry=14).update(due_date=today())
-        
+
         # Run dry-run to check counters
         initial_reminder_count = Reminder.objects.count()
-        call_command('send_reminders', '--dry-run')
-        
+        call_command("send_reminders", "--dry-run")
+
         # Verify no changes were made in dry-run mode
         self.assertEqual(Reminder.objects.count(), initial_reminder_count)
 
@@ -340,26 +334,28 @@ class SendRemindersCommandTestCase(TestCase):
         clean_cmd = CleanExpiredCommand()
         send_cmd = SendRemindersCommand()
         summarize_cmd = SummarizeExpiriesCommand()
-        
+
         self.assertIsNotNone(clean_cmd)
         self.assertIsNotNone(send_cmd)
         self.assertIsNotNone(summarize_cmd)
-        
+
         # Test help text
-        self.assertIn("Clean up expired, consumed, and old one-time codes", clean_cmd.help)
+        self.assertIn(
+            "Clean up expired, consumed, and old one-time codes", clean_cmd.help
+        )
         self.assertIn("Send reminders for expiring", send_cmd.help)
         self.assertIn("Summarize upcoming", summarize_cmd.help)
 
     def test_send_reminders_add_arguments(self):
         """Test that send_reminders command properly handles arguments"""
         cmd = SendRemindersCommand()
-        
+
         # Test that dry-run argument is added
-        parser = cmd.create_parser('send_reminders', 'send_reminders')
+        parser = cmd.create_parser("send_reminders", "send_reminders")
         # This will raise if --dry-run argument wasn't added properly
-        parsed = parser.parse_args(['--dry-run'])
+        parsed = parser.parse_args(["--dry-run"])
         self.assertTrue(parsed.dry_run)
-        
+
         # Test without dry-run
         parsed = parser.parse_args([])
         self.assertFalse(parsed.dry_run)
@@ -370,19 +366,13 @@ class SummarizeExpiriesCommandTestCase(TestCase):
 
     def setUp(self):
         self.discipline1 = Discipline.objects.create(
-            name="Armoured Combat",
-            slug="armoured-combat"
+            name="Armoured Combat", slug="armoured-combat"
         )
-        self.discipline2 = Discipline.objects.create(
-            name="Fencing", 
-            slug="fencing"
-        )
+        self.discipline2 = Discipline.objects.create(name="Fencing", slug="fencing")
         self.authorization = Authorization.objects.create(
-            name="Test Auth",
-            slug="test-auth",
-            discipline=self.discipline1
+            name="Test Auth", slug="test-auth", discipline=self.discipline1
         )
-        
+
         # Create combatants
         self.combatant1 = Combatant.objects.create(
             sca_name="Test Fighter 1",
@@ -391,14 +381,14 @@ class SummarizeExpiriesCommandTestCase(TestCase):
             accepted_privacy_policy=True,
         )
         self.combatant2 = Combatant.objects.create(
-            sca_name="Test Fighter 2", 
+            sca_name="Test Fighter 2",
             legal_name="Test Legal 2",
             email="test2@example.com",
             accepted_privacy_policy=True,
         )
         self.combatant3 = Combatant.objects.create(
             sca_name="Test Fighter 3",
-            legal_name="Test Legal 3", 
+            legal_name="Test Legal 3",
             email="test3@example.com",
             accepted_privacy_policy=True,
         )
@@ -409,19 +399,19 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         card_expiring_soon = Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
-            date_issued=today() - timedelta(days=365*2-5)  # Expires in 5 days
+            date_issued=today() - timedelta(days=365 * 2 - 5),  # Expires in 5 days
         )
-        
+
         # Create card expiring in 10 days (outside week)
         card_expiring_later = Card.objects.create(
             combatant=self.combatant2,
             discipline=self.discipline2,
-            date_issued=today() - timedelta(days=365*2-10)  # Expires in 10 days
+            date_issued=today() - timedelta(days=365 * 2 - 10),  # Expires in 10 days
         )
-        
+
         # Run command with default settings
-        call_command('summarize_expiries')
-        
+        call_command("summarize_expiries")
+
         # The command completed successfully (no exceptions)
         self.assertTrue(True)
 
@@ -431,17 +421,17 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         card1 = Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
-            date_issued=today() - timedelta(days=365*2-3)  # Expires in 3 days
+            date_issued=today() - timedelta(days=365 * 2 - 3),  # Expires in 3 days
         )
         card2 = Card.objects.create(
             combatant=self.combatant2,
             discipline=self.discipline2,
-            date_issued=today() - timedelta(days=365*2-15)  # Expires in 15 days
+            date_issued=today() - timedelta(days=365 * 2 - 15),  # Expires in 15 days
         )
-        
+
         # Run with 14 days - should include first card only
-        call_command('summarize_expiries', '--days=14')
-        
+        call_command("summarize_expiries", "--days=14")
+
         # The command completed successfully
         self.assertTrue(True)
 
@@ -451,16 +441,16 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         card = Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
-            date_issued=today() - timedelta(days=365*2-5)  # Expires in 5 days
+            date_issued=today() - timedelta(days=365 * 2 - 5),  # Expires in 5 days
         )
         waiver = Waiver.objects.create(
             combatant=self.combatant2,
-            date_signed=today() - timedelta(days=365*7-3)  # Expires in 3 days
+            date_signed=today() - timedelta(days=365 * 7 - 3),  # Expires in 3 days
         )
-        
+
         # Run with detailed flag
-        call_command('summarize_expiries', '--detailed')
-        
+        call_command("summarize_expiries", "--detailed")
+
         # The command completed successfully
         self.assertTrue(True)
 
@@ -470,16 +460,16 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         card = Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
-            date_issued=today() - timedelta(days=100)  # Expires in ~630 days
+            date_issued=today() - timedelta(days=100),  # Expires in ~630 days
         )
         waiver = Waiver.objects.create(
             combatant=self.combatant2,
-            date_signed=today() - timedelta(days=100)  # Expires in ~2455 days
+            date_signed=today() - timedelta(days=100),  # Expires in ~2455 days
         )
-        
+
         # Run command
-        call_command('summarize_expiries')
-        
+        call_command("summarize_expiries")
+
         # The command completed successfully
         self.assertTrue(True)
 
@@ -488,24 +478,24 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         # Create items expiring at different times
         card_tomorrow = Card.objects.create(
             combatant=self.combatant1,
-            discipline=self.discipline1, 
-            date_issued=today() - timedelta(days=365*2-1)  # Expires tomorrow
+            discipline=self.discipline1,
+            date_issued=today() - timedelta(days=365 * 2 - 1),  # Expires tomorrow
         )
         card_next_month = Card.objects.create(
             combatant=self.combatant2,
             discipline=self.discipline2,
-            date_issued=today() - timedelta(days=365*2-25)  # Expires in 25 days
+            date_issued=today() - timedelta(days=365 * 2 - 25),  # Expires in 25 days
         )
-        
+
         # Test day period - should only include tomorrow's expiry
-        call_command('summarize_expiries', '--period=day')
-        
+        call_command("summarize_expiries", "--period=day")
+
         # Test week period
-        call_command('summarize_expiries', '--period=week')
-        
+        call_command("summarize_expiries", "--period=week")
+
         # Test month period - should include both
-        call_command('summarize_expiries', '--period=month')
-        
+        call_command("summarize_expiries", "--period=month")
+
         # All commands completed successfully
         self.assertTrue(True)
 
@@ -515,22 +505,22 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         card1 = Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
-            date_issued=today() - timedelta(days=365*2-3)  # Expires in 3 days
+            date_issued=today() - timedelta(days=365 * 2 - 3),  # Expires in 3 days
         )
         card2 = Card.objects.create(
-            combatant=self.combatant2, 
+            combatant=self.combatant2,
             discipline=self.discipline1,
-            date_issued=today() - timedelta(days=365*2-5)  # Expires in 5 days
+            date_issued=today() - timedelta(days=365 * 2 - 5),  # Expires in 5 days
         )
         card3 = Card.objects.create(
             combatant=self.combatant3,
             discipline=self.discipline2,
-            date_issued=today() - timedelta(days=365*2-6)  # Expires in 6 days
+            date_issued=today() - timedelta(days=365 * 2 - 6),  # Expires in 6 days
         )
-        
+
         # Run detailed summary
-        call_command('summarize_expiries', '--detailed')
-        
+        call_command("summarize_expiries", "--detailed")
+
         # The command completed successfully
         self.assertTrue(True)
 
@@ -539,16 +529,16 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         # Create multiple waivers
         waiver1 = Waiver.objects.create(
             combatant=self.combatant1,
-            date_signed=today() - timedelta(days=365*7-2)  # Expires in 2 days
+            date_signed=today() - timedelta(days=365 * 7 - 2),  # Expires in 2 days
         )
         waiver2 = Waiver.objects.create(
             combatant=self.combatant2,
-            date_signed=today() - timedelta(days=365*7-6)  # Expires in 6 days
+            date_signed=today() - timedelta(days=365 * 7 - 6),  # Expires in 6 days
         )
-        
+
         # Run detailed summary
-        call_command('summarize_expiries', '--detailed')
-        
+        call_command("summarize_expiries", "--detailed")
+
         # The command completed successfully
         self.assertTrue(True)
 
@@ -558,16 +548,16 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         card = Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
-            date_issued=today() - timedelta(days=365*2-4)  # Expires in 4 days
+            date_issued=today() - timedelta(days=365 * 2 - 4),  # Expires in 4 days
         )
         waiver = Waiver.objects.create(
             combatant=self.combatant2,
-            date_signed=today() - timedelta(days=365*7-3)  # Expires in 3 days
+            date_signed=today() - timedelta(days=365 * 7 - 3),  # Expires in 3 days
         )
-        
+
         # Run detailed summary
-        call_command('summarize_expiries', '--detailed')
-        
+        call_command("summarize_expiries", "--detailed")
+
         # The command completed successfully
         self.assertTrue(True)
 
@@ -580,29 +570,29 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_argument_parsing(self):
         """Test that command arguments are parsed correctly"""
         cmd = SummarizeExpiriesCommand()
-        parser = cmd.create_parser('summarize_expiries', 'summarize_expiries')
-        
+        parser = cmd.create_parser("summarize_expiries", "summarize_expiries")
+
         # Test default values
         parsed = parser.parse_args([])
-        self.assertEqual(parsed.period, 'week')
+        self.assertEqual(parsed.period, "week")
         self.assertIsNone(parsed.days)
         self.assertFalse(parsed.detailed)
-        
+
         # Test period argument
-        parsed = parser.parse_args(['--period=month'])
-        self.assertEqual(parsed.period, 'month')
-        
+        parsed = parser.parse_args(["--period=month"])
+        self.assertEqual(parsed.period, "month")
+
         # Test custom days
-        parsed = parser.parse_args(['--days=14'])
+        parsed = parser.parse_args(["--days=14"])
         self.assertEqual(parsed.days, 14)
-        
+
         # Test detailed flag
-        parsed = parser.parse_args(['--detailed'])
+        parsed = parser.parse_args(["--detailed"])
         self.assertTrue(parsed.detailed)
-        
+
         # Test combined arguments
-        parsed = parser.parse_args(['--period=day', '--detailed'])
-        self.assertEqual(parsed.period, 'day')
+        parsed = parser.parse_args(["--period=day", "--detailed"])
+        self.assertEqual(parsed.period, "day")
         self.assertTrue(parsed.detailed)
 
     def test_summarize_expiries_boundary_conditions(self):
@@ -611,15 +601,16 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         card_boundary = Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
-            date_issued=today() - timedelta(days=365*2-7)  # Expires in exactly 7 days
+            date_issued=today()
+            - timedelta(days=365 * 2 - 7),  # Expires in exactly 7 days
         )
-        
+
         # Run week summary - should include the boundary case
-        call_command('summarize_expiries', '--period=week')
-        
+        call_command("summarize_expiries", "--period=week")
+
         # Run with 6 days - should not include the boundary case
-        call_command('summarize_expiries', '--days=6')
-        
+        call_command("summarize_expiries", "--days=6")
+
         # The command completed successfully
         self.assertTrue(True)
 
@@ -654,7 +645,7 @@ class PINMigrationCommandTestCase(TestCase):
         from io import StringIO
 
         out = StringIO()
-        call_command('pin_migration', '--dry-run', stdout=out)
+        call_command("pin_migration", "--dry-run", stdout=out)
 
         output = out.getvalue()
         self.assertIn("Found 1 combatants without PINs", output)
@@ -663,7 +654,7 @@ class PINMigrationCommandTestCase(TestCase):
         """Test that --dry-run doesn't actually send emails."""
         initial_code_count = OneTimeCode.objects.count()
 
-        call_command('pin_migration', '--dry-run')
+        call_command("pin_migration", "--dry-run")
 
         self.assertEqual(OneTimeCode.objects.count(), initial_code_count)
 
@@ -672,15 +663,10 @@ class PINMigrationCommandTestCase(TestCase):
         """Test that command creates OneTimeCodes for combatants."""
         initial_code_count = OneTimeCode.objects.count()
 
-        call_command('pin_migration', '--stage=initial')
+        call_command("pin_migration", "--stage=initial")
 
-        self.assertEqual(
-            OneTimeCode.objects.count(),
-            initial_code_count + 1
-        )
-        code = OneTimeCode.objects.filter(
-            combatant=self.combatant_with_privacy
-        ).first()
+        self.assertEqual(OneTimeCode.objects.count(), initial_code_count + 1)
+        code = OneTimeCode.objects.filter(combatant=self.combatant_with_privacy).first()
         self.assertIsNotNone(code)
 
     @override_settings(SEND_EMAIL=False)
@@ -701,7 +687,7 @@ class PINMigrationCommandTestCase(TestCase):
 
         initial_count = OneTimeCode.objects.count()
 
-        call_command('pin_migration', '--limit=1')
+        call_command("pin_migration", "--limit=1")
 
         self.assertEqual(OneTimeCode.objects.count(), initial_count + 1)
 
@@ -709,9 +695,9 @@ class PINMigrationCommandTestCase(TestCase):
         """Test that different stages are accepted."""
         from io import StringIO
 
-        for stage in ['initial', 'reminder', 'final']:
+        for stage in ["initial", "reminder", "final"]:
             out = StringIO()
-            call_command('pin_migration', f'--stage={stage}', '--dry-run', stdout=out)
+            call_command("pin_migration", f"--stage={stage}", "--dry-run", stdout=out)
             output = out.getvalue()
             self.assertIn(stage, output)
 
@@ -720,7 +706,7 @@ class PINMigrationCommandTestCase(TestCase):
         from io import StringIO
 
         out = StringIO()
-        call_command('pin_migration', '--dry-run', stdout=out)
+        call_command("pin_migration", "--dry-run", stdout=out)
 
         output = out.getvalue()
         self.assertNotIn("test3@example.com", output)
@@ -730,7 +716,7 @@ class PINMigrationCommandTestCase(TestCase):
         from io import StringIO
 
         out = StringIO()
-        call_command('pin_migration', '--dry-run', stdout=out)
+        call_command("pin_migration", "--dry-run", stdout=out)
 
         output = out.getvalue()
         self.assertNotIn("test2@example.com", output)

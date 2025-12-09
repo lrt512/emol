@@ -8,7 +8,7 @@ from .defaults import *  # noqa: F401, F403
 AWS_REGION = "ca-central-1"
 
 BASE_URL = "http://localhost:8000"
-SECRET_KEY = 'super-secret-development-key-1234'
+SECRET_KEY = "super-secret-development-key-1234"
 
 DEBUG = True
 NO_ENFORCE_PERMISSIONS = True
@@ -46,7 +46,7 @@ LOGGING = {
         },
         "file": {
             "class": "logging.FileHandler",
-            "filename": "/var/log/emol/django.log", 
+            "filename": "/var/log/emol/django.log",
             "formatter": "file",
         },
     },
@@ -111,20 +111,20 @@ GLOBAL_THROTTLE_LIMIT = 20000
 GLOBAL_THROTTLE_WINDOW = 3600
 
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': get_secret("/emol/db_host"),
-        'NAME': get_secret("/emol/db_name"),
-        'USER': get_secret("/emol/db_user"),
-        'PASSWORD': get_secret("/emol/db_password"),
+    "default": {
+        "ENGINE": "django.db.backends.mysql",
+        "HOST": get_secret("/emol/db_host"),
+        "NAME": get_secret("/emol/db_name"),
+        "USER": get_secret("/emol/db_user"),
+        "PASSWORD": get_secret("/emol/db_password"),
     },
-    'cache_db': {
-        'ENGINE': 'django.db.backends.mysql',
-        'HOST': get_secret("/emol/db_host"),
-        'NAME': f"{get_secret('/emol/db_name')}_cache",
-        'USER': get_secret("/emol/db_user"),
-        'PASSWORD': get_secret("/emol/db_password"),
-    }
+    "cache_db": {
+        "ENGINE": "django.db.backends.mysql",
+        "HOST": get_secret("/emol/db_host"),
+        "NAME": f"{get_secret('/emol/db_name')}_cache",
+        "USER": get_secret("/emol/db_user"),
+        "PASSWORD": get_secret("/emol/db_password"),
+    },
 }
 
 # Security config
@@ -143,6 +143,7 @@ MOCK_OAUTH_USER = {
 # Conditionally add debug toolbar
 try:
     import debug_toolbar
+
     INSTALLED_APPS += ["debug_toolbar"]  # type: ignore
     MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # type: ignore
 except ImportError:

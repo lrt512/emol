@@ -52,9 +52,11 @@ class Reminder(models.Model):
     @property
     def should_send_email(self) -> bool:
         if self.content_object is None:
-            logger.warning("Reminder %s has no content_object (orphaned reminder)", self.id)
+            logger.warning(
+                "Reminder %s has no content_object (orphaned reminder)", self.id
+            )
             return False
-        
+
         combatant = self.content_object.combatant
         if not combatant.accepted_privacy_policy:
             return False

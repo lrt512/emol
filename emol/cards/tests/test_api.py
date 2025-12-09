@@ -2,22 +2,14 @@
 
 from datetime import timedelta
 
+from cards.models import (Authorization, Card, Combatant,
+                          CombatantAuthorization, Discipline, Marshal, Region,
+                          Waiver)
+from cards.utility.time import today
 from django.test import TestCase
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APIClient
-
-from cards.models import (
-    Authorization,
-    Card,
-    Combatant,
-    CombatantAuthorization,
-    Discipline,
-    Marshal,
-    Region,
-    Waiver,
-)
-from cards.utility.time import today
 from sso_user.models import SSOUser
 
 

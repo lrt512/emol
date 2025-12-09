@@ -64,7 +64,7 @@ class SelfServeUpdateSerializer(ModelSerializer):
                     "member_number": "Member number is required when specifying an expiry date."
                 }
             )
-        
+
         # Validate province code exists in Region table
         if data.get("province"):
             province_code = data["province"]
@@ -72,10 +72,10 @@ class SelfServeUpdateSerializer(ModelSerializer):
                 raise serializers.ValidationError(
                     {
                         "province": f"Province code '{province_code}' is not valid. "
-                                   f"Valid codes are: {', '.join(Region.objects.filter(active=True).values_list('code', flat=True))}"
+                        f"Valid codes are: {', '.join(Region.objects.filter(active=True).values_list('code', flat=True))}"
                     }
                 )
-        
+
         return data
 
     def to_internal_value(self, data):
@@ -108,14 +108,16 @@ def self_serve_update(request, code):
     """Handle self-serve updates"""
     try:
         one_time_code = OneTimeCode.objects.get(code=code)
-        
+
         if not one_time_code.is_valid:
             return render(
                 request,
                 "message/message.html",
-                {"message": "The update code provided is invalid or has already been used."},
+                {
+                    "message": "The update code provided is invalid or has already been used."
+                },
             )
-        
+
         context = {
             "self_serve": True,
             "code": code,

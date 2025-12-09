@@ -1,7 +1,6 @@
 """Template tags for checking feature switch status in templates."""
 
 from django import template
-
 from feature_switches.helpers import is_enabled
 
 register = template.Library()
@@ -41,7 +40,11 @@ class IfSwitchNode(template.Node):
         self.nodelist_false = nodelist_false
 
     def render(self, context) -> str:
-        switch_name = self.switch_name.resolve(context) if hasattr(self.switch_name, "resolve") else self.switch_name
+        switch_name = (
+            self.switch_name.resolve(context)
+            if hasattr(self.switch_name, "resolve")
+            else self.switch_name
+        )
         if is_enabled(switch_name):
             return self.nodelist_true.render(context)
         return self.nodelist_false.render(context)
@@ -68,7 +71,9 @@ def if_switch(parser, token):
     """
     bits = token.split_contents()
     if len(bits) != 2:
-        raise template.TemplateSyntaxError(f"'{bits[0]}' tag requires exactly one argument (switch name)")
+        raise template.TemplateSyntaxError(
+            f"'{bits[0]}' tag requires exactly one argument (switch name)"
+        )
 
     switch_name = bits[1]
     if switch_name[0] in ('"', "'") and switch_name[-1] == switch_name[0]:
@@ -84,4 +89,3 @@ def if_switch(parser, token):
         nodelist_false = template.NodeList()
 
     return IfSwitchNode(switch_name, nodelist_true, nodelist_false)
-

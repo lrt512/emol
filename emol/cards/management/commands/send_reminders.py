@@ -14,20 +14,22 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            '--dry-run',
-            action='store_true',
-            help='Show what would happen without actually sending emails or deleting reminders',
+            "--dry-run",
+            action="store_true",
+            help="Show what would happen without actually sending emails or deleting reminders",
         )
 
     def handle(self, *args, **options):
-        dry_run = options['dry_run']
+        dry_run = options["dry_run"]
         now = timezone.now()
 
         if dry_run:
-            logger.info("🔍 DRY RUN MODE - No emails will be sent, no reminders will be deleted")
+            logger.info(
+                "🔍 DRY RUN MODE - No emails will be sent, no reminders will be deleted"
+            )
 
         # 1. Clean up ALL orphaned reminders first
-        all_reminders = Reminder.objects.all().select_related('content_type')
+        all_reminders = Reminder.objects.all().select_related("content_type")
         orphaned_reminders = [r for r in all_reminders if r.content_object is None]
 
         if orphaned_reminders:
@@ -35,10 +37,14 @@ class Command(BaseCommand):
             if dry_run:
                 logger.info(f"🗑️  Would clean up {orphaned_count} orphaned reminders")
                 for orphaned in orphaned_reminders:
-                    logger.info(f"   - Would delete orphaned reminder ID {orphaned.id} (object_id={orphaned.object_id})")
+                    logger.info(
+                        f"   - Would delete orphaned reminder ID {orphaned.id} (object_id={orphaned.object_id})"
+                    )
             else:
                 logger.info(f"Cleaning up {orphaned_count} orphaned reminders...")
-                count, _ = Reminder.objects.filter(id__in=[r.id for r in orphaned_reminders]).delete()
+                count, _ = Reminder.objects.filter(
+                    id__in=[r.id for r in orphaned_reminders]
+                ).delete()
                 logger.info(f"Deleted {count} orphaned reminders.")
 
         # 2. Process DUE reminders
@@ -106,16 +112,24 @@ class Command(BaseCommand):
 
             if dry_run:
                 expired_count += len(reminders_group)
-                logger.info(f"   - [DRY RUN] Would delete {len(reminders_group)} reminders for this object.")
+                logger.info(
+                    f"   - [DRY RUN] Would delete {len(reminders_group)} reminders for this object."
+                )
             else:
                 content_type_id, object_id = key
                 deleted_count, _ = Reminder.objects.filter(
                     content_type_id=content_type_id, object_id=object_id
                 ).delete()
                 expired_count += deleted_count
-                logger.info(f"   - Cleaned up {deleted_count} reminders for this object.")
+                logger.info(
+                    f"   - Cleaned up {deleted_count} reminders for this object."
+                )
 
         if dry_run:
-            logger.info(f"🔍 DRY RUN SUMMARY: Would send {sent_count} reminders and delete {expired_count} total reminders.")
+            logger.info(
+                f"🔍 DRY RUN SUMMARY: Would send {sent_count} reminders and delete {expired_count} total reminders."
+            )
         else:
-            logger.info(f"✅ Sent {sent_count} reminders and cleaned up {expired_count} total reminders.")
+            logger.info(
+                f"✅ Sent {sent_count} reminders and cleaned up {expired_count} total reminders."
+            )

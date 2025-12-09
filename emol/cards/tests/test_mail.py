@@ -3,24 +3,16 @@
 from datetime import timedelta
 from unittest.mock import patch
 
+from cards.mail import (send_card_expiry, send_card_reminder, send_card_url,
+                        send_info_update, send_pin_lockout_notification,
+                        send_pin_migration_email, send_pin_reset,
+                        send_pin_setup, send_privacy_policy,
+                        send_waiver_expiry, send_waiver_reminder)
+from cards.models import (Card, Combatant, Discipline, OneTimeCode, Reminder,
+                          Waiver)
+from cards.utility.time import today
 from django.contrib.contenttypes.models import ContentType
 from django.test import TestCase, override_settings
-
-from cards.mail import (
-    send_card_expiry,
-    send_card_reminder,
-    send_card_url,
-    send_info_update,
-    send_pin_lockout_notification,
-    send_pin_migration_email,
-    send_pin_reset,
-    send_pin_setup,
-    send_privacy_policy,
-    send_waiver_expiry,
-    send_waiver_reminder,
-)
-from cards.models import Card, Combatant, Discipline, OneTimeCode, Reminder, Waiver
-from cards.utility.time import today
 
 
 class SendCardReminderTestCase(TestCase):
@@ -359,4 +351,3 @@ class SendPINMigrationEmailTestCase(TestCase):
         )
 
         self.assertFalse(result)
-

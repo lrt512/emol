@@ -173,22 +173,22 @@ class Combatant(models.Model):
     @property
     def privacy_policy_code(self):
         """Generate a privacy policy code from the combatant's SCA name.
-        
+
         Returns the first letter of each word in the SCA name.
-        
+
         Returns:
             String containing initials
         """
         if not self.sca_name:
             return ""
-        
+
         words = self.sca_name.split()
         return "".join(word[0] for word in words if word)
 
     @property
     def waiver_date(self):
         """Get the waiver date signed.
-        
+
         Returns:
             Date when waiver was signed, or None if no waiver exists
         """
@@ -196,18 +196,18 @@ class Combatant(models.Model):
             return self.waiver.date_signed
         except AttributeError:
             return None
-    
+
     @waiver_date.setter
     def waiver_date(self, value):
         """Set the waiver date signed.
-        
+
         Creates a new waiver if one doesn't exist, or updates the existing one.
-        
+
         Args:
             value: Date when waiver was signed
         """
         from .waiver import Waiver  # Import here to avoid circular imports
-        
+
         try:
             # Update existing waiver
             self.waiver.date_signed = value
@@ -216,10 +216,10 @@ class Combatant(models.Model):
             # Create new waiver
             Waiver.objects.create(combatant=self, date_signed=value)
 
-    @property 
+    @property
     def waiver_duration(self):
         """Get the waiver validity duration.
-        
+
         Returns:
             Timedelta representing actual waiver validity period
         """
@@ -228,11 +228,11 @@ class Combatant(models.Model):
         else:
             # Default 7-year duration if no waiver exists
             return timedelta(days=365 * 7)
-    
+
     @property
     def waiver_expires(self):
         """Get the waiver expiration date.
-        
+
         Returns:
             Date when waiver expires, or None if no waiver exists
         """
@@ -352,7 +352,9 @@ class Combatant(models.Model):
             return False
 
         if not self.has_pin:
-            logger.warning(f"PIN check attempted for combatant {self.email} with no PIN set")
+            logger.warning(
+                f"PIN check attempted for combatant {self.email} with no PIN set"
+            )
             return False
 
         if check_password(raw_pin, self.pin_hash):
@@ -364,7 +366,9 @@ class Combatant(models.Model):
         self.pin_failed_attempts += 1
         if self.pin_failed_attempts >= self.PIN_MAX_ATTEMPTS:
             self.pin_locked_until = timezone.now() + self.PIN_LOCKOUT_DURATION
-            logger.warning(f"Combatant {self.email} locked out after {self.pin_failed_attempts} failed PIN attempts")
+            logger.warning(
+                f"Combatant {self.email} locked out after {self.pin_failed_attempts} failed PIN attempts"
+            )
             self._send_lockout_notification()
 
         self.save(update_fields=["pin_failed_attempts", "pin_locked_until"])

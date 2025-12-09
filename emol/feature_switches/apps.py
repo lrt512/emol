@@ -9,4 +9,3 @@ class FeatureSwitchesConfig(AppConfig):
     default_auto_field = "django.db.models.BigAutoField"
     name = "feature_switches"
     verbose_name = "Feature Switches"
-

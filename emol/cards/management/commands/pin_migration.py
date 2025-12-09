@@ -10,11 +10,10 @@ a PIN set. It supports three stages:
 import logging
 from datetime import timedelta
 
-from django.core.management.base import BaseCommand
-from django.utils import timezone
-
 from cards.mail import send_pin_migration_email
 from cards.models import Combatant, OneTimeCode
+from django.core.management.base import BaseCommand
+from django.utils import timezone
 
 logger = logging.getLogger("cards")
 
@@ -87,4 +86,3 @@ class Command(BaseCommand):
         )
         if error_count:
             self.stdout.write(self.style.ERROR(f"Errors: {error_count}"))
-
