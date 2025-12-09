@@ -1,21 +1,24 @@
 import logging
 
+from cards.mail import send_pin_setup
 from cards.models.combatant import Combatant
+from cards.models.one_time_code import OneTimeCode
 from cards.models.privacy_policy import PrivacyPolicy
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, render
 from django.views.decorators.http import require_http_methods
+
+from feature_switches.helpers import is_enabled
 
 logger = logging.getLogger("cards")
 
 
 @require_http_methods(["GET", "POST"])
 def privacy_policy(request, code=None):
-    """
-    View the privacy policy, optionally with UUID for accepting it
+    """View the privacy policy, optionally with UUID for accepting it.
 
-    args:
-        uuid - UUID for a PrivacyAcceptance instance
+    Args:
+        code: Code for a Combatant's privacy_acceptance_code field
     """
     combatant = None
     code = request.POST.get("code", code)
@@ -29,10 +32,19 @@ def privacy_policy(request, code=None):
 
         if "accept" in request.POST:
             sent_email = combatant.accept_privacy_policy()
-            context = {
-                "card_url": combatant.card_url,
-                "sent_email": True,
-            }
+
+            if is_enabled("pin_authentication"):
+                pin_code = OneTimeCode.create_for_pin_setup(combatant)
+                send_pin_setup(combatant, pin_code)
+                context = {
+                    "requires_pin_setup": True,
+                    "sent_email": True,
+                }
+            else:
+                context = {
+                    "card_url": combatant.card_url,
+                    "sent_email": True,
+                }
             return render(request, "privacy/privacy_accepted.html", context)
         elif "decline" in request.POST:
             combatant.delete()

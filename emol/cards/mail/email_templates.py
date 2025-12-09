@@ -161,6 +161,125 @@ it will expire and a new one must be requested.
 Ealdormere eMoL
 """
 
+# PIN setup required email
+PIN_SETUP_SUBJECT = "Set your eMoL PIN"
+PIN_SETUP_EMAIL = """Greetings, {combatant_name}!
+
+To improve security, eMoL now requires a PIN to access your authorization card
+and update your information.
+
+Please set your PIN using the following link:
+{pin_setup_url}
+
+Your PIN must be 4-6 numeric digits. Choose something you can remember, but
+don't use obvious numbers like your birth year or 1234.
+
+This link will expire in 24 hours. If it expires before you set your PIN,
+please contact the Minister of the Lists to request a new link.
+
+Ealdormere eMoL
+"""
+
+# PIN lockout notification email
+PIN_LOCKOUT_SUBJECT = "Your eMoL account has been temporarily locked"
+PIN_LOCKOUT_EMAIL = """Greetings, {combatant_name}!
+
+Your eMoL account has been temporarily locked due to multiple incorrect PIN
+attempts. This is a security measure to protect your information.
+
+Your account will be automatically unlocked in 15 minutes.
+
+If you did not make these attempts, please contact the Minister of the Lists
+immediately, as someone may be trying to access your account.
+
+If you have forgotten your PIN, please contact the Minister of the Lists to
+request a PIN reset.
+
+Ealdormere eMoL
+"""
+
+# PIN reset email
+PIN_RESET_SUBJECT = "Reset your eMoL PIN"
+PIN_RESET_EMAIL = """Greetings, {combatant_name}!
+
+A PIN reset has been initiated for your eMoL account by the Minister of the
+Lists.
+
+Please set your new PIN using the following link:
+{pin_reset_url}
+
+Your PIN must be 4-6 numeric digits. Choose something you can remember, but
+don't use obvious numbers like your birth year or 1234.
+
+This link will expire in 24 hours. If it expires before you set your PIN,
+please contact the Minister of the Lists to request a new link.
+
+Until you set a new PIN, you will not be able to access your authorization card.
+
+Ealdormere eMoL
+"""
+
+# PIN migration campaign - initial email
+PIN_MIGRATION_INITIAL_SUBJECT = "Action Required: Set your eMoL PIN"
+PIN_MIGRATION_INITIAL_EMAIL = """Greetings, {combatant_name}!
+
+To improve security, eMoL now requires a PIN to access your authorization card
+and update your information.
+
+Please set your PIN using the following link:
+{pin_setup_url}
+
+Your PIN must be 4-6 numeric digits. Choose something you can remember, but
+don't use obvious numbers like your birth year or 1234.
+
+This link will expire in 24 hours. If it expires before you set your PIN,
+you can request a new link from the eMoL website.
+
+Ealdormere eMoL
+"""
+
+# PIN migration campaign - reminder email
+PIN_MIGRATION_REMINDER_SUBJECT = "Reminder: Set your eMoL PIN"
+PIN_MIGRATION_REMINDER_EMAIL = """Greetings, {combatant_name}!
+
+This is a reminder that you still need to set your eMoL PIN.
+
+To improve security, eMoL now requires a PIN to access your authorization card
+and update your information. We sent you an email about this last week.
+
+Please set your PIN using the following link:
+{pin_setup_url}
+
+Your PIN must be 4-6 numeric digits. Choose something you can remember, but
+don't use obvious numbers like your birth year or 1234.
+
+This link will expire in 24 hours. If it expires before you set your PIN,
+you can request a new link from the eMoL website.
+
+Ealdormere eMoL
+"""
+
+# PIN migration campaign - final warning email
+PIN_MIGRATION_FINAL_SUBJECT = "Final Notice: Set your eMoL PIN"
+PIN_MIGRATION_FINAL_EMAIL = """Greetings, {combatant_name}!
+
+This is the final notice regarding your eMoL PIN.
+
+You have not yet set your PIN, which is now required to access your
+authorization card online. If you do not set a PIN, you will need to contact
+the Minister of the Lists directly to access your card information.
+
+Please set your PIN using the following link:
+{pin_setup_url}
+
+Your PIN must be 4-6 numeric digits.
+
+If you have any questions or difficulties, please contact the Minister of the
+Lists for assistance.
+
+Ealdormere eMoL
+"""
+
 # Map a dictionary of the above emails for reference
 EMAIL_TEMPLATES = {
     "card_reminder": {"subject": CARD_REMINDER_SUBJECT, "body": CARD_REMINDER_EMAIL},
@@ -173,4 +292,19 @@ EMAIL_TEMPLATES = {
     "card_url": {"subject": CARD_URL_SUBJECT, "body": CARD_URL_EMAIL},
     "info_update": {"subject": INFO_UPDATE_SUBJECT, "body": INFO_UPDATE_EMAIL},
     "privacy_policy": {"subject": PRIVACY_POLICY_SUBJECT, "body": PRIVACY_POLICY_EMAIL},
+    "pin_setup": {"subject": PIN_SETUP_SUBJECT, "body": PIN_SETUP_EMAIL},
+    "pin_lockout": {"subject": PIN_LOCKOUT_SUBJECT, "body": PIN_LOCKOUT_EMAIL},
+    "pin_reset": {"subject": PIN_RESET_SUBJECT, "body": PIN_RESET_EMAIL},
+    "pin_migration_initial": {
+        "subject": PIN_MIGRATION_INITIAL_SUBJECT,
+        "body": PIN_MIGRATION_INITIAL_EMAIL,
+    },
+    "pin_migration_reminder": {
+        "subject": PIN_MIGRATION_REMINDER_SUBJECT,
+        "body": PIN_MIGRATION_REMINDER_EMAIL,
+    },
+    "pin_migration_final": {
+        "subject": PIN_MIGRATION_FINAL_SUBJECT,
+        "body": PIN_MIGRATION_FINAL_EMAIL,
+    },
 }

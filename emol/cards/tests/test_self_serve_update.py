@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from unittest.mock import patch
 from uuid import uuid4
 
-from cards.models import Combatant, Region, UpdateCode
+from cards.models import Combatant, OneTimeCode, Region
 from cards.views.self_serve_update import (
     SelfServeUpdateSerializer,
     serializer_errors_to_strings,
@@ -252,8 +252,9 @@ class SelfServeUpdateViewTestCase(TestCase):
             }
         )
 
-        self.update_code = UpdateCode.objects.create(
+        self.update_code = OneTimeCode.objects.create(
             combatant=self.combatant,
+            url_template="/self-serve-update/{code}",
             expires_at=timezone.now() + timedelta(hours=24),
         )
 
@@ -319,8 +320,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         self.assertEqual(self.combatant.legal_name, "Updated Legal")
         self.assertEqual(self.combatant.phone, "555-5678")
 
-        # Verify the update code was deleted
-        self.assertFalse(UpdateCode.objects.filter(id=self.update_code.id).exists())
+        # Verify the update code was consumed
+        self.update_code.refresh_from_db()
+        self.assertTrue(self.update_code.consumed)
 
     def test_post_invalid_data(self):
         """Test POST request with invalid data (member_expiry without member_number)"""
@@ -347,8 +349,9 @@ class SelfServeUpdateViewTestCase(TestCase):
         self.combatant.refresh_from_db()
         self.assertEqual(self.combatant.sca_name, "Test Fighter")
 
-        # Verify the update code still exists
-        self.assertTrue(UpdateCode.objects.filter(id=self.update_code.id).exists())
+        # Verify the update code is still valid (not consumed)
+        self.update_code.refresh_from_db()
+        self.assertFalse(self.update_code.consumed)
 
     def test_post_member_expiry_without_number(self):
         """Test POST request with member_expiry but no member_number"""
@@ -451,8 +454,7 @@ class SelfServeUpdateViewTestCase(TestCase):
     @patch('cards.views.self_serve_update.logger')
     def test_exception_handling(self, mock_logger):
         """Test handling of unexpected exceptions"""
-        # Create a scenario that will cause an exception
-        with patch('cards.views.self_serve_update.UpdateCode.objects.get') as mock_get:
+        with patch('cards.views.self_serve_update.OneTimeCode.objects.get') as mock_get:
             mock_get.side_effect = Exception("Database error")
             
             response = self.client.get(
@@ -501,10 +503,8 @@ class SelfServeUpdateViewTestCase(TestCase):
         self.assertIn('message', response.context)
         self.assertIn('errors', response.context)
 
-    def test_update_code_deleted_after_successful_update(self):
-        """Test that update code is deleted after successful update"""
-        initial_count = UpdateCode.objects.count()
-        
+    def test_update_code_consumed_after_successful_update(self):
+        """Test that update code is consumed after successful update"""
         data = {
             "legal_name": "Updated Legal",
             "phone": "555-5678",
@@ -520,13 +520,11 @@ class SelfServeUpdateViewTestCase(TestCase):
         )
         
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(UpdateCode.objects.count(), initial_count - 1)
-        self.assertFalse(UpdateCode.objects.filter(id=self.update_code.id).exists())
+        self.update_code.refresh_from_db()
+        self.assertTrue(self.update_code.consumed)
 
     def test_update_code_preserved_after_failed_update(self):
-        """Test that update code is preserved after failed update"""
-        initial_count = UpdateCode.objects.count()
-        
+        """Test that update code is not consumed after failed update"""
         data = {
             "legal_name": "Test Legal",
             "phone": "555-1234",
@@ -535,7 +533,6 @@ class SelfServeUpdateViewTestCase(TestCase):
             "province": "ON",
             "postal_code": "K1A 0A6",
             "member_expiry": "2025-12-31",
-            # member_number is missing - this will trigger validation error
         }
 
         response = self.client.post(
@@ -544,12 +541,12 @@ class SelfServeUpdateViewTestCase(TestCase):
         )
         
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(UpdateCode.objects.count(), initial_count)
-        self.assertTrue(UpdateCode.objects.filter(id=self.update_code.id).exists())
+        self.update_code.refresh_from_db()
+        self.assertFalse(self.update_code.consumed)
 
 
-class UpdateCodeModelTestCase(TestCase):
-    """Test the UpdateCode model functionality"""
+class OneTimeCodeModelTestCase(TestCase):
+    """Test the OneTimeCode model functionality"""
 
     def setUp(self):
         """Set up test data"""
@@ -565,26 +562,80 @@ class UpdateCodeModelTestCase(TestCase):
             accepted_privacy_policy=True,
         )
 
-    def test_update_code_creation(self):
-        """Test creating an update code"""
-        update_code = UpdateCode.objects.create(combatant=self.combatant)
-        
-        self.assertIsNotNone(update_code.code)
-        self.assertEqual(update_code.combatant, self.combatant)
-        self.assertIsNotNone(update_code.expires_at)
+    def test_one_time_code_creation(self):
+        """Test creating a one-time code"""
+        one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/test/{code}",
+        )
 
-    def test_update_code_str_representation(self):
-        """Test string representation of update code"""
-        update_code = UpdateCode.objects.create(combatant=self.combatant)
-        str_repr = str(update_code)
-        
+        self.assertIsNotNone(one_time_code.code)
+        self.assertEqual(one_time_code.combatant, self.combatant)
+        self.assertIsNotNone(one_time_code.expires_at)
+        self.assertFalse(one_time_code.consumed)
+
+    def test_one_time_code_str_representation(self):
+        """Test string representation of one-time code"""
+        one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/test/{code}",
+        )
+        str_repr = str(one_time_code)
+
         self.assertIn("test@example.com", str_repr)
-        self.assertIn("UpdateCode:", str_repr)
+        self.assertIn("OneTimeCode:", str_repr)
+        self.assertIn("[ACTIVE]", str_repr)
 
-    def test_update_code_url_property(self):
+    def test_one_time_code_url_property(self):
         """Test URL property generation"""
-        update_code = UpdateCode.objects.create(combatant=self.combatant)
-        url = update_code.url
-        
-        self.assertIn(str(update_code.code), url)
-        self.assertIn("self-serve-update", url) 
+        one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/self-serve-update/{code}",
+        )
+        url = one_time_code.url
+
+        self.assertIn(str(one_time_code.code), url)
+        self.assertIn("self-serve-update", url)
+
+    def test_one_time_code_consume(self):
+        """Test consuming a one-time code"""
+        one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/test/{code}",
+        )
+
+        self.assertTrue(one_time_code.is_valid)
+        result = one_time_code.consume()
+        self.assertTrue(result)
+        self.assertTrue(one_time_code.consumed)
+        self.assertIsNotNone(one_time_code.consumed_at)
+        self.assertFalse(one_time_code.is_valid)
+
+        # Second consume should fail
+        result = one_time_code.consume()
+        self.assertFalse(result)
+
+    def test_one_time_code_str_expired(self):
+        """Test string representation shows EXPIRED status"""
+        from django.utils import timezone
+        from datetime import timedelta
+
+        one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/test/{code}",
+            expires_at=timezone.now() - timedelta(hours=1),
+        )
+        str_repr = str(one_time_code)
+
+        self.assertIn("[EXPIRED]", str_repr)
+
+    def test_one_time_code_str_used(self):
+        """Test string representation shows USED status"""
+        one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/test/{code}",
+        )
+        one_time_code.consume()
+        str_repr = str(one_time_code)
+
+        self.assertIn("[USED]", str_repr) 

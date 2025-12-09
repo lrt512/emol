@@ -7,6 +7,8 @@ from cards.utility.decorators import permission_required
 from current_user import get_current_user
 from django.shortcuts import redirect, render
 
+from feature_switches.helpers import is_enabled
+
 logger = logging.getLogger("cards")
 
 
@@ -32,21 +34,26 @@ def combatant_detail(request):
         "disciplines": Discipline.objects.all(),
         "authorizations": Authorization.objects.all(),
         "regions": Region.objects.all(),
-        "combatant": {},  # Pass an empty dict for initial render
-        "uuid": "",  # Add explicit empty uuid to avoid template errors
+        "combatant": {},
+        "uuid": "",
     }
     return render(request, "combatant/combatant_detail.html", context)
 
 
 def combatant_card(request, card_id):
-    """
-    View a combatant's card, accessed by its card_id
+    """View a combatant's card, accessed by its card_id.
 
-    args:
-        card_id - The ID of the card to view
+    Args:
+        card_id: The ID of the card to view
     """
     try:
         combatant = Combatant.objects.get(card_id=card_id)
+
+        if is_enabled("pin_authentication") and combatant.has_pin:
+            session_key = f"pin_verified_{card_id}"
+            if not request.session.get(session_key):
+                return redirect("pin-verify", card_id=card_id)
+
         if not hasattr(combatant, "waiver"):
             return render(request, "combatant/waiver_expired.html", {})
 

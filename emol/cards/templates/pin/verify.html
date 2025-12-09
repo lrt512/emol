@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block title %}Enter PIN - eMoL{% endblock %}
+
+{% block body %}
+<div class="row top-space-xl">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+    <h2>Enter Your PIN</h2>
+    <p>Hello, {{ combatant_name }}!</p>
+    <p>
+      Please enter your PIN to view your authorization card.
+    </p>
+  </div>
+</div>
+<form method="post">
+  {% csrf_token %}
+  <div class="row top-space-lg">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,6}"
+        placeholder="Enter PIN" class="input-round" required maxlength="6" minlength="4"
+        autocomplete="current-password" autofocus />
+    </div>
+  </div>
+  {% if error %}
+  <div class="row top-space-sm">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <div class="error message-text">{{ error }}</div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="row top-space-sm">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <input type="submit" class="btn btn-lg btn-lg-width btn-primary" value="Verify" />
+    </div>
+  </div>
+  <div class="row top-space-lg">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <p class="text-muted">
+        <small>
+          Forgot your PIN? Contact the Minister of the Lists to request a reset.
+        </small>
+      </p>
+    </div>
+  </div>
+</form>
+{% endblock %}
+

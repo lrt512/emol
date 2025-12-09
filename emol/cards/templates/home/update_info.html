@@ -8,25 +8,32 @@
 <div class="row top-space-xl">
   <div class="col-md-2"></div>
   <div class="col-md-8">
-    Enter your email address below and click the Update Info button.
+    Enter your email address below{% if pin_enabled %} and your PIN{% endif %}, then click the Update Info button.
     You will be sent an email with a link to follow to update your information.
   </div>
 </div>
 <form method="POST">
   {% csrf_token %}
-  <div class="row top-space-xl">
+  <div class="row top-space-lg">
     <div class="col-md-2"></div>
     <div class="col-md-8 content-centered">
         <input id="update-info-email" name="update-info-email" type="email" placeholder="Email address"
         class="input-round" required />
-      <div id="request-card-message-text" class="error message-text">{{ message }}</div>
     </div>
   </div>
-  <div class="row hidden" id="request-card-message">
-    <div class="col-md-6 col-lg-offset-4 content-centered">
-      <div>
-        <div id="update-info-message-text" class="center-content message-text">123</div>
-      </div>
+  {% if pin_enabled %}
+  <div class="row top-space-sm">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <input id="update-info-pin" name="update-info-pin" type="password" inputmode="numeric" pattern="[0-9]{4,6}"
+        placeholder="PIN (4-6 digits)" class="input-round" required maxlength="6" minlength="4" />
+    </div>
+  </div>
+  {% endif %}
+  <div class="row top-space-sm">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <div id="request-card-message-text" class="error message-text">{{ message }}</div>
     </div>
   </div>
   <div class="row top-space-sm">

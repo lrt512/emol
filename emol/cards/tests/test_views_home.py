@@ -1,6 +1,6 @@
 from unittest.mock import patch
 
-from cards.models import Combatant, UpdateCode
+from cards.models import Combatant, OneTimeCode
 from django.test import TestCase
 from django.urls import reverse
 
@@ -87,27 +87,31 @@ class HomeViewsTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "If a combatant with this email exists, an email has been sent")
         
-        # Verify an UpdateCode was created
-        update_code = UpdateCode.objects.get(combatant=self.combatant_with_privacy)
-        mock_send_info_update.assert_called_once_with(self.combatant_with_privacy, update_code)
+        # Verify an OneTimeCode was created
+        one_time_code = OneTimeCode.objects.get(combatant=self.combatant_with_privacy)
+        mock_send_info_update.assert_called_once_with(self.combatant_with_privacy, one_time_code)
 
     @patch('cards.views.home.send_info_update')
-    def test_update_info_post_existing_update_code(self, mock_send_info_update):
-        """Test POST request when UpdateCode already exists (get_or_create)"""
-        # Create an existing UpdateCode
-        existing_code = UpdateCode.objects.create(combatant=self.combatant_with_privacy)
+    def test_update_info_post_creates_new_code(self, mock_send_info_update):
+        """Test POST request always creates a new OneTimeCode"""
+        # Create an existing OneTimeCode
+        existing_code = OneTimeCode.objects.create(
+            combatant=self.combatant_with_privacy,
+            url_template="/self-serve-update/{code}"
+        )
         
         response = self.client.post(reverse('update-info'), {
             'update-info-email': 'test@example.com'
         })
         
         self.assertEqual(response.status_code, 200)
-        # Verify the existing code was reused
-        update_codes = UpdateCode.objects.filter(combatant=self.combatant_with_privacy)
-        self.assertEqual(update_codes.count(), 1)
-        self.assertEqual(update_codes.first().id, existing_code.id)
+        # Verify a new code was created (now there are 2)
+        one_time_codes = OneTimeCode.objects.filter(combatant=self.combatant_with_privacy)
+        self.assertEqual(one_time_codes.count(), 2)
         
-        mock_send_info_update.assert_called_once_with(self.combatant_with_privacy, existing_code)
+        # The new code should be the one passed to send_info_update
+        new_code = one_time_codes.exclude(id=existing_code.id).first()
+        mock_send_info_update.assert_called_once_with(self.combatant_with_privacy, new_code)
 
     @patch('cards.views.home.send_privacy_policy')
     def test_update_info_post_existing_combatant_without_privacy(self, mock_send_privacy_policy):
@@ -120,8 +124,8 @@ class HomeViewsTestCase(TestCase):
         self.assertContains(response, "If a combatant with this email exists, an email has been sent")
         mock_send_privacy_policy.assert_called_once_with(self.combatant_without_privacy)
         
-        # Verify no UpdateCode was created
-        self.assertFalse(UpdateCode.objects.filter(combatant=self.combatant_without_privacy).exists())
+        # Verify no OneTimeCode was created
+        self.assertFalse(OneTimeCode.objects.filter(combatant=self.combatant_without_privacy).exists())
 
     def test_update_info_post_nonexistent_combatant(self):
         """Test POST request for non-existent combatant"""

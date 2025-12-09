@@ -6,6 +6,7 @@ authorizations in a discipline and needs an authorization card to show for them.
 """
 
 import logging
+import re
 from collections import namedtuple
 from datetime import date, timedelta
 from urllib.parse import urljoin
@@ -14,9 +15,11 @@ from uuid import uuid4
 from cards.mail import send_card_url, send_privacy_policy
 from cards.utility.names import generate_name
 from django.conf import settings
+from django.contrib.auth.hashers import check_password, make_password
 from django.db import models
 from django.dispatch import receiver
 from django.urls import reverse
+from django.utils import timezone
 
 from .permissioned_db_fields import (PermissionedCharField,
                                      PermissionedDateField,
@@ -58,8 +61,25 @@ class Combatant(models.Model):
     accepted_privacy_policy = models.BooleanField(default=False)
     privacy_acceptance_code = models.CharField(max_length=32, unique=True, null=True)
 
+    # PIN authentication fields
+    pin_hash = models.CharField(
+        max_length=128,
+        null=True,
+        blank=True,
+        help_text="Hashed PIN for card access verification",
+    )
+    pin_failed_attempts = models.IntegerField(
+        default=0,
+        help_text="Number of consecutive failed PIN attempts",
+    )
+    pin_locked_until = models.DateTimeField(
+        null=True,
+        blank=True,
+        help_text="Datetime when PIN lockout expires",
+    )
+
     # Data columns that are not encrypted
-    email = models.CharField(max_length=255, unique=True)
+    email = models.CharField(max_length=255, db_index=True)
     sca_name = models.CharField(max_length=255, null=True, blank=True)
 
     # Data fields for creating combatants
@@ -266,6 +286,130 @@ class Combatant(models.Model):
 
         self.save()
         return send_card_url(self)
+
+    # PIN Authentication Methods
+
+    PIN_LOCKOUT_DURATION = timedelta(minutes=15)
+    PIN_MAX_ATTEMPTS = 5
+
+    @property
+    def has_pin(self) -> bool:
+        """Check if combatant has set a PIN.
+
+        Returns:
+            True if PIN is set, False otherwise
+        """
+        return self.pin_hash is not None and len(self.pin_hash) > 0
+
+    @property
+    def is_locked_out(self) -> bool:
+        """Check if combatant is currently locked out due to failed PIN attempts.
+
+        Returns:
+            True if locked out, False otherwise
+        """
+        if self.pin_locked_until is None:
+            return False
+        return timezone.now() < self.pin_locked_until
+
+    def set_pin(self, raw_pin: str) -> bool:
+        """Set the combatant's PIN.
+
+        Validates that the PIN is 4-6 numeric digits and stores it hashed.
+
+        Args:
+            raw_pin: The plain text PIN to set
+
+        Returns:
+            True if PIN was set successfully
+
+        Raises:
+            ValueError: If PIN is not 4-6 numeric digits
+        """
+        if not raw_pin or not re.match(r"^\d{4,6}$", raw_pin):
+            raise ValueError("PIN must be 4-6 numeric digits")
+
+        self.pin_hash = make_password(raw_pin)
+        self.pin_failed_attempts = 0
+        self.pin_locked_until = None
+        self.save(update_fields=["pin_hash", "pin_failed_attempts", "pin_locked_until"])
+        return True
+
+    def check_pin(self, raw_pin: str) -> bool:
+        """Check if the provided PIN matches the stored PIN.
+
+        Handles lockout logic: increments failed attempts on failure,
+        locks account after PIN_MAX_ATTEMPTS failures, clears attempts on success.
+
+        Args:
+            raw_pin: The plain text PIN to check
+
+        Returns:
+            True if PIN matches, False otherwise (including when locked out)
+        """
+        if self.is_locked_out:
+            logger.warning(f"PIN check attempted for locked out combatant {self.email}")
+            return False
+
+        if not self.has_pin:
+            logger.warning(f"PIN check attempted for combatant {self.email} with no PIN set")
+            return False
+
+        if check_password(raw_pin, self.pin_hash):
+            if self.pin_failed_attempts > 0:
+                self.pin_failed_attempts = 0
+                self.save(update_fields=["pin_failed_attempts"])
+            return True
+
+        self.pin_failed_attempts += 1
+        if self.pin_failed_attempts >= self.PIN_MAX_ATTEMPTS:
+            self.pin_locked_until = timezone.now() + self.PIN_LOCKOUT_DURATION
+            logger.warning(f"Combatant {self.email} locked out after {self.pin_failed_attempts} failed PIN attempts")
+            self._send_lockout_notification()
+
+        self.save(update_fields=["pin_failed_attempts", "pin_locked_until"])
+        return False
+
+    def clear_lockout(self) -> None:
+        """Clear the lockout state for this combatant.
+
+        Resets failed attempts and lockout timestamp.
+        """
+        self.pin_failed_attempts = 0
+        self.pin_locked_until = None
+        self.save(update_fields=["pin_failed_attempts", "pin_locked_until"])
+
+    def clear_pin(self) -> None:
+        """Clear the PIN for this combatant (for PIN reset flow).
+
+        Clears the PIN hash and lockout state.
+        """
+        self.pin_hash = None
+        self.pin_failed_attempts = 0
+        self.pin_locked_until = None
+        self.save(update_fields=["pin_hash", "pin_failed_attempts", "pin_locked_until"])
+
+    def initiate_pin_reset(self) -> "OneTimeCode":
+        """Initiate a PIN reset for this combatant.
+
+        Clears the existing PIN and creates a one-time code for setting a new PIN.
+
+        Returns:
+            OneTimeCode instance for the PIN reset flow
+        """
+        from .one_time_code import OneTimeCode
+
+        self.clear_pin()
+        return OneTimeCode.create_for_pin_reset(self)
+
+    def _send_lockout_notification(self) -> None:
+        """Send an email notification that the account has been locked out."""
+        from cards.mail import send_pin_lockout_notification
+
+        try:
+            send_pin_lockout_notification(self)
+        except Exception as e:
+            logger.error(f"Failed to send lockout notification to {self.email}: {e}")
 
 
 def membership_valid(self, on_date=None):

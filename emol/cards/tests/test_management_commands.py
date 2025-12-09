@@ -6,8 +6,8 @@ from cards.management.commands.clean_expired import Command as CleanExpiredComma
 from cards.management.commands.send_reminders import Command as SendRemindersCommand
 from cards.management.commands.summarize_expiries import Command as SummarizeExpiriesCommand
 from cards.models import (
-    Authorization, Card, Combatant, Discipline, Reminder, 
-    UpdateCode, Waiver
+    Authorization, Card, Combatant, Discipline, OneTimeCode, Reminder, 
+    Waiver
 )
 from cards.utility.time import today, utc_tomorrow
 from django.contrib.contenttypes.models import ContentType
@@ -28,93 +28,94 @@ class CleanExpiredCommandTestCase(TestCase):
         )
 
     def test_clean_expired_codes_success(self):
-        """Test cleaning up expired update codes"""
-        # Create expired code for first combatant
-        expired_code1 = UpdateCode.objects.create(
+        """Test cleaning up expired one-time codes"""
+        expired_code1 = OneTimeCode.objects.create(
             combatant=self.combatant,
+            url_template="/test/{code}",
             expires_at=timezone.now() - timedelta(days=1)
         )
-        
-        # Create a second combatant and expired code
+
         combatant2 = Combatant.objects.create(
             sca_name="Test Fighter 2",
-            legal_name="Test Legal 2", 
+            legal_name="Test Legal 2",
             email="test2@example.com",
             accepted_privacy_policy=True,
         )
-        expired_code2 = UpdateCode.objects.create(
+        expired_code2 = OneTimeCode.objects.create(
             combatant=combatant2,
+            url_template="/test/{code}",
             expires_at=timezone.now() - timedelta(hours=1)
         )
-        
-        # Create a third combatant with valid (non-expired) code
+
         combatant3 = Combatant.objects.create(
             sca_name="Test Fighter 3",
             legal_name="Test Legal 3",
             email="test3@example.com",
             accepted_privacy_policy=True,
         )
-        valid_code = UpdateCode.objects.create(
+        valid_code = OneTimeCode.objects.create(
             combatant=combatant3,
+            url_template="/test/{code}",
             expires_at=utc_tomorrow()
         )
-        
-        # Verify initial state
-        self.assertEqual(UpdateCode.objects.count(), 3)
-        
-        # Run the command
+
+        self.assertEqual(OneTimeCode.objects.count(), 3)
+
         call_command('clean_expired')
-        
-        # Verify expired codes are deleted
-        self.assertEqual(UpdateCode.objects.count(), 1)
-        self.assertTrue(UpdateCode.objects.filter(id=valid_code.id).exists())
-        self.assertFalse(UpdateCode.objects.filter(id=expired_code1.id).exists())
-        self.assertFalse(UpdateCode.objects.filter(id=expired_code2.id).exists())
+
+        self.assertEqual(OneTimeCode.objects.count(), 1)
+        self.assertTrue(OneTimeCode.objects.filter(id=valid_code.id).exists())
+        self.assertFalse(OneTimeCode.objects.filter(id=expired_code1.id).exists())
+        self.assertFalse(OneTimeCode.objects.filter(id=expired_code2.id).exists())
+
+    def test_clean_consumed_codes(self):
+        """Test cleaning up consumed one-time codes"""
+        consumed_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/test/{code}",
+            consumed=True,
+        )
+
+        call_command('clean_expired')
+
+        self.assertFalse(OneTimeCode.objects.filter(id=consumed_code.id).exists())
 
     def test_clean_expired_codes_none_expired(self):
         """Test command when no codes are expired"""
-        # Create only valid codes
-        UpdateCode.objects.create(
+        OneTimeCode.objects.create(
             combatant=self.combatant,
+            url_template="/test/{code}",
             expires_at=utc_tomorrow()
         )
-        
-        # Verify initial state
-        self.assertEqual(UpdateCode.objects.count(), 1)
-        
-        # Run the command
+
+        self.assertEqual(OneTimeCode.objects.count(), 1)
+
         call_command('clean_expired')
-        
-        # Verify no codes are deleted
-        self.assertEqual(UpdateCode.objects.count(), 1)
+
+        self.assertEqual(OneTimeCode.objects.count(), 1)
 
     def test_clean_expired_codes_empty_database(self):
-        """Test command when no update codes exist"""
-        # Verify initial state
-        self.assertEqual(UpdateCode.objects.count(), 0)
-        
-        # Run the command  
+        """Test command when no codes exist"""
+        self.assertEqual(OneTimeCode.objects.count(), 0)
+
         call_command('clean_expired')
-        
-        # Verify still no codes
-        self.assertEqual(UpdateCode.objects.count(), 0)
+
+        self.assertEqual(OneTimeCode.objects.count(), 0)
 
     def test_clean_expired_boundary_condition(self):
         """Test command with codes expiring exactly now"""
         now = timezone.now()
-        
-        # Create code expiring exactly now
-        boundary_code = UpdateCode.objects.create(
+
+        boundary_code = OneTimeCode.objects.create(
             combatant=self.combatant,
+            url_template="/test/{code}",
             expires_at=now
         )
-        
-        # Run the command
+
         with patch('django.utils.timezone.now', return_value=now):
             call_command('clean_expired')
-        
-        # Code expiring exactly now should be cleaned up
-        self.assertFalse(UpdateCode.objects.filter(id=boundary_code.id).exists())
+
+        self.assertFalse(OneTimeCode.objects.filter(id=boundary_code.id).exists())
 
 
 class SendRemindersCommandTestCase(TestCase):
@@ -345,7 +346,7 @@ class SendRemindersCommandTestCase(TestCase):
         self.assertIsNotNone(summarize_cmd)
         
         # Test help text
-        self.assertIn("Clean up expired update codes", clean_cmd.help)
+        self.assertIn("Clean up expired, consumed, and old one-time codes", clean_cmd.help)
         self.assertIn("Send reminders for expiring", send_cmd.help)
         self.assertIn("Summarize upcoming", summarize_cmd.help)
 
@@ -620,4 +621,116 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         call_command('summarize_expiries', '--days=6')
         
         # The command completed successfully
-        self.assertTrue(True) 
+        self.assertTrue(True)
+
+
+class PINMigrationCommandTestCase(TestCase):
+    """Test the pin_migration management command."""
+
+    def setUp(self):
+        """Set up test combatants."""
+        self.combatant_with_privacy = Combatant.objects.create(
+            sca_name="Test Fighter 1",
+            legal_name="Test Legal 1",
+            email="test1@example.com",
+            accepted_privacy_policy=True,
+        )
+        self.combatant_without_privacy = Combatant.objects.create(
+            sca_name="Test Fighter 2",
+            legal_name="Test Legal 2",
+            email="test2@example.com",
+            accepted_privacy_policy=False,
+        )
+        self.combatant_with_pin = Combatant.objects.create(
+            sca_name="Test Fighter 3",
+            legal_name="Test Legal 3",
+            email="test3@example.com",
+            accepted_privacy_policy=True,
+        )
+        self.combatant_with_pin.set_pin("1234")
+
+    def test_finds_combatants_without_pins(self):
+        """Test that command finds combatants without PINs who accepted privacy."""
+        from io import StringIO
+
+        out = StringIO()
+        call_command('pin_migration', '--dry-run', stdout=out)
+
+        output = out.getvalue()
+        self.assertIn("Found 1 combatants without PINs", output)
+
+    def test_dry_run_does_not_send_emails(self):
+        """Test that --dry-run doesn't actually send emails."""
+        initial_code_count = OneTimeCode.objects.count()
+
+        call_command('pin_migration', '--dry-run')
+
+        self.assertEqual(OneTimeCode.objects.count(), initial_code_count)
+
+    @override_settings(SEND_EMAIL=False)
+    def test_creates_one_time_codes(self):
+        """Test that command creates OneTimeCodes for combatants."""
+        initial_code_count = OneTimeCode.objects.count()
+
+        call_command('pin_migration', '--stage=initial')
+
+        self.assertEqual(
+            OneTimeCode.objects.count(),
+            initial_code_count + 1
+        )
+        code = OneTimeCode.objects.filter(
+            combatant=self.combatant_with_privacy
+        ).first()
+        self.assertIsNotNone(code)
+
+    @override_settings(SEND_EMAIL=False)
+    def test_limit_option(self):
+        """Test --limit option restricts number of emails."""
+        Combatant.objects.create(
+            sca_name="Test Fighter 4",
+            legal_name="Test Legal 4",
+            email="test4@example.com",
+            accepted_privacy_policy=True,
+        )
+        Combatant.objects.create(
+            sca_name="Test Fighter 5",
+            legal_name="Test Legal 5",
+            email="test5@example.com",
+            accepted_privacy_policy=True,
+        )
+
+        initial_count = OneTimeCode.objects.count()
+
+        call_command('pin_migration', '--limit=1')
+
+        self.assertEqual(OneTimeCode.objects.count(), initial_count + 1)
+
+    def test_stage_options(self):
+        """Test that different stages are accepted."""
+        from io import StringIO
+
+        for stage in ['initial', 'reminder', 'final']:
+            out = StringIO()
+            call_command('pin_migration', f'--stage={stage}', '--dry-run', stdout=out)
+            output = out.getvalue()
+            self.assertIn(stage, output)
+
+    def test_excludes_combatants_with_pins(self):
+        """Test that combatants with PINs are excluded."""
+        from io import StringIO
+
+        out = StringIO()
+        call_command('pin_migration', '--dry-run', stdout=out)
+
+        output = out.getvalue()
+        self.assertNotIn("test3@example.com", output)
+
+    def test_excludes_combatants_without_privacy_acceptance(self):
+        """Test that combatants who haven't accepted privacy are excluded."""
+        from io import StringIO
+
+        out = StringIO()
+        call_command('pin_migration', '--dry-run', stdout=out)
+
+        output = out.getvalue()
+        self.assertNotIn("test2@example.com", output)
