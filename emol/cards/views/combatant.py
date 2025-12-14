@@ -3,6 +3,7 @@
 import logging
 
 from cards.models import Authorization, Combatant, Discipline, Region
+from cards.models.user_permission import UserPermission
 from cards.utility.decorators import permission_required
 from current_user import get_current_user
 from django.shortcuts import redirect, render
@@ -18,7 +19,16 @@ def combatant_list(request):
     DataTables will use the combatant API to get combatant data via AJAX
 
     """
-    return render(request, "combatant/combatant_list.html")
+    pin_enabled = is_enabled("pin_authentication")
+    can_reset_pin = UserPermission.user_has_permission(
+        request.user, "can_initiate_pin_reset"
+    )
+
+    context = {
+        "pin_enabled": pin_enabled,
+        "can_reset_pin": can_reset_pin,
+    }
+    return render(request, "combatant/combatant_list.html", context)
 
 
 @permission_required("read_combatant_info")

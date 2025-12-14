@@ -161,7 +161,16 @@ def send_pin_setup(combatant, one_time_code):
     Args:
         combatant: The combatant to send notice to
         one_time_code: The OneTimeCode for PIN setup
+
+    Raises:
+        ValueError: If combatant has not accepted the privacy policy
     """
+    if not combatant.accepted_privacy_policy:
+        raise ValueError(
+            f"Cannot send PIN setup email to {combatant.email}: "
+            "privacy policy not accepted"
+        )
+
     template = EMAIL_TEMPLATES.get("pin_setup")
     body = template.get("body").format(
         pin_setup_url=one_time_code.url,
@@ -203,7 +212,16 @@ def send_pin_migration_email(combatant, one_time_code, stage="initial"):
         combatant: The combatant to send notice to
         one_time_code: The OneTimeCode for PIN setup
         stage: One of 'initial', 'reminder', or 'final'
+
+    Raises:
+        ValueError: If combatant has not accepted the privacy policy
     """
+    if not combatant.accepted_privacy_policy:
+        raise ValueError(
+            f"Cannot send PIN migration email to {combatant.email}: "
+            "privacy policy not accepted"
+        )
+
     template_key = f"pin_migration_{stage}"
     template = EMAIL_TEMPLATES.get(template_key)
     if not template:

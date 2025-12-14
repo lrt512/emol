@@ -3,6 +3,12 @@
 
 {% block head %}
     {% include 'includes/datatables.html' %}
+    <script type="text/javascript">
+        window.EMOL_CONFIG = {
+            pinEnabled: {{ pin_enabled|yesno:"true,false" }},
+            canResetPin: {{ can_reset_pin|yesno:"true,false" }}
+        };
+    </script>
     <script type="text/javascript" src="{% static 'cards/javascript/combatant_list.js' %}"></script>
     <script type="text/javascript" src="{% static 'cards/javascript/combatant_detail.js' %}"></script>
 {% endblock %}
@@ -24,6 +30,7 @@
                         <th>Legal Name</th>
                         <th>Card ID</th>
                         <th>Privacy</th>
+                        {% if pin_enabled and can_reset_pin %}<th>PIN</th>{% endif %}
                         <th></th>
                     </tr>
                 </thead>

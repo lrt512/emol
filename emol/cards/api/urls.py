@@ -5,6 +5,7 @@ from .card import CardDateViewSet, CardViewSet
 from .combatant import CombatantListViewSet, CombatantViewSet
 from .combatant_authorization import CombatantAuthorizationViewSet
 from .combatant_warrant import CombatantWarrantViewSet
+from .pin import InitiatePinResetView
 from .privacy import ResendPrivacyView
 from .waiver import WaiverViewSet
 
@@ -25,8 +26,13 @@ api_router.register(r"combatant-cards", CardViewSet, basename="combatant-cards")
 api_router.register(r"waiver", WaiverViewSet, basename="waiver")
 
 api_router.register(r"card-date", CardDateViewSet, basename="card-date")
-# We have some non-model API views, so let's create urlpatterns manaully
+
 urlpatterns = [
     path("", include(api_router.urls)),
     re_path(r"^resend-privacy/$", ResendPrivacyView.as_view(), name="resend-privacy"),
+    re_path(
+        r"^initiate-pin-reset/$",
+        InitiatePinResetView.as_view(),
+        name="initiate-pin-reset",
+    ),
 ]

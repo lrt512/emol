@@ -255,6 +255,16 @@ class SendPINSetupTestCase(TestCase):
 
         self.assertTrue(result)
 
+    def test_send_pin_setup_requires_privacy_acceptance(self):
+        """send_pin_setup raises ValueError if privacy policy not accepted."""
+        self.combatant.accepted_privacy_policy = False
+        self.combatant.save()
+
+        with self.assertRaises(ValueError) as cm:
+            send_pin_setup(self.combatant, self.one_time_code)
+
+        self.assertIn("privacy policy not accepted", str(cm.exception))
+
 
 class SendPINLockoutNotificationTestCase(TestCase):
     """Tests for send_pin_lockout_notification."""
@@ -351,3 +361,15 @@ class SendPINMigrationEmailTestCase(TestCase):
         )
 
         self.assertFalse(result)
+
+    def test_send_pin_migration_requires_privacy_acceptance(self):
+        """send_pin_migration_email raises ValueError if privacy policy not accepted."""
+        self.combatant.accepted_privacy_policy = False
+        self.combatant.save()
+
+        with self.assertRaises(ValueError) as cm:
+            send_pin_migration_email(
+                self.combatant, self.one_time_code, stage="initial"
+            )
+
+        self.assertIn("privacy policy not accepted", str(cm.exception))

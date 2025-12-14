@@ -12,6 +12,8 @@ logger = logging.getLogger("cards")
 
 
 class CombatantListSerializer(ModelSerializer):
+    has_pin = serializers.SerializerMethodField()
+
     class Meta:
         model = Combatant
         fields = [
@@ -20,7 +22,12 @@ class CombatantListSerializer(ModelSerializer):
             "card_id",
             "uuid",
             "accepted_privacy_policy",
+            "has_pin",
         ]
+
+    def get_has_pin(self, obj: Combatant) -> bool:
+        """Return whether the combatant has a PIN set."""
+        return obj.has_pin
 
 
 class CombatantListViewSet(ReadOnlyModelViewSet):

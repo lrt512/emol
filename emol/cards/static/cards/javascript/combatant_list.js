@@ -412,19 +412,9 @@
             });
         });
 
-        // DataTable for the combatant list
-        dataTable = combatant_list.DataTable({
-            dom: "Bfrt",
-            ajax: {
-                url: "/api/combatant-list/",
-                dataSrc: "",
-            },
-            order: [1, "asc"],
-            scrollY: "300px",
-            scrollX: false,
-            scrollCollapse: true,
-            paging: false,
-            columns: [{
+        // Build columns array dynamically based on configuration
+        var columns = [
+            {
                 defaultContent: '<button type="button" title="Edit" class="btn btn-xs btn-primary btn-edit"><i style="margin-left:2px;" class="fa fa-pencil-square-o" aria-hidden="true"></i></button>',
                 orderable: false,
             },
@@ -451,13 +441,43 @@
                     }
                     return '<i class="fa fa-close fa-lg fg-red"></i> <button type="button" title="Resend privacy policy" class="btn btn-xs btn-primary btn-resend-privacy"><i class="fa fa-repeat" aria-hidden="true"></i></button>';
                 },
+            }
+        ];
+
+        // Add PIN reset column if enabled and user has permission
+        if (window.EMOL_CONFIG && window.EMOL_CONFIG.pinEnabled && window.EMOL_CONFIG.canResetPin) {
+            columns.push({
+                data: "has_pin",
+                width: "75px",
+                render: function (data, type, full, meta) {
+                    if (data === true) {
+                        return '<button type="button" title="Reset PIN" class="btn btn-xs btn-warning btn-reset-pin"><i class="fa fa-key" aria-hidden="true"></i></button>';
+                    }
+                    return '<i class="fa fa-minus fg-muted" title="No PIN set"></i>';
+                },
+            });
+        }
+
+        // Add delete button and hidden uuid columns
+        columns.push({
+            defaultContent: '<button type="button" title="Delete" class="btn btn-xs btn-primary btn-delete"><i class="fa fa-trash-o" aria-hidden="true"></i></button>',
+            orderable: false,
+        });
+        columns.push({ data: "uuid", visible: false });
+
+        // DataTable for the combatant list
+        dataTable = combatant_list.DataTable({
+            dom: "Bfrt",
+            ajax: {
+                url: "/api/combatant-list/",
+                dataSrc: "",
             },
-            {
-                defaultContent: '<button type="button" title="Delete" class="btn btn-xs btn-primary btn-delete"><i class="fa fa-trash-o" aria-hidden="true"></i></button>',
-                orderable: false,
-            },
-            { data: "uuid", visible: false },
-            ],
+            order: [1, "asc"],
+            scrollY: "300px",
+            scrollX: false,
+            scrollCollapse: true,
+            paging: false,
+            columns: columns,
             responsive: false,
             buttons: ["new_combatant"],
         });
@@ -585,6 +605,48 @@
             },
             error: function (xhr, status, error) {
                 toastr.error("Error sending privacy policy email: " + error);
+            },
+            complete: function() {
+                $button.prop('disabled', false);
+                $button.find('i').removeClass('fa-spin');
+            }
+        });
+    });
+
+    // Initiate PIN reset for a combatant
+    $(document).on("click", ".btn-reset-pin", function () {
+        var row = $(this).parents("tr"),
+            data = $("#combatant-list").DataTable().row(row).data(),
+            name = data.sca_name || data.legal_name;
+
+        if (!confirm("Initiate PIN reset for " + name + "? They will receive an email with a reset link.")) {
+            return;
+        }
+
+        var $button = $(this);
+        $button.prop('disabled', true);
+        $button.find('i').addClass('fa-spin');
+
+        $.ajax({
+            method: "POST",
+            url: "/api/initiate-pin-reset/",
+            type: "json",
+            data: { combatant_uuid: data.uuid },
+            headers: { "X-CSRFToken": csrf_token() },
+            success: function (response) {
+                toastr.success("PIN reset email sent to " + name);
+            },
+            error: function (xhr, status, error) {
+                var errorMsg = "Error initiating PIN reset";
+                try {
+                    var response = JSON.parse(xhr.responseText);
+                    if (response.message) {
+                        errorMsg = response.message;
+                    }
+                } catch (e) {
+                    errorMsg += ": " + error;
+                }
+                toastr.error(errorMsg);
             },
             complete: function() {
                 $button.prop('disabled', false);
