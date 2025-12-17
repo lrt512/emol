@@ -187,8 +187,13 @@ class MarshalListViewTestCase(TestCase):
 
     def setUp(self):
         """Set up test data for marshal list tests"""
-        from cards.models import (Authorization, Card, CombatantWarrant,
-                                  Discipline, Marshal)
+        from cards.models import (
+            Authorization,
+            Card,
+            CombatantWarrant,
+            Discipline,
+            Marshal,
+        )
 
         # Create test data
         self.discipline = Discipline.objects.create(

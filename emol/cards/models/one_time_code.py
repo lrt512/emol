@@ -1,6 +1,9 @@
 """One-time code model for various verification purposes."""
 
+from __future__ import annotations
+
 import uuid
+from typing import cast
 from urllib.parse import urljoin
 
 from cards.utility.time import utc_tomorrow
@@ -8,7 +11,77 @@ from django.conf import settings
 from django.db import models
 from django.utils import timezone
 
-from .combatant import Combatant
+
+class OneTimeCodeQuerySet(models.QuerySet):
+    def _get_combatant_id(self) -> int:
+        """Extract combatant_id from queryset filter.
+
+        When called through a RelatedManager (e.g., combatant.one_time_codes),
+        the queryset is filtered to a single combatant_id. This method extracts
+        that value from the queryset's where clause.
+
+        Returns:
+            The combatant_id from the queryset filter
+
+        Raises:
+            ValueError: If combatant_id cannot be determined from filter
+        """
+        where = self.query.where
+
+        def find_combatant_id(node):
+            """Recursively search for combatant_id filter."""
+            if hasattr(node, "children"):
+                for child in node.children:
+                    result = find_combatant_id(child)
+                    if result is not None:
+                        return result
+            if hasattr(node, "lhs") and hasattr(node.lhs, "target"):
+                field = node.lhs.target
+                if hasattr(field, "name") and field.name == "combatant_id":
+                    if hasattr(node, "rhs"):
+                        return node.rhs
+            return None
+
+        combatant_id = find_combatant_id(where)
+        if combatant_id is not None:
+            return int(combatant_id)
+        raise ValueError("combatant_id not found in queryset filter")
+
+    def create_info_update_code(self) -> OneTimeCode:
+        """Create a one-time code for combatant info update."""
+        url_template = urljoin(settings.BASE_URL, "/self-serve-update/{code}")
+        combatant_id = self._get_combatant_id()
+        return cast(
+            OneTimeCode,
+            self.model.objects.create(
+                combatant_id=combatant_id,
+                url_template=url_template,
+            ),
+        )
+
+    def create_pin_setup_code(self) -> OneTimeCode:
+        """Create a one-time code for initial PIN setup."""
+        url_template = urljoin(settings.BASE_URL, "/pin/setup/{code}")
+        combatant_id = self._get_combatant_id()
+        return cast(
+            OneTimeCode,
+            self.model.objects.create(
+                combatant_id=combatant_id,
+                url_template=url_template,
+            ),
+        )
+
+    def create_pin_reset_code(self) -> OneTimeCode:
+        """Create a one-time code for PIN reset."""
+        url_template = urljoin(settings.BASE_URL, "/pin/reset/{code}")
+        combatant_id = self._get_combatant_id()
+        return cast(
+            OneTimeCode,
+            self.model.objects.create(
+                combatant_id=combatant_id,
+                url_template=url_template,
+            ),
+        )
 
 
 class OneTimeCode(models.Model):
@@ -28,8 +101,9 @@ class OneTimeCode(models.Model):
         created_at: When this code was created
     """
 
+    objects = OneTimeCodeQuerySet.as_manager()
     combatant = models.ForeignKey(
-        Combatant,
+        "Combatant",
         on_delete=models.CASCADE,
         related_name="one_time_codes",
     )
@@ -94,51 +168,3 @@ class OneTimeCode(models.Model):
         self.consumed_at = timezone.now()
         self.save(update_fields=["consumed", "consumed_at"])
         return True
-
-    @classmethod
-    def create_for_info_update(cls, combatant: Combatant) -> "OneTimeCode":
-        """Create a one-time code for combatant info update.
-
-        Args:
-            combatant: The combatant requesting the update
-
-        Returns:
-            New OneTimeCode instance
-        """
-        url_template = urljoin(settings.BASE_URL, "/self-serve-update/{code}")
-        return cls.objects.create(
-            combatant=combatant,
-            url_template=url_template,
-        )
-
-    @classmethod
-    def create_for_pin_setup(cls, combatant: Combatant) -> "OneTimeCode":
-        """Create a one-time code for initial PIN setup.
-
-        Args:
-            combatant: The combatant setting up their PIN
-
-        Returns:
-            New OneTimeCode instance
-        """
-        url_template = urljoin(settings.BASE_URL, "/pin/setup/{code}")
-        return cls.objects.create(
-            combatant=combatant,
-            url_template=url_template,
-        )
-
-    @classmethod
-    def create_for_pin_reset(cls, combatant: Combatant) -> "OneTimeCode":
-        """Create a one-time code for PIN reset.
-
-        Args:
-            combatant: The combatant resetting their PIN
-
-        Returns:
-            New OneTimeCode instance
-        """
-        url_template = urljoin(settings.BASE_URL, "/pin/reset/{code}")
-        return cls.objects.create(
-            combatant=combatant,
-            url_template=url_template,
-        )

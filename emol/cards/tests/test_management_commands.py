@@ -2,14 +2,20 @@ import uuid
 from datetime import date, datetime, timedelta
 from unittest.mock import patch
 
-from cards.management.commands.clean_expired import \
-    Command as CleanExpiredCommand
-from cards.management.commands.send_reminders import \
-    Command as SendRemindersCommand
-from cards.management.commands.summarize_expiries import \
-    Command as SummarizeExpiriesCommand
-from cards.models import (Authorization, Card, Combatant, Discipline,
-                          OneTimeCode, Reminder, Waiver)
+from cards.management.commands.clean_expired import Command as CleanExpiredCommand
+from cards.management.commands.send_reminders import Command as SendRemindersCommand
+from cards.management.commands.summarize_expiries import (
+    Command as SummarizeExpiriesCommand,
+)
+from cards.models import (
+    Authorization,
+    Card,
+    Combatant,
+    Discipline,
+    OneTimeCode,
+    Reminder,
+    Waiver,
+)
 from cards.utility.time import today, utc_tomorrow
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command

@@ -21,9 +21,11 @@ from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
 
-from .permissioned_db_fields import (PermissionedCharField,
-                                     PermissionedDateField,
-                                     PermissionedIntegerField)
+from .permissioned_db_fields import (
+    PermissionedCharField,
+    PermissionedDateField,
+    PermissionedIntegerField,
+)
 
 __all__ = ["Combatant"]
 

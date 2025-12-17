@@ -1,8 +1,13 @@
 import logging
 
 from cards.api.permissions import CombatantAuthorizationPermission
-from cards.models import (Authorization, Card, Combatant,
-                          CombatantAuthorization, Discipline)
+from cards.models import (
+    Authorization,
+    Card,
+    Combatant,
+    CombatantAuthorization,
+    Discipline,
+)
 from cards.utility.time import today
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers, status

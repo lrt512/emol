@@ -3,10 +3,19 @@
 from datetime import timedelta
 from unittest.mock import patch
 
-from cards.models import (Authorization, Card, Combatant,
-                          CombatantAuthorization, Discipline, Marshal,
-                          OneTimeCode, Permission, Region, UserPermission,
-                          Waiver)
+from cards.models import (
+    Authorization,
+    Card,
+    Combatant,
+    CombatantAuthorization,
+    Discipline,
+    Marshal,
+    OneTimeCode,
+    Permission,
+    Region,
+    UserPermission,
+    Waiver,
+)
 from cards.utility.time import today
 from django.test import TestCase, override_settings
 from django.urls import reverse

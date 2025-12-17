@@ -3,12 +3,14 @@
 from types import SimpleNamespace
 from unittest.mock import patch
 
-from cards.api.permissions import (CardDatePermission,
-                                   CombatantAuthorizationPermission,
-                                   CombatantInfoPermission,
-                                   CombatantMarshalPermission,
-                                   ResendPrivacyPermission,
-                                   WaiverDatePermission)
+from cards.api.permissions import (
+    CardDatePermission,
+    CombatantAuthorizationPermission,
+    CombatantInfoPermission,
+    CombatantMarshalPermission,
+    ResendPrivacyPermission,
+    WaiverDatePermission,
+)
 from django.test import TestCase
 from sso_user.models import SSOUser
 

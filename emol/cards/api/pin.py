@@ -1,4 +1,5 @@
 """API endpoint for PIN reset initiation."""
+
 import logging
 
 from cards.mail import send_pin_reset
@@ -64,4 +65,3 @@ class InitiatePinResetView(APIView):
             {"message": f"PIN reset email sent to {combatant.name}"},
             status=status.HTTP_200_OK,
         )
-
