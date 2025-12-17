@@ -4,7 +4,6 @@ import logging
 
 from cards.mail import send_pin_reset, send_pin_setup
 from cards.models import Combatant, OneTimeCode
-from django.contrib import messages
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
@@ -303,7 +302,7 @@ def send_pin_setup_email(combatant: Combatant) -> OneTimeCode:
     Returns:
         OneTimeCode for the PIN setup
     """
-    one_time_code = OneTimeCode.create_for_pin_setup(combatant)
+    one_time_code = combatant.one_time_codes.create_pin_setup_code()
     send_pin_setup(combatant, one_time_code)
     logger.info(f"PIN setup email sent to combatant {combatant.email}")
     return one_time_code

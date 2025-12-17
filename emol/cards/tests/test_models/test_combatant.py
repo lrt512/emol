@@ -5,7 +5,6 @@ from cards.models.authorization import Authorization
 from cards.models.combatant import Combatant
 from cards.models.discipline import Discipline
 from cards.models.one_time_code import OneTimeCode
-from django.core.exceptions import ValidationError
 from django.db.utils import IntegrityError
 from django.test import TestCase, override_settings
 from django.utils import timezone

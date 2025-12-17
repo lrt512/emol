@@ -1,11 +1,10 @@
 """Tests for reminder functionality."""
 
 from datetime import timedelta
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
 from cards.models import Authorization, Card, Combatant, Discipline, Reminder, Waiver
 from cards.utility.time import today
-from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management import call_command
 from django.test import TestCase, override_settings

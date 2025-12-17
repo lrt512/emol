@@ -1,7 +1,6 @@
 import logging
 
 from cards.models.combatant import Combatant
-from cards.models.one_time_code import OneTimeCode
 from cards.models.privacy_policy import PrivacyPolicy
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
@@ -29,10 +28,10 @@ def privacy_policy(request, code=None):
             raise HttpResponseBadRequest
 
         if "accept" in request.POST:
-            sent_email = combatant.accept_privacy_policy()
+            combatant.accept_privacy_policy()
 
             if is_enabled("pin_authentication"):
-                pin_code = OneTimeCode.create_for_pin_setup(combatant)
+                pin_code = combatant.one_time_codes.create_pin_setup_code()
                 return redirect("pin-setup", code=pin_code.code)
             else:
                 context = {

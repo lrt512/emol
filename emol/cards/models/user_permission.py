@@ -27,7 +27,10 @@ class UserPermission(models.Model):
 
     def __str__(self):
         if self.discipline:
-            return f"<UserPermission: {self.user.email} - {self.permission.name} ({self.discipline.name})>"
+            return (
+                f"<UserPermission: {self.user.email} - {self.permission.name} "
+                f"({self.discipline.name})>"
+            )
         else:
             return (
                 f"<UserPermission: {self.user.email} - {self.permission.name} (global)>"
@@ -44,8 +47,11 @@ class UserPermission(models.Model):
         ):
             raise ValidationError(
                 {
-                    "discipline": f"Global permission '{self.permission.name}' cannot be assigned to a specific discipline. "
-                    f"Global permissions must be discipline-independent."
+                    "discipline": (
+                        f"Global permission '{self.permission.name}' "
+                        "cannot be assigned to a specific discipline. Global "
+                        "permissions must be discipline-independent."
+                    ),
                 }
             )
 
@@ -56,7 +62,10 @@ class UserPermission(models.Model):
         ):
             raise ValidationError(
                 {
-                    "discipline": f"Non-global permission '{self.permission.name}' requires a discipline to be specified."
+                    "discipline": (
+                        f"Non-global permission '{self.permission.name}' "
+                        "requires a discipline to be specified."
+                    ),
                 }
             )
 
@@ -83,7 +92,7 @@ class UserPermission(models.Model):
         try:
             permission = Permission.find(permission)
         except Permission.DoesNotExist:
-            logger.error(f"Permission '%s' does not exist", permission)
+            logger.error("Permission '%s' does not exist", permission)
             return False
 
         filters = {

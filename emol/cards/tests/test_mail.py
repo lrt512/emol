@@ -1,8 +1,5 @@
 """Tests for email sending functions."""
 
-from datetime import timedelta
-from unittest.mock import patch
-
 from cards.mail import (
     send_card_expiry,
     send_card_reminder,

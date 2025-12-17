@@ -43,8 +43,8 @@ class Authorization(models.Model):
         """Look up an authorization.
 
         Args:
-            discipline: A discipline slug (string) or id (int) or Discipline object
-            authorization: An authorization slug (string) or id (int) or Authorization object
+            discipline: A discipline slug, id, or Discipline object
+            authorization: An authorization slug, id, or Authorization object
 
         Returns:
             Authorization object

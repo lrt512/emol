@@ -79,6 +79,9 @@ class AWSEmailer:
             return False
         else:
             logger.debug(
-                f"Email {subject} sent to {recipient}. Message ID: {response['MessageId']}"
+                "Email %s sent to %s. Message ID: %s",
+                subject,
+                recipient,
+                response["MessageId"],
             )
             return True

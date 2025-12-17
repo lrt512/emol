@@ -68,12 +68,12 @@ class Command(BaseCommand):
 
             self.stdout.write(f"  Request {i+1}: Status {status}")
             if status == 429:
-                self.stdout.write(self.style.ERROR(f"    ❌ THROTTLED"))
+                self.stdout.write(self.style.ERROR("    ❌ THROTTLED"))
             else:
-                self.stdout.write(self.style.SUCCESS(f"    ✅ OK"))
+                self.stdout.write(self.style.SUCCESS("    ✅ OK"))
 
             self.stdout.write(
-                f"    Headers - Limit: {limit}, Remaining: {remaining}, Window: {window}"
+                f"  Headers - Limit: {limit}, Remaining: {remaining}, Window: {window}"
             )
 
             responses.append(
@@ -87,7 +87,7 @@ class Command(BaseCommand):
 
         # Summary
         throttled_count = sum(1 for r in responses if r["status"] == 429)
-        self.stdout.write(f"\n📊 Summary:")
+        self.stdout.write("\n📊 Summary:")
         self.stdout.write(f"   Total requests: {len(responses)}")
         self.stdout.write(f"   Successful: {len(responses) - throttled_count}")
         self.stdout.write(f"   Throttled: {throttled_count}")
@@ -100,11 +100,11 @@ class Command(BaseCommand):
                 "This suggests the throttling middleware is active and working"
             )
         else:
-            self.stdout.write(self.style.SUCCESS(f"\n✅ No requests were throttled"))
+            self.stdout.write(self.style.SUCCESS("\n✅ No requests were throttled"))
             self.stdout.write("Either throttling is disabled or limit is not reached")
 
         # Check cache after requests
-        self.stdout.write(f"\n💾 Cache check after requests:")
+        self.stdout.write("\n💾 Cache check after requests:")
         test_keys = [
             "throttle:global:127.0.0.1",
             "throttle:global:localhost",

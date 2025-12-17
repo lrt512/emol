@@ -7,5 +7,5 @@ Settings files:
 - prod.py: Production environment settings
 
 Optional override:
-- emol_production.py: Instance-specific production overrides (mounted from /opt/emol_config/)
+- emol_production.py: production overrides (mounted from /opt/emol_config/)
 """

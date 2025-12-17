@@ -77,10 +77,11 @@ class CombatantSerializer(ModelSerializer):
         # Validate province code exists in Region table
         if data.get("province"):
             province_code = data["province"]
-            if not Region.objects.filter(code=province_code, active=True).exists():
+            codes = Region.objects.filter(active=True).values_list("code", flat=True)
+            if province_code not in codes:
                 raise serializers.ValidationError(
                     f"Province code '{province_code}' is not valid. "
-                    f"Valid codes are: {', '.join(Region.objects.filter(active=True).values_list('code', flat=True))}"
+                    f"Valid codes are: {', '.join(str(code) for code in codes)}"
                 )
 
         return data

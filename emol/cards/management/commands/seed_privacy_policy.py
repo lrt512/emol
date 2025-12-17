@@ -34,7 +34,7 @@ Your information is used solely to:
 
 ## Data Retention
 
-Records are retained while your card is active and for a reasonable period after expiration.
+Records are retained while your card is active and for a reasonable period after expiry.
 
 ## Your Rights
 

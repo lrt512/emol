@@ -1,6 +1,3 @@
-print("Loading dev.py settings...")
-import os
-
 from emol.secrets import get_secret
 
 from .defaults import *  # noqa: F401, F403
@@ -33,7 +30,7 @@ LOGGING = {
             "style": "{",
         },
         "file": {
-            "format": "{levelname} {asctime} {name} {lineno} {process:d} {thread:d} {message}",
+            "format": "{levelname} {asctime} {name} {lineno} {process:d} {thread:d} {message}",  # noqa: E501
             "style": "{",
         },
     },
@@ -139,12 +136,3 @@ MOCK_OAUTH_USER = {
     "is_superuser": True,  # Make the dev user a superuser by default
     "is_staff": True,
 }
-
-# Conditionally add debug toolbar
-try:
-    import debug_toolbar
-
-    INSTALLED_APPS += ["debug_toolbar"]  # type: ignore
-    MIDDLEWARE += ["debug_toolbar.middleware.DebugToolbarMiddleware"]  # type: ignore
-except ImportError:
-    pass

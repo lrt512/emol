@@ -1,6 +1,6 @@
 import logging
 from collections import defaultdict
-from datetime import date, timedelta
+from datetime import timedelta
 
 from cards.models import Card, Waiver
 from cards.utility.time import DATE_FORMAT, today
@@ -52,7 +52,10 @@ class Command(BaseCommand):
         end_date = today() + timedelta(days=days_ahead)
 
         logger.info(
-            f"Expiry summary for {period_name} ({today().strftime(DATE_FORMAT)} to {end_date.strftime(DATE_FORMAT)})"
+            "Expiry summary for %s (%s to %s)",
+            period_name,
+            today().strftime(DATE_FORMAT),
+            end_date.strftime(DATE_FORMAT),
         )
 
         # Query for expiring cards
@@ -81,7 +84,10 @@ class Command(BaseCommand):
         total_count = card_count + waiver_count
 
         logger.info(
-            f"📊 SUMMARY: {total_count} total expiries ({card_count} cards, {waiver_count} waivers)"
+            "📊 SUMMARY: %s total expiries (%s cards, %s waivers)",
+            total_count,
+            card_count,
+            waiver_count,
         )
 
         if total_count == 0:
@@ -90,7 +96,7 @@ class Command(BaseCommand):
 
         # Card summary by discipline
         if card_count > 0:
-            logger.info(f"🃏 CARDS EXPIRING: {card_count} cards")
+            logger.info("🃏 CARDS EXPIRING: %s cards", card_count)
 
             discipline_counts = defaultdict(int)
             cards_by_date = defaultdict(list)
@@ -102,21 +108,23 @@ class Command(BaseCommand):
 
             # Show discipline breakdown
             for discipline, count in sorted(discipline_counts.items()):
-                logger.info(f"   {discipline}: {count} cards")
+                logger.info("   %s: %s cards", discipline, count)
 
             # Show detailed listing if requested
             if detailed:
                 logger.info("📋 Detailed card expiries:")
                 for expiry_date in sorted(cards_by_date.keys()):
-                    logger.info(f"   {expiry_date.strftime(DATE_FORMAT)}:")
+                    logger.info("   %s:", expiry_date.strftime(DATE_FORMAT))
                     for card in cards_by_date[expiry_date]:
                         logger.info(
-                            f"      {card.combatant.sca_name} - {card.discipline.name}"
+                            "      %s - %s",
+                            card.combatant.sca_name,
+                            card.discipline.name,
                         )
 
         # Waiver summary
         if waiver_count > 0:
-            logger.info(f"📋 WAIVERS EXPIRING: {waiver_count} waivers")
+            logger.info("📋 WAIVERS EXPIRING: %s waivers", waiver_count)
 
             if detailed:
                 waivers_by_date = defaultdict(list)
@@ -126,13 +134,13 @@ class Command(BaseCommand):
 
                 logger.info("📋 Detailed waiver expiries:")
                 for expiry_date in sorted(waivers_by_date.keys()):
-                    logger.info(f"   {expiry_date.strftime(DATE_FORMAT)}:")
+                    logger.info("   %s:", expiry_date.strftime(DATE_FORMAT))
                     for waiver in waivers_by_date[expiry_date]:
-                        logger.info(f"      {waiver.combatant.sca_name}")
+                        logger.info("      %s", waiver.combatant.sca_name)
 
         # Reminder scheduling information
         reminder_days = getattr(settings, "REMINDER_DAYS", [60, 30, 14, 0])
-        logger.info(f"📅 REMINDER SCHEDULE: {reminder_days} days before expiry")
+        logger.info("📅 REMINDER SCHEDULE: %s days before expiry", reminder_days)
 
         if total_count > 0:
             # Calculate how many reminders would be sent during this period
@@ -165,7 +173,9 @@ class Command(BaseCommand):
 
             if reminder_count > 0:
                 logger.info(
-                    f"📬 REMINDERS TO SEND: {reminder_count} total reminders during {period_name}"
+                    "📬 REMINDERS TO SEND: %s total reminders during %s",
+                    reminder_count,
+                    period_name,
                 )
                 for reminder_day in sorted(reminder_breakdown.keys()):
                     counts = reminder_breakdown[reminder_day]
@@ -173,11 +183,16 @@ class Command(BaseCommand):
                     card_count = counts["card"]
                     waiver_count = counts["waiver"]
                     logger.info(
-                        f"   {reminder_day}-day reminders: {total} (waiver: {waiver_count}, card: {card_count})"
+                        "   %s-day reminders: %s (waiver: %s, card: %s)",
+                        reminder_day,
+                        total,
+                        waiver_count,
+                        card_count,
                     )
             else:
                 logger.info(
-                    f"📬 REMINDERS TO SEND: No reminders scheduled during {period_name}"
+                    "📬 REMINDERS TO SEND: No reminders scheduled during %s",
+                    period_name,
                 )
 
-        logger.info(f"✅ Expiry summary complete for {period_name}")
+        logger.info("✅ Expiry summary complete for %s", period_name)

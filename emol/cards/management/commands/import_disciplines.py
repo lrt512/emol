@@ -19,10 +19,9 @@ class Command(BaseCommand):
         for discipline_data in data:
             discipline_name = discipline_data["name"]
             discipline, created = Discipline.objects.get_or_create(name=discipline_name)
+            result = "created" if created else "already exists"
             self.stdout.write(
-                self.style.SUCCESS(
-                    f'Discipline `{discipline_name}` {"created" if created else "already exists"}'
-                )
+                self.style.SUCCESS(f"Discipline `{discipline_name}` {result}")
             )
 
             for authorization_data in discipline_data.get("authorizations", []):
@@ -33,9 +32,10 @@ class Command(BaseCommand):
                     discipline=discipline,
                     defaults={"is_primary": is_primary},
                 )
+                result = "created" if auth_created else "already exists"
                 self.stdout.write(
                     self.style.SUCCESS(
-                        f'  Authorization `{authorization_name}` {"created" if auth_created else "already exists"}'
+                        f"  Authorization `{authorization_name}` {result}"
                     )
                 )
 
@@ -44,10 +44,9 @@ class Command(BaseCommand):
                 _, marshal_created = Marshal.objects.get_or_create(
                     name=marshal_name, discipline=discipline
                 )
+                result = "created" if marshal_created else "already exists"
                 self.stdout.write(
-                    self.style.SUCCESS(
-                        f'  Marshal `{marshal_name}` {"created" if marshal_created else "already exists"}'
-                    )
+                    self.style.SUCCESS(f"  Marshal `{marshal_name}` {result}")
                 )
 
         self.stdout.write(self.style.SUCCESS("Data loaded successfully"))

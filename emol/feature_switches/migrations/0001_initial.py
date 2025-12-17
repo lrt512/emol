@@ -25,7 +25,7 @@ class Migration(migrations.Migration):
                 (
                     "name",
                     models.CharField(
-                        help_text="Unique identifier for this switch (e.g., 'pin_required')",
+                        help_text="Unique identifier for this switch",
                         max_length=100,
                         unique=True,
                     ),

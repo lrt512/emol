@@ -1,17 +1,15 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from unittest.mock import patch
 from uuid import uuid4
 
 from cards.models import Combatant, OneTimeCode, Region
 from cards.views.self_serve_update import (
     SelfServeUpdateSerializer,
-    self_serve_update,
     serializer_errors_to_strings,
 )
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.utils import timezone
-from rest_framework import serializers
 
 
 class SelfServeUpdateSerializerTestCase(TestCase):

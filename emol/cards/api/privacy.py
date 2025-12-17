@@ -42,9 +42,7 @@ class ResendPrivacyView(APIView):
                 "Combatant %s has already accepted the privacy policy", combatant
             )
             return Response(
-                {
-                    "message": f"{combatant.name} has already accepted the privacy policy"
-                },
+                {"message": f"{combatant.name} has accepted the privacy policy"},
                 status=status.HTTP_208_ALREADY_REPORTED,
             )
 

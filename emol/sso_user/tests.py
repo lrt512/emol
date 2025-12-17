@@ -1,9 +1,8 @@
 """Tests for sso_user app."""
 
 from io import StringIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.http import HttpResponse

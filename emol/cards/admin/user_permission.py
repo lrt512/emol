@@ -23,13 +23,14 @@ class UserPermissionForm(ModelForm):
 
         if permission and permission.is_global and discipline is not None:
             raise ValidationError(
-                f"Global permission '{permission.name}' cannot be assigned to a specific discipline. "
-                f"Global permissions must be discipline-independent."
+                f"Global permission '{permission.name}' cannot be assigned to a "
+                "specific discipline. Global permissions are discipline-independent."
             )
 
         if permission and not permission.is_global and discipline is None:
             raise ValidationError(
-                f"Non-global permission '{permission.name}' requires a discipline to be specified."
+                f"Non-global permission '{permission.name}' requires a "
+                "discipline to be specified."
             )
 
         return cleaned_data

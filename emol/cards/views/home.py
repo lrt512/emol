@@ -3,7 +3,7 @@ import logging
 from typing import Any, Dict
 
 from cards.mail import send_card_url, send_info_update, send_privacy_policy
-from cards.models import Combatant, CombatantWarrant, Discipline, OneTimeCode
+from cards.models import Combatant, CombatantWarrant, Discipline
 from current_user import get_current_user
 from django.core.exceptions import MultipleObjectsReturned
 from django.shortcuts import render
@@ -68,7 +68,7 @@ def request_card(request):
             combatants = _find_combatants_by_email_and_pin(email, pin)
             if not combatants:
                 context = {
-                    "message": "No matching combatant found. Please check your email and PIN.",
+                    "message": "No matching combatant found.",
                     "pin_enabled": pin_enabled,
                 }
                 return render(request, "home/request_card.html", context)
@@ -120,14 +120,14 @@ def update_info(request):
             combatants = _find_combatants_by_email_and_pin(email, pin)
             if not combatants:
                 context = {
-                    "message": "No matching combatant found. Please check your email and PIN.",
+                    "message": "No matching combatant found.",
                     "pin_enabled": pin_enabled,
                 }
                 return render(request, "home/update_info.html", context)
 
             for combatant in combatants:
                 if combatant.accepted_privacy_policy:
-                    code = OneTimeCode.create_for_info_update(combatant)
+                    code = combatant.one_time_codes.create_info_update_code()
                     logger.info(f"Created update code for {combatant}")
                     send_info_update(combatant, code)
                 else:
@@ -137,7 +137,7 @@ def update_info(request):
             try:
                 combatant = Combatant.objects.get(email=email)
                 if combatant.accepted_privacy_policy:
-                    code = OneTimeCode.create_for_info_update(combatant)
+                    code = combatant.one_time_codes.create_info_update_code()
                     logger.info(f"Created update code for {combatant}")
                     send_info_update(combatant, code)
                 else:
@@ -147,7 +147,7 @@ def update_info(request):
                 combatants = Combatant.objects.filter(email=email)
                 for combatant in combatants:
                     if combatant.accepted_privacy_policy:
-                        code = OneTimeCode.create_for_info_update(combatant)
+                        code = combatant.one_time_codes.create_info_update_code()
                         logger.info(f"Created update code for {combatant}")
                         send_info_update(combatant, code)
                     else:

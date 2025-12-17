@@ -1,7 +1,6 @@
 """Helper functions for checking feature switch status."""
 
 import logging
-from functools import lru_cache
 from typing import Optional
 
 from django.core.cache import cache
@@ -38,7 +37,9 @@ def is_enabled(switch_name: str, default: bool = False) -> bool:
         value = switch.enabled
     except FeatureSwitch.DoesNotExist:
         logger.warning(
-            f"Feature switch '{switch_name}' does not exist, using default={default}"
+            "Feature switch '%s' does not exist, using default='%s'",
+            switch_name,
+            default,
         )
         value = default
 

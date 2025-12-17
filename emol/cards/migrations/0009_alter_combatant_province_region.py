@@ -64,7 +64,7 @@ class Migration(migrations.Migration):
                     "is_primary",
                     models.BooleanField(
                         default=False,
-                        help_text="Indicates if this is a primary region for the kingdom",
+                        help_text="Indicates a primary region for the kingdom",
                     ),
                 ),
                 (

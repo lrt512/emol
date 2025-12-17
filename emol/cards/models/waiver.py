@@ -8,7 +8,7 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 from .reminder import Reminder
-from .reminder_mixin import DirtyModelReminderMeta, ReminderMixin
+from .reminder_mixin import ReminderMixin
 
 logger = logging.getLogger("cards")
 

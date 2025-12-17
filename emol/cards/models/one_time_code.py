@@ -28,6 +28,33 @@ class OneTimeCodeQuerySet(models.QuerySet):
         """
         where = self.query.where
 
+        def extract_value(rhs):
+            """Extract integer value from RHS node."""
+            if isinstance(rhs, (int, str)):
+                return int(rhs)
+            if hasattr(rhs, "value"):
+                return int(rhs.value)
+            if hasattr(rhs, "__int__"):
+                return int(rhs)
+            try:
+                return int(rhs)
+            except (TypeError, ValueError):
+                return None
+
+        def get_field_name(lhs):
+            """Extract field name from LHS node."""
+            if hasattr(lhs, "target") and hasattr(lhs.target, "name"):
+                return lhs.target.name
+            if hasattr(lhs, "col"):
+                col = lhs.col
+                if hasattr(col, "target") and hasattr(col.target, "name"):
+                    return col.target.name
+                if hasattr(col, "field") and hasattr(col.field, "name"):
+                    return col.field.name
+            if hasattr(lhs, "output_field") and hasattr(lhs.output_field, "name"):
+                return lhs.output_field.name
+            return None
+
         def find_combatant_id(node):
             """Recursively search for combatant_id filter."""
             if hasattr(node, "children"):
@@ -35,17 +62,44 @@ class OneTimeCodeQuerySet(models.QuerySet):
                     result = find_combatant_id(child)
                     if result is not None:
                         return result
-            if hasattr(node, "lhs") and hasattr(node.lhs, "target"):
-                field = node.lhs.target
-                if hasattr(field, "name") and field.name == "combatant_id":
-                    if hasattr(node, "rhs"):
-                        return node.rhs
+
+            if hasattr(node, "lhs") and hasattr(node, "rhs"):
+                field_name = get_field_name(node.lhs)
+                if field_name == "combatant_id":
+                    value = extract_value(node.rhs)
+                    if value is not None:
+                        return value
+
             return None
 
         combatant_id = find_combatant_id(where)
         if combatant_id is not None:
-            return int(combatant_id)
-        raise ValueError("combatant_id not found in queryset filter")
+            return combatant_id
+
+        try:
+            compiler = self.query.get_compiler(using=self.db)
+            sql, params = compiler.as_sql()
+            if params:
+                for param in params:
+                    if isinstance(param, int) and param > 0:
+                        return param
+        except Exception:
+            pass
+
+        try:
+            distinct_combatant_ids = list(
+                self.values_list("combatant_id", flat=True).distinct()
+            )
+            if len(distinct_combatant_ids) == 1:
+                return distinct_combatant_ids[0]
+        except Exception:
+            pass
+
+        raise ValueError(
+            "combatant_id not found in queryset filter. "
+            "This method must be called through a RelatedManager "
+            "(e.g., combatant.one_time_codes.create_pin_reset_code())"
+        )
 
     def create_info_update_code(self) -> OneTimeCode:
         """Create a one-time code for combatant info update."""

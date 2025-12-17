@@ -30,7 +30,7 @@ class Migration(migrations.Migration):
                 (
                     "url_template",
                     models.CharField(
-                        help_text="URL template with {code} placeholder, e.g., '/update/{code}/'",
+                        help_text="URL template with {code} placeholder, e.g., '/update/{code}/'",  # noqa: E501
                         max_length=500,
                     ),
                 ),

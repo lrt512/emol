@@ -1,7 +1,5 @@
 """Production settings for eMoL."""
 
-import os
-
 from emol.secrets import get_secret
 
 from .defaults import *  # noqa: F403, F401

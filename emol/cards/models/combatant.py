@@ -261,13 +261,14 @@ class Combatant(models.Model):
 
         """
         if not self.accepted_privacy_policy:
-            logger.error(f"Attempt to get card URL for {self} (privacy not accepted)")
+            logger.error("Attempt to get card URL for %s (privacy not accepted)", self)
             raise Exception("no")
 
         if self.card_id is None or len(self.card_id) == 0:
             logger.error(
                 (
-                    f"Attempt to get card_id for {self} but card ID has not been allocated"
+                    "Attempt to get card_id for %s but card ID has not been allocated",
+                    self,
                 )
             )
             raise Exception("no")
@@ -350,12 +351,14 @@ class Combatant(models.Model):
             True if PIN matches, False otherwise (including when locked out)
         """
         if self.is_locked_out:
-            logger.warning(f"PIN check attempted for locked out combatant {self.email}")
+            logger.warning(
+                "PIN check attempted for locked out combatant %s", self.email
+            )
             return False
 
         if not self.has_pin:
             logger.warning(
-                f"PIN check attempted for combatant {self.email} with no PIN set"
+                "PIN check attempted for combatant %s with no PIN set", self.email
             )
             return False
 
@@ -369,7 +372,9 @@ class Combatant(models.Model):
         if self.pin_failed_attempts >= self.PIN_MAX_ATTEMPTS:
             self.pin_locked_until = timezone.now() + self.PIN_LOCKOUT_DURATION
             logger.warning(
-                f"Combatant {self.email} locked out after {self.pin_failed_attempts} failed PIN attempts"
+                "Combatant %s locked out after %s failed PIN attempts",
+                self.email,
+                self.pin_failed_attempts,
             )
             self._send_lockout_notification()
 
@@ -395,7 +400,7 @@ class Combatant(models.Model):
         self.pin_locked_until = None
         self.save(update_fields=["pin_hash", "pin_failed_attempts", "pin_locked_until"])
 
-    def initiate_pin_reset(self) -> "OneTimeCode":
+    def initiate_pin_reset(self) -> "OneTimeCode":  # noqa: F821
         """Initiate a PIN reset for this combatant.
 
         Clears the existing PIN and creates a one-time code for setting a new PIN.
@@ -403,10 +408,8 @@ class Combatant(models.Model):
         Returns:
             OneTimeCode instance for the PIN reset flow
         """
-        from .one_time_code import OneTimeCode
-
         self.clear_pin()
-        return OneTimeCode.create_for_pin_reset(self)
+        return self.one_time_codes.create_pin_reset_code()
 
     def _send_lockout_notification(self) -> None:
         """Send an email notification that the account has been locked out."""

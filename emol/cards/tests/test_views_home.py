@@ -52,7 +52,7 @@ class HomeViewsTestCase(TestCase):
     def test_request_card_post_existing_combatant_without_privacy(
         self, mock_send_privacy_policy
     ):
-        """Test POST request for existing combatant who hasn't accepted privacy policy"""
+        """Test POST request for combatant who hasn't accepted privacy policy"""
         response = self.client.post(
             reverse("request-card"), {"request-card-email": "test2@example.com"}
         )
@@ -143,7 +143,7 @@ class HomeViewsTestCase(TestCase):
     def test_update_info_post_existing_combatant_without_privacy(
         self, mock_send_privacy_policy
     ):
-        """Test POST request for existing combatant who hasn't accepted privacy policy"""
+        """Test POST request for combatant who hasn't accepted privacy policy"""
         response = self.client.post(
             reverse("update-info"), {"update-info-email": "test2@example.com"}
         )

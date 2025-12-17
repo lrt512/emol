@@ -1,10 +1,10 @@
 """Tests for PIN views."""
 
 from datetime import timedelta
-from unittest.mock import patch
 
-from cards.models import Combatant, OneTimeCode
-from django.test import TestCase, override_settings
+from cards.models import Combatant, OneTimeCode, Waiver
+from cards.utility.time import today
+from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
 from feature_switches.models import FeatureSwitch
@@ -280,8 +280,6 @@ class CombatantCardWithPINTestCase(TestCase):
             accepted_privacy_policy=True,
             card_id="protected-card",
         )
-        from cards.models import Discipline, Waiver
-        from cards.utility.time import today
 
         Waiver.objects.create(
             combatant=self.combatant,

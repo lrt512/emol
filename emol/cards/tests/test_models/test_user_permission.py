@@ -103,7 +103,8 @@ class UserPermissionTestCase(TestCase):
         )
 
     def test_model_validation_non_global_permission_without_discipline_fails(self):
-        """Model validation should prevent non-global permissions from being assigned without disciplines"""
+        """Model validation prevents non-global permissions from
+        being assigned without a discipline"""
         with self.assertRaises(ValidationError) as context:
             UserPermission.objects.create(
                 user=self.user,
@@ -136,7 +137,7 @@ class UserPermissionTestCase(TestCase):
 
     @override_settings(NO_ENFORCE_PERMISSIONS=False)
     def test_global_permission_ignores_discipline_parameter(self):
-        """When checking global permissions, the discipline parameter should be ignored"""
+        """When checking global permissions, the discipline parameter is ignored"""
         # Create a global permission assignment (correctly with discipline=None)
         UserPermission.objects.create(
             user=self.user, permission=self.global_permission, discipline=None
@@ -161,7 +162,7 @@ class UserPermissionTestCase(TestCase):
 
     @override_settings(NO_ENFORCE_PERMISSIONS=False)
     def test_non_global_permission_requires_specific_discipline(self):
-        """Non-global permissions should only be granted for the specific assigned discipline"""
+        """Non-global permissions only granted for the specific assigned discipline"""
         other_discipline = Discipline.objects.create(name="Other Discipline")
 
         # Assign permission to specific discipline

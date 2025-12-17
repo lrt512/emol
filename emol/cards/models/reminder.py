@@ -29,7 +29,10 @@ class Reminder(models.Model):
         )
         if self.content_object is None:
             return f"<Orphaned Reminder: object_id={self.object_id} - {s}>"
-        return f"<{self.content_object.__class__.__name__}: {self.content_object.combatant.name} - {s}>"
+        return (
+            f"<{self.content_object.__class__.__name__}: "
+            f"{self.content_object.combatant.name} - {s}>"
+        )
 
     @classmethod
     def create_or_update_reminders(cls, instance):

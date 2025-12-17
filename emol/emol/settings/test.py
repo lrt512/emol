@@ -1,7 +1,5 @@
 import os
 
-from emol.secrets import get_secret
-
 from .defaults import *  # noqa: F401, F403
 
 AWS_REGION = "ca-central-1"
@@ -36,11 +34,11 @@ REMINDER_DAYS = [60, 30, 14, 0]
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "test.sqlite3"),
+        "NAME": os.path.join(BASE_DIR, "test.sqlite3"),  # noqa: F405
     },
     "cache_db": {
         "ENGINE": "django.db.backends.sqlite3",
-        "NAME": os.path.join(BASE_DIR, "test_cache.sqlite3"),
+        "NAME": os.path.join(BASE_DIR, "test_cache.sqlite3"),  # noqa: F405
     },
 }
 

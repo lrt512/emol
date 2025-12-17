@@ -50,7 +50,9 @@ class GlobalThrottleMiddleware:
             self.request_window = 3600
 
         logger.debug(
-            f"GlobalThrottleMiddleware initialized: limit={self.request_limit}, window={self.request_window}"
+            "GlobalThrottleMiddleware initialized: limit=%s, window=%s",
+            self.request_limit,
+            self.request_window,
         )
 
         self.whitelist = getattr(
@@ -77,20 +79,22 @@ class GlobalThrottleMiddleware:
         """Determine if we should throttle the calling IP address"""
         if request.user.is_authenticated:
             logger.debug(
-                f"User {request.user.email} is authenticated, skipping throttle"
+                "User %s is authenticated, skipping throttle",
+                request.user.email,
             )
             return False
 
         ip_address = self.get_client_ip(request)
 
         if ip_address in self.whitelist:
-            logger.debug(f"IP address {ip_address} is whitelisted, skipping throttle")
+            logger.debug("IP address %s is whitelisted, skipping throttle", ip_address)
             return False
 
         view_func = resolve(request.path).func
         if getattr(view_func, "exempt_from_throttling", False):
             logger.debug(
-                f"View function {view_func.__name__} is exempt from throttling, skipping throttle"
+                "View function %s is exempt from throttling, skipping throttle",
+                view_func.__name__,
             )
             return False
 
@@ -98,34 +102,43 @@ class GlobalThrottleMiddleware:
         request_count = cache.get(cache_key, 0)
 
         request.throttle_remaining = max(0, self.request_limit - request_count)
-        logger.debug(f"Request count {request_count} for IP address {ip_address}")
+        logger.debug("Request count %s for IP address %s", request_count, ip_address)
 
         if request_count >= self.request_limit:
             logger.error(
-                f"THROTTLING: Request count {request_count} exceeds limit {self.request_limit} for {ip_address}"
+                "THROTTLING: Request count %s exceeds limit %s for %s",
+                request_count,
+                self.request_limit,
+                ip_address,
             )
             return True
 
         cache.set(cache_key, request_count + 1, self.request_window)
         logger.debug(
-            f"Request count {request_count + 1} for IP address {ip_address} after increment"
+            "Request count %s for IP address %s after increment",
+            request_count + 1,
+            ip_address,
         )
         return False
 
     def __call__(self, request):
         """Handle the request and throttle if necessary"""
-        logger.debug(f"GlobalThrottleMiddleware processing request to {request.path}")
+        logger.debug("GlobalThrottleMiddleware processing request to %s", request.path)
         throttled = self.maybe_throttle(request)
         ip_address = self.get_client_ip(request)
 
         if throttled:
             logger.error(
-                f"MIDDLEWARE THROTTLING: Returning 429 for {request.path} from IP {ip_address}"
+                "MIDDLEWARE THROTTLING: Returning 429 for %s from IP %s",
+                request.path,
+                ip_address,
             )
             response = render(request, "429.html", status=429)
         else:
             logger.debug(
-                f"Request to {request.path} from IP {ip_address} allowed by middleware"
+                "Request to %s from IP %s allowed by middleware",
+                request.path,
+                ip_address,
             )
             response = self.get_response(request)
 

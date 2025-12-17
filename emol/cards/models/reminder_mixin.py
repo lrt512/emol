@@ -1,6 +1,6 @@
 """Abstract and Metaclass magic for ReminderMixin"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 from dirtyfields import DirtyFieldsMixin
 from django.db.models.base import ModelBase

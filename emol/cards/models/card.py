@@ -32,7 +32,7 @@ from .authorization import Authorization
 from .discipline import Discipline
 from .marshal import Marshal
 from .reminder import Reminder
-from .reminder_mixin import DirtyModelReminderMeta, ReminderMixin
+from .reminder_mixin import ReminderMixin
 
 __all__ = ["Card"]
 

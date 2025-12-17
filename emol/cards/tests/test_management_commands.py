@@ -1,5 +1,4 @@
-import uuid
-from datetime import date, datetime, timedelta
+from datetime import timedelta
 from unittest.mock import patch
 
 from cards.management.commands.clean_expired import Command as CleanExpiredCommand
@@ -232,10 +231,9 @@ class SendRemindersCommandTestCase(TestCase):
 
         reminder_60 = card_reminders.get(days_to_expiry=60)
         reminder_30 = card_reminders.get(days_to_expiry=30)
-        reminder_14 = card_reminders.get(days_to_expiry=14)
 
         # Mock email sending to verify which reminder gets processed
-        with patch("cards.models.reminder.Reminder.send_email") as mock_send:
+        with patch("cards.models.reminder.Reminder.send_email"):
             call_command("send_reminders")
 
         # Verify most urgent reminder was processed
@@ -247,7 +245,7 @@ class SendRemindersCommandTestCase(TestCase):
 
     @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
     def test_send_reminders_privacy_policy_not_accepted(self):
-        """Test that reminders are skipped for users who haven't accepted privacy policy"""
+        """Test that reminders are skipped when privacy policy is not accepted"""
         # Create combatant who hasn't accepted privacy policy
         combatant_no_privacy = Combatant.objects.create(
             sca_name="No Privacy Fighter",
@@ -402,14 +400,14 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_default_week(self):
         """Test default week period summary"""
         # Create cards expiring in 5 days (within week)
-        card_expiring_soon = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
             date_issued=today() - timedelta(days=365 * 2 - 5),  # Expires in 5 days
         )
 
         # Create card expiring in 10 days (outside week)
-        card_expiring_later = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant2,
             discipline=self.discipline2,
             date_issued=today() - timedelta(days=365 * 2 - 10),  # Expires in 10 days
@@ -424,12 +422,12 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_custom_days(self):
         """Test custom days parameter"""
         # Create cards with different expiry times
-        card1 = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
             date_issued=today() - timedelta(days=365 * 2 - 3),  # Expires in 3 days
         )
-        card2 = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant2,
             discipline=self.discipline2,
             date_issued=today() - timedelta(days=365 * 2 - 15),  # Expires in 15 days
@@ -444,12 +442,12 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_detailed_mode(self):
         """Test detailed listing mode"""
         # Create card and waiver expiring within a week
-        card = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
             date_issued=today() - timedelta(days=365 * 2 - 5),  # Expires in 5 days
         )
-        waiver = Waiver.objects.create(
+        Waiver.objects.create(
             combatant=self.combatant2,
             date_signed=today() - timedelta(days=365 * 7 - 3),  # Expires in 3 days
         )
@@ -463,12 +461,12 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_no_expiries(self):
         """Test when no items are expiring"""
         # Create cards/waivers that expire far in the future
-        card = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
             date_issued=today() - timedelta(days=100),  # Expires in ~630 days
         )
-        waiver = Waiver.objects.create(
+        Waiver.objects.create(
             combatant=self.combatant2,
             date_signed=today() - timedelta(days=100),  # Expires in ~2455 days
         )
@@ -482,12 +480,12 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_different_periods(self):
         """Test different period options"""
         # Create items expiring at different times
-        card_tomorrow = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
             date_issued=today() - timedelta(days=365 * 2 - 1),  # Expires tomorrow
         )
-        card_next_month = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant2,
             discipline=self.discipline2,
             date_issued=today() - timedelta(days=365 * 2 - 25),  # Expires in 25 days
@@ -508,17 +506,17 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_cards_only(self):
         """Test summary with only cards expiring"""
         # Create multiple cards in different disciplines
-        card1 = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
             date_issued=today() - timedelta(days=365 * 2 - 3),  # Expires in 3 days
         )
-        card2 = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant2,
             discipline=self.discipline1,
             date_issued=today() - timedelta(days=365 * 2 - 5),  # Expires in 5 days
         )
-        card3 = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant3,
             discipline=self.discipline2,
             date_issued=today() - timedelta(days=365 * 2 - 6),  # Expires in 6 days
@@ -533,11 +531,11 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_waivers_only(self):
         """Test summary with only waivers expiring"""
         # Create multiple waivers
-        waiver1 = Waiver.objects.create(
+        Waiver.objects.create(
             combatant=self.combatant1,
             date_signed=today() - timedelta(days=365 * 7 - 2),  # Expires in 2 days
         )
-        waiver2 = Waiver.objects.create(
+        Waiver.objects.create(
             combatant=self.combatant2,
             date_signed=today() - timedelta(days=365 * 7 - 6),  # Expires in 6 days
         )
@@ -551,12 +549,12 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_mixed_cards_and_waivers(self):
         """Test summary with both cards and waivers expiring"""
         # Create mix of cards and waivers
-        card = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
             date_issued=today() - timedelta(days=365 * 2 - 4),  # Expires in 4 days
         )
-        waiver = Waiver.objects.create(
+        Waiver.objects.create(
             combatant=self.combatant2,
             date_signed=today() - timedelta(days=365 * 7 - 3),  # Expires in 3 days
         )
@@ -604,7 +602,7 @@ class SummarizeExpiriesCommandTestCase(TestCase):
     def test_summarize_expiries_boundary_conditions(self):
         """Test edge cases and boundary conditions"""
         # Create card expiring exactly in 7 days (boundary of week)
-        card_boundary = Card.objects.create(
+        Card.objects.create(
             combatant=self.combatant1,
             discipline=self.discipline1,
             date_issued=today()

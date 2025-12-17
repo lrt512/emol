@@ -8,12 +8,10 @@ a PIN set. It supports three stages:
 """
 
 import logging
-from datetime import timedelta
 
 from cards.mail import send_pin_migration_email
-from cards.models import Combatant, OneTimeCode
+from cards.models import Combatant
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
 logger = logging.getLogger("cards")
 
@@ -70,19 +68,18 @@ class Command(BaseCommand):
                 continue
 
             try:
-                one_time_code = OneTimeCode.create_for_pin_setup(combatant)
+                one_time_code = combatant.one_time_codes.create_pin_setup_code()
                 send_pin_migration_email(combatant, one_time_code, stage=stage)
                 sent_count += 1
-                logger.info(f"Sent {stage} PIN migration email to {combatant.email}")
+                logger.info("Sent %s PIN migration email to %s", stage, combatant.email)
             except Exception as e:
                 error_count += 1
-                logger.error(f"Failed to send email to {combatant.email}: {e}")
+                logger.error("Failed to send email to %s: %s", combatant.email, e)
                 self.stderr.write(f"Error sending to {combatant.email}: {e}")
 
+        action = "Would send" if dry_run else "Sent"
         self.stdout.write(
-            self.style.SUCCESS(
-                f"{'Would send' if dry_run else 'Sent'} {sent_count} {stage} emails"
-            )
+            self.style.SUCCESS(f"{action} {sent_count} {stage} emails")
         )
         if error_count:
-            self.stdout.write(self.style.ERROR(f"Errors: {error_count}"))
+            self.stdout.write(self.style.ERROR("Errors: %s", error_count))

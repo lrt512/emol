@@ -4,7 +4,6 @@ from datetime import date
 from cards.models.reminder import Reminder
 from cards.utility.time import DATE_FORMAT, today
 from django.core.management.base import BaseCommand
-from django.utils import timezone
 
 logger = logging.getLogger("cards")
 
@@ -16,12 +15,11 @@ class Command(BaseCommand):
         parser.add_argument(
             "--dry-run",
             action="store_true",
-            help="Show what would happen without actually sending emails or deleting reminders",
+            help="Show what would happen, do not send emails or delete reminders",
         )
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
-        now = timezone.now()
 
         if dry_run:
             logger.info(
@@ -35,17 +33,19 @@ class Command(BaseCommand):
         if orphaned_reminders:
             orphaned_count = len(orphaned_reminders)
             if dry_run:
-                logger.info(f"🗑️  Would clean up {orphaned_count} orphaned reminders")
+                logger.info("🗑️  Would clean up %s orphaned reminders", orphaned_count)
                 for orphaned in orphaned_reminders:
                     logger.info(
-                        f"   - Would delete orphaned reminder ID {orphaned.id} (object_id={orphaned.object_id})"
+                        "   - Would delete orphaned reminder ID %s (object_id=%s)",
+                        orphaned.id,
+                        orphaned.object_id,
                     )
             else:
-                logger.info(f"Cleaning up {orphaned_count} orphaned reminders...")
+                logger.info("Cleaning up %s orphaned reminders...", orphaned_count)
                 count, _ = Reminder.objects.filter(
                     id__in=[r.id for r in orphaned_reminders]
                 ).delete()
-                logger.info(f"Deleted {count} orphaned reminders.")
+                logger.info("Deleted %s orphaned reminders.", count)
 
         # 2. Process DUE reminders
         # Compare against today's date using the same helper used to set due_date
@@ -54,16 +54,16 @@ class Command(BaseCommand):
         due_count = due_reminders.count()
 
         logger.info(
-            f"Processing reminders for {date.today().strftime(DATE_FORMAT)}: Found {due_count} due reminders to process."
+            "Processing reminders for %s: Found %s due reminders to process.",
+            date.today().strftime(DATE_FORMAT),
+            due_count,
         )
 
         if due_count == 0:
             return
 
-        # Group reminders by content object to avoid sending multiple reminders for the same item
         content_object_reminders = {}
         for reminder in due_reminders:
-            # This check is technically redundant given the cleanup above, but safe to keep
             if reminder.content_object is None:
                 continue
             key = (reminder.content_type_id, reminder.object_id)
@@ -83,37 +83,43 @@ class Command(BaseCommand):
                 if dry_run:
                     email_sent = True
                     logger.info(
-                        f"[DRY RUN] Would send {most_urgent.days_to_expiry}-day "
-                        f"reminder for {most_urgent.content_object}"
+                        "[DRY RUN] Would send %s-day reminder for %s",
+                        most_urgent.days_to_expiry,
+                        most_urgent.content_object,
                     )
                 else:
                     email_sent = most_urgent.send_email()
                     if email_sent:
                         logger.info(
-                            f"Sent {most_urgent.days_to_expiry}-day "
-                            f"reminder for {most_urgent.content_object}"
+                            "Sent %s-day reminder for %s",
+                            most_urgent.days_to_expiry,
+                            most_urgent.content_object,
                         )
                     else:
                         logger.warning(
-                            f"Failed to send {most_urgent.days_to_expiry}-day "
-                            f"reminder for {most_urgent.content_object}"
+                            "Failed to send %s-day reminder for %s",
+                            most_urgent.days_to_expiry,
+                            most_urgent.content_object,
                         )
                 sent_count += 1 if email_sent else 0
             else:
                 email_sent = True
                 logger.info(
-                    f"{'[DRY RUN] Would skip' if dry_run else 'Skipped'} {most_urgent.days_to_expiry}-day "
-                    f"reminder for {most_urgent.content_object} (email criteria not met)."
+                    "%s %s-day reminder for %s (email criteria not met).",
+                    "[DRY RUN] Would skip" if dry_run else "Skipped",
+                    most_urgent.days_to_expiry,
+                    most_urgent.content_object,
                 )
 
             if not email_sent:
-                logger.info(f"   - Keeping reminders for retry tomorrow")
+                logger.info("   - Keeping reminders for retry tomorrow.")
                 continue
 
             if dry_run:
                 expired_count += len(reminders_group)
                 logger.info(
-                    f"   - [DRY RUN] Would delete {len(reminders_group)} reminders for this object."
+                    "   - [DRY RUN] Would delete %s reminders for this object.",
+                    len(reminders_group),
                 )
             else:
                 content_type_id, object_id = key
@@ -122,14 +128,19 @@ class Command(BaseCommand):
                 ).delete()
                 expired_count += deleted_count
                 logger.info(
-                    f"   - Cleaned up {deleted_count} reminders for this object."
+                    "   - Cleaned up %s reminders for this object.",
+                    deleted_count,
                 )
 
         if dry_run:
             logger.info(
-                f"🔍 DRY RUN SUMMARY: Would send {sent_count} reminders and delete {expired_count} total reminders."
+                "🔍 DRY RUN: Would send %s reminders and delete %s total reminders.",
+                sent_count,
+                expired_count,
             )
         else:
             logger.info(
-                f"✅ Sent {sent_count} reminders and cleaned up {expired_count} total reminders."
+                "✅ Sent %s reminders and cleaned up %s total reminders.",
+                sent_count,
+                expired_count,
             )
