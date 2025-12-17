@@ -28,20 +28,22 @@ def is_enabled(switch_name: str, default: bool = False) -> bool:
 
     cached_value = cache.get(cache_key)
     if cached_value is not None:
-        return cached_value
+        if isinstance(cached_value, bool):
+            return cached_value
+        return bool(cached_value)
 
     from .models import FeatureSwitch
 
     try:
         switch = FeatureSwitch.objects.get(name=switch_name)
-        value = switch.enabled
+        value = bool(switch.enabled)
     except FeatureSwitch.DoesNotExist:
         logger.warning(
             "Feature switch '%s' does not exist, using default='%s'",
             switch_name,
             default,
         )
-        value = default
+        value = bool(default)
 
     cache.set(cache_key, value, CACHE_TIMEOUT)
     return value
@@ -61,5 +63,5 @@ def clear_cache(switch_name: Optional[str] = None) -> None:
         from .models import FeatureSwitch
 
         for switch in FeatureSwitch.objects.all():
-            cache_key = f"{CACHE_KEY_PREFIX}{switch.name}"
+            cache_key = f"{CACHE_KEY_PREFIX}{switch.name}"  # type: ignore[attr-defined]
             cache.delete(cache_key)

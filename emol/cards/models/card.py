@@ -17,7 +17,10 @@
     in. These show up as the `cards` relationship on the Combatant model.
 """
 
+from __future__ import annotations
+
 import logging
+from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from cards.mail import send_card_expiry, send_card_reminder
@@ -33,6 +36,12 @@ from .discipline import Discipline
 from .marshal import Marshal
 from .reminder import Reminder
 from .reminder_mixin import ReminderMixin
+
+if TYPE_CHECKING:
+    from django.db.models import ManyToManyField as DjangoManyToManyField
+
+    AuthorizationsField = DjangoManyToManyField[Authorization, Any]
+    WarrantsField = DjangoManyToManyField[Marshal, Any]
 
 __all__ = ["Card"]
 
@@ -71,6 +80,9 @@ class Card(models.Model, DirtyFieldsMixin, ReminderMixin):
         "Combatant", on_delete=models.CASCADE, related_name="cards"
     )
     discipline = models.ForeignKey(Discipline, on_delete=models.CASCADE)
+    if TYPE_CHECKING:
+        authorizations: AuthorizationsField
+        warrants: WarrantsField
     authorizations = models.ManyToManyField(
         Authorization, through="CombatantAuthorization"
     )
@@ -99,19 +111,19 @@ class Card(models.Model, DirtyFieldsMixin, ReminderMixin):
         """Return the expiration date as a string"""
         return self.expiration_date.strftime(DATE_FORMAT)
 
-    def send_expiry(self, reminder):
+    def send_expiry(self, reminder) -> bool:
         if not isinstance(reminder.content_object, Card):
             logger.error("Reminder %s is not a card", reminder)
             return False
 
-        return send_card_expiry(reminder)
+        return bool(send_card_expiry(reminder))
 
-    def send_reminder(self, reminder):
+    def send_reminder(self, reminder) -> bool:
         if not isinstance(reminder.content_object, Card):
             logger.error("Reminder %s is not a card", reminder)
             return False
 
-        return send_card_reminder(reminder)
+        return bool(send_card_reminder(reminder))
 
     @property
     def expiry_or_expired(self):
@@ -123,7 +135,7 @@ class Card(models.Model, DirtyFieldsMixin, ReminderMixin):
     @property
     def is_valid(self) -> bool:
         """Card is not past its expiration date"""
-        return self.expiry_days > 0
+        return bool(self.expiry_days > 0)
 
     @property
     def expiry_days(self):

@@ -42,7 +42,7 @@ urlpatterns = [
         name="pin-reset",
     ),
     path("pin/verify/<str:card_id>", pin.pin_verify, name="pin-verify"),
-    path("api/", include(api_urlpatterns)),
+    path("api/", include(api_urlpatterns)),  # type: ignore[arg-type]
 ]
 
 # Custom error handlers

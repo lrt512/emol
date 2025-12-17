@@ -74,7 +74,7 @@ class OneTimeCodeQuerySet(models.QuerySet):
 
         combatant_id = find_combatant_id(where)
         if combatant_id is not None:
-            return combatant_id
+            return int(combatant_id)
 
         try:
             compiler = self.query.get_compiler(using=self.db)
@@ -82,7 +82,7 @@ class OneTimeCodeQuerySet(models.QuerySet):
             if params:
                 for param in params:
                     if isinstance(param, int) and param > 0:
-                        return param
+                        return int(param)
         except Exception:
             pass
 
@@ -91,7 +91,7 @@ class OneTimeCodeQuerySet(models.QuerySet):
                 self.values_list("combatant_id", flat=True).distinct()
             )
             if len(distinct_combatant_ids) == 1:
-                return distinct_combatant_ids[0]
+                return int(distinct_combatant_ids[0])
         except Exception:
             pass
 

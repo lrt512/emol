@@ -5,12 +5,18 @@ Combatants are the centerpiece of eMoL. A combatant is someone who has
 authorizations in a discipline and needs an authorization card to show for them.
 """
 
+from __future__ import annotations
+
 import logging
 import re
 from collections import namedtuple
 from datetime import date, timedelta
+from typing import TYPE_CHECKING
 from urllib.parse import urljoin
 from uuid import uuid4
+
+if TYPE_CHECKING:
+    from cards.models.one_time_code import OneTimeCode
 
 from cards.mail import send_card_url, send_privacy_policy
 from cards.utility.names import generate_name
@@ -362,6 +368,9 @@ class Combatant(models.Model):
             )
             return False
 
+        if self.pin_hash is None:
+            return False
+
         if check_password(raw_pin, self.pin_hash):
             if self.pin_failed_attempts > 0:
                 self.pin_failed_attempts = 0
@@ -400,7 +409,7 @@ class Combatant(models.Model):
         self.pin_locked_until = None
         self.save(update_fields=["pin_hash", "pin_failed_attempts", "pin_locked_until"])
 
-    def initiate_pin_reset(self) -> "OneTimeCode":  # noqa: F821
+    def initiate_pin_reset(self) -> OneTimeCode:
         """Initiate a PIN reset for this combatant.
 
         Clears the existing PIN and creates a one-time code for setting a new PIN.

@@ -114,8 +114,12 @@ class Command(BaseCommand):
         """
         self.stdout.write("Checking for orphaned reminders...")
 
-        all_reminders = Reminder.objects.all().select_related("content_type")
-        orphaned = [r for r in all_reminders if r.content_object is None]
+        reminders = Reminder.objects.all().select_related("content_type")
+        orphaned = [
+            r
+            for r in reminders
+            if r.content_object is None  # type: ignore[attr-defined]
+        ]
 
         if orphaned:
             self.stdout.write(
@@ -123,7 +127,8 @@ class Command(BaseCommand):
             )
             for r in orphaned[:10]:
                 self.stdout.write(
-                    "    - Reminder ID %s (object_id=%s)" % (r.id, r.object_id)
+                    "    - Reminder ID %s (object_id=%s)"
+                    % (r.id, r.object_id)  # type: ignore[attr-defined]
                 )
             if len(orphaned) > 10:
                 self.stdout.write("    ... and %s more" % (len(orphaned) - 10))

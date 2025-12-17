@@ -1,6 +1,7 @@
 """PIN-related views for combatant authentication."""
 
 import logging
+from typing import cast
 
 from cards.mail import send_pin_reset, send_pin_setup
 from cards.models import Combatant, OneTimeCode
@@ -290,7 +291,7 @@ def initiate_pin_reset_for_combatant(combatant: Combatant) -> OneTimeCode:
     one_time_code = combatant.initiate_pin_reset()
     send_pin_reset(combatant, one_time_code)
     logger.info("PIN reset initiated for combatant %s", combatant.email)
-    return one_time_code
+    return cast(OneTimeCode, one_time_code)
 
 
 def send_pin_setup_email(combatant: Combatant) -> OneTimeCode:

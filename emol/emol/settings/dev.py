@@ -12,7 +12,7 @@ NO_ENFORCE_PERMISSIONS = True
 ALLOWED_HOSTS = ["localhost"]
 
 # Override CSP settings for development to allow inline scripts (for debugging)
-CSP_SCRIPT_SRC = (
+CSP_SCRIPT_SRC = (  # type: ignore[no-redef]
     "'self'",
     "https://cdnjs.cloudflare.com",
     "https://maxcdn.bootstrapcdn.com",

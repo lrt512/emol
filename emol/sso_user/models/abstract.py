@@ -15,7 +15,7 @@ class AbstractBaseUser(models.Model):
 
     is_active = True
 
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS: list[str] = []
 
     class Meta:
         abstract = True

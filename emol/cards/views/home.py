@@ -41,9 +41,9 @@ def _find_combatants_by_email_and_pin(email: str, pin: str) -> list:
     combatants = Combatant.objects.filter(email=email)
     matching = []
     for combatant in combatants:
-        if combatant.has_pin and combatant.check_pin(pin):
+        if combatant.has_pin and combatant.check_pin(pin):  # type: ignore[attr-defined]
             matching.append(combatant)
-        elif not combatant.has_pin:
+        elif not combatant.has_pin:  # type: ignore[attr-defined]
             matching.append(combatant)
     return matching
 

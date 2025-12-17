@@ -39,19 +39,19 @@ class Waiver(models.Model, DirtyFieldsMixin, ReminderMixin):
         """Return the expiration date as a string"""
         return self.expiration_date.strftime(DATE_FORMAT)
 
-    def send_expiry(self, reminder):
+    def send_expiry(self, reminder) -> bool:
         if not isinstance(reminder.content_object, Waiver):
             logger.error("Reminder %s is not a waiver", reminder)
             return False
 
-        return send_waiver_expiry(reminder)
+        return bool(send_waiver_expiry(reminder))
 
-    def send_reminder(self, reminder):
+    def send_reminder(self, reminder) -> bool:
         if not isinstance(reminder.content_object, Waiver):
             logger.error("Reminder %s is not a waiver", reminder)
             return False
 
-        return send_waiver_reminder(reminder)
+        return bool(send_waiver_reminder(reminder))
 
     @property
     def expiry_days(self):
@@ -60,7 +60,7 @@ class Waiver(models.Model, DirtyFieldsMixin, ReminderMixin):
 
     @property
     def is_valid(self) -> bool:
-        return self.expiry_days > 0
+        return bool(self.expiry_days > 0)
 
     @property
     def expiry_or_expired(self):

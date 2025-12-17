@@ -34,7 +34,9 @@ class ReminderMixin:
 
 
 # We need a fancy metaclass for mixing Model, ReminderMixin, and DirtyFieldsMixin
-class DirtyModelReminderMeta(ModelBase, ReminderMixinMeta, type(DirtyFieldsMixin)):
+class DirtyModelReminderMeta(
+    ModelBase, ReminderMixinMeta, type(DirtyFieldsMixin)  # type: ignore[misc]
+):
     """For any model that inherits from both ReminderMixin and DirtyFieldsMixin
 
     This works for solving the metaclass problems if ReminderMixin is abstract,

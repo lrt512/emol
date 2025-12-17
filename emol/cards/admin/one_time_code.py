@@ -32,4 +32,4 @@ class OneTimeCodeAdmin(admin.ModelAdmin):
         code_str = str(obj.code)
         return f"{code_str[:4]}...{code_str[-4:]}"
 
-    code_preview.short_description = "Code"
+    code_preview.short_description = "Code"  # type: ignore[attr-defined]

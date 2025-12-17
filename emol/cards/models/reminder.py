@@ -77,10 +77,13 @@ class Reminder(models.Model):
             return False
 
         model = self.content_type.model_class()
+        content_object = self.content_object
         try:
             if self.days_to_expiry == 0:
-                return self.content_object.send_expiry(self)
-            return self.content_object.send_reminder(self)
-        except model.DoesNotExist:
+                result = content_object.send_expiry(self)  # type: ignore[union-attr]
+            else:
+                result = content_object.send_reminder(self)  # type: ignore[union-attr]
+            return bool(result)
+        except model.DoesNotExist:  # type: ignore[union-attr]
             logger.error("%s instance for ID %s does not exist", model, self.object_id)
             return False

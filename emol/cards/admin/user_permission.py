@@ -41,16 +41,16 @@ class UserPermissionAdmin(admin.ModelAdmin):
     """Django Admin for UserPermission model"""
 
     form = UserPermissionForm
-    list_display = ("user", "permission", "discipline", "is_global_permission")
+    list_display = ("user", "permission", "discipline", "is_global")
     list_filter = ("permission__is_global", "discipline")
     search_fields = ("user__email", "permission__name", "discipline__name")
 
-    def is_global_permission(self, obj):
+    def is_global(self, obj):
         """Display whether the permission is global in the list view"""
         return obj.permission.is_global
 
-    is_global_permission.boolean = True
-    is_global_permission.short_description = "Global Permission"
+    is_global.boolean = True  # type: ignore[attr-defined]
+    is_global.short_description = "Global Permission"  # type: ignore[attr-defined]
 
     def add_view(self, request, form_url="", extra_context=None):
         """Add permission data to the context for JavaScript"""

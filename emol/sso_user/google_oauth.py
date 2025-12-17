@@ -1,6 +1,6 @@
 import logging
 import os
-from typing import Any, Dict
+from typing import Any, Dict, cast
 
 from authlib.integrations.django_client import OAuth
 from django.http import HttpResponseRedirect
@@ -44,6 +44,16 @@ class MockOAuthClient:
             "scope": "openid email profile",
             "userinfo": self.user_info,
         }
+
+    def fetch_token(self, request: Any) -> Dict[str, Any]:
+        """Fetch token from request (alias for authorize_access_token)."""
+        return self.authorize_access_token(request)
+
+    def userinfo(self, token: Dict[str, Any] | str) -> Dict[str, Any]:
+        """Return user info from token or directly."""
+        if isinstance(token, dict) and "userinfo" in token:
+            return cast(Dict[str, Any], token["userinfo"])
+        return cast(Dict[str, Any], self.user_info)
 
 
 class GoogleOAuth:

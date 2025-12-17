@@ -102,11 +102,13 @@ class GoogleAuthorize(View):
         request.session["google_token"] = token
         user_info = oauth.google.userinfo(token)
         request.session["user_info"] = user_info
+        assert settings.LOGIN_REDIRECT_URL is not None
         return redirect(settings.LOGIN_REDIRECT_URL)
 
 
 def logout_view(request: HttpRequest) -> HttpResponse:
     request.session.clear()
+    assert settings.LOGOUT_REDIRECT_URL is not None
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
 
