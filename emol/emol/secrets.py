@@ -70,8 +70,8 @@ def get_secret(name):
         response = ssm.get_parameter(Name=name, WithDecryption=True)
         return response["Parameter"]["Value"]
     except ssm.exceptions.ParameterNotFound as exc:
-        logger.error(f"Parameter '{name}' not found: {exc}")
+        logger.error("Parameter '%s' not found: %s", name, exc)
         return None
     except Exception as e:
-        logger.error(f"Error retrieving parameter '{name}': {str(e)}")
+        logger.error("Error retrieving parameter '%s': %s", name, str(e))
         return None

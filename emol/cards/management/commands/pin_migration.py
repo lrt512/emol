@@ -52,18 +52,20 @@ class Command(BaseCommand):
         )
 
         total = combatants.count()
-        self.stdout.write(f"Found {total} combatants without PINs")
+        self.stdout.write("Found %s combatants without PINs" % total)
 
         if limit:
             combatants = combatants[:limit]
-            self.stdout.write(f"Limited to {limit} combatants")
+            self.stdout.write("Limited to %s combatants" % limit)
 
         sent_count = 0
         error_count = 0
 
         for combatant in combatants:
             if dry_run:
-                self.stdout.write(f"Would send {stage} email to: {combatant.email}")
+                self.stdout.write(
+                    "Would send %s email to: %s" % (stage, combatant.email)
+                )
                 sent_count += 1
                 continue
 
@@ -75,11 +77,11 @@ class Command(BaseCommand):
             except Exception as e:
                 error_count += 1
                 logger.error("Failed to send email to %s: %s", combatant.email, e)
-                self.stderr.write(f"Error sending to {combatant.email}: {e}")
+                self.stderr.write("Error sending to %s: %s" % (combatant.email, e))
 
         action = "Would send" if dry_run else "Sent"
         self.stdout.write(
-            self.style.SUCCESS(f"{action} {sent_count} {stage} emails")
+            self.style.SUCCESS("%s %s %s emails" % (action, sent_count, stage))
         )
         if error_count:
             self.stdout.write(self.style.ERROR("Errors: %s", error_count))

@@ -26,8 +26,8 @@ class Command(BaseCommand):
         today = timezone.now().date()
         reminder_days = getattr(settings, "REMINDER_DAYS", [60, 30, 14, 0])
 
-        self.stdout.write(f"Reminder hygiene check ({today})")
-        self.stdout.write(f"Expected reminder days: {reminder_days}")
+        self.stdout.write("Reminder hygiene check (%s)" % today)
+        self.stdout.write("Expected reminder days: %s" % reminder_days)
         self.stdout.write("")
 
         card_ct = ContentType.objects.get_for_model(Card)
@@ -48,9 +48,7 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS("✓ No issues found"))
         else:
             action = "Fixed" if fix else "Found"
-            self.stdout.write(
-                self.style.WARNING(f"⚠ {action} {issues_found} issues")
-            )
+            self.stdout.write(self.style.WARNING(f"⚠ {action} {issues_found} issues"))
             if not fix:
                 self.stdout.write("Run with --fix to create missing reminders")
 
@@ -82,7 +80,7 @@ class Command(BaseCommand):
             item for item in model_class.objects.all() if item.expiration_date > today
         ]
 
-        self.stdout.write(f"Checking {len(active_items)} active {label}...")
+        self.stdout.write("Checking %s active %s..." % (len(active_items), label))
 
         for item in active_items:
             existing = set(
@@ -98,7 +96,7 @@ class Command(BaseCommand):
                 issues += 1
                 self.stdout.write(
                     self.style.WARNING(
-                        f"  {item}: missing reminders for days {sorted(missing)}"
+                        "  %s: missing reminders for days %s" % (item, sorted(missing))
                     )
                 )
                 if fix:
@@ -121,12 +119,14 @@ class Command(BaseCommand):
 
         if orphaned:
             self.stdout.write(
-                self.style.WARNING(f"  Found {len(orphaned)} orphaned reminders")
+                self.style.WARNING("  Found %s orphaned reminders" % len(orphaned))
             )
             for r in orphaned[:10]:
-                self.stdout.write(f"    - Reminder ID {r.id} (object_id={r.object_id})")
+                self.stdout.write(
+                    "    - Reminder ID %s (object_id=%s)" % (r.id, r.object_id)
+                )
             if len(orphaned) > 10:
-                self.stdout.write(f"    ... and {len(orphaned) - 10} more")
+                self.stdout.write("    ... and %s more" % (len(orphaned) - 10))
             self.stdout.write("  (These will be cleaned up by send_reminders)")
 
         return len(orphaned)

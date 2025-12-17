@@ -41,9 +41,9 @@ class Command(BaseCommand):
                 for key in all_keys:
                     cache.delete(key)
                     cache_keys.append(key)
-                self.stdout.write(f"🧹 Cleared {len(cache_keys)} throttle cache keys")
+                self.stdout.write("🧹 Cleared %s throttle cache keys" % len(cache_keys))
             except Exception as e:
-                self.stdout.write(f"⚠️  Could not clear cache keys: {e}")
+                self.stdout.write("⚠️  Could not clear cache keys: %s" % e)
                 # Try to clear some common ones
                 for i in range(256):
                     for j in range(256):
@@ -54,7 +54,7 @@ class Command(BaseCommand):
         # Create test client
         client = Client()
 
-        self.stdout.write(f"🧪 Making {options['requests']} test requests to /")
+        self.stdout.write("🧪 Making %s test requests to /" % options["requests"])
 
         responses = []
         for i in range(options["requests"]):
@@ -66,14 +66,15 @@ class Command(BaseCommand):
             remaining = response.get("X-RateLimit-Remaining", "Not Set")
             window = response.get("X-RateLimit-Window", "Not Set")
 
-            self.stdout.write(f"  Request {i+1}: Status {status}")
+            self.stdout.write("  Request %s: Status %s" % (i + 1, status))
             if status == 429:
                 self.stdout.write(self.style.ERROR("    ❌ THROTTLED"))
             else:
                 self.stdout.write(self.style.SUCCESS("    ✅ OK"))
 
             self.stdout.write(
-                f"  Headers - Limit: {limit}, Remaining: {remaining}, Window: {window}"
+                "  Headers - Limit: %s, Remaining: %s, Window: %s"
+                % (limit, remaining, window)
             )
 
             responses.append(
@@ -88,13 +89,13 @@ class Command(BaseCommand):
         # Summary
         throttled_count = sum(1 for r in responses if r["status"] == 429)
         self.stdout.write("\n📊 Summary:")
-        self.stdout.write(f"   Total requests: {len(responses)}")
-        self.stdout.write(f"   Successful: {len(responses) - throttled_count}")
-        self.stdout.write(f"   Throttled: {throttled_count}")
+        self.stdout.write("   Total requests: %s" % len(responses))
+        self.stdout.write("   Successful: %s" % (len(responses) - throttled_count))
+        self.stdout.write("   Throttled: %s" % throttled_count)
 
         if throttled_count > 0:
             self.stdout.write(
-                self.style.ERROR(f"\n❌ {throttled_count} requests were throttled")
+                self.style.ERROR("\n❌ %s requests were throttled" % throttled_count)
             )
             self.stdout.write(
                 "This suggests the throttling middleware is active and working"
@@ -113,4 +114,4 @@ class Command(BaseCommand):
 
         for key in test_keys:
             value = cache.get(key, "Not Found")
-            self.stdout.write(f"   {key}: {value}")
+            self.stdout.write("   %s: %s" % (key, value))

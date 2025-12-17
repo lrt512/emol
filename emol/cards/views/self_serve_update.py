@@ -60,7 +60,11 @@ class SelfServeUpdateSerializer(ModelSerializer):
         """
         if data.get("member_expiry") and not data.get("member_number"):
             raise serializers.ValidationError(
-                {"member_number": "Member number is required when specifying an expiry date."}
+                {
+                    "member_number": (
+                        "Member number is required when specifying an expiry date."
+                    )
+                }
             )
 
         # Validate province code exists in Region table
@@ -112,7 +116,11 @@ def self_serve_update(request, code):
             return render(
                 request,
                 "message/message.html",
-                {"message": "The update code provided is invalid or has already been used."},
+                {
+                    "message": (
+                        "The update code provided is invalid or has already been used."
+                    )
+                },
             )
 
         context = {
@@ -155,7 +163,11 @@ def self_serve_update(request, code):
         return render(
             request,
             "message/message.html",
-            {"message": "The update code provided is invalid or has already been used."},
+            {
+                "message": (
+                    "The update code provided is invalid or has already been used."
+                )
+            },
         )
     except Exception:
         logger.exception("Unexpected error in self_serve_update for code %s", code)

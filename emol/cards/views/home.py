@@ -77,7 +77,9 @@ def request_card(request):
                 if combatant.accepted_privacy_policy:
                     send_card_url(combatant)
                 else:
-                    logger.error(f"Card request for {combatant} (privacy not accepted)")
+                    logger.error(
+                        "Card request for %s (privacy not accepted)", combatant
+                    )
                     send_privacy_policy(combatant)
         else:
             try:
@@ -85,7 +87,9 @@ def request_card(request):
                 if combatant.accepted_privacy_policy:
                     send_card_url(combatant)
                 else:
-                    logger.error(f"Card request for {combatant} (privacy not accepted)")
+                    logger.error(
+                        "Card request for %s (privacy not accepted)", combatant
+                    )
                     send_privacy_policy(combatant)
             except MultipleObjectsReturned:
                 combatants = Combatant.objects.filter(email=email)
@@ -95,7 +99,7 @@ def request_card(request):
                     else:
                         send_privacy_policy(combatant)
     except Combatant.DoesNotExist:
-        logger.error(f"Card URL request: No combatant for {email}")
+        logger.error("Card URL request: No combatant for %s", email)
 
     return render(request, "message/message.html", context)
 
@@ -128,27 +132,31 @@ def update_info(request):
             for combatant in combatants:
                 if combatant.accepted_privacy_policy:
                     code = combatant.one_time_codes.create_info_update_code()
-                    logger.info(f"Created update code for {combatant}")
+                    logger.info("Created update code for %s", combatant)
                     send_info_update(combatant, code)
                 else:
-                    logger.error(f"Card request for {combatant} (privacy not accepted)")
+                    logger.error(
+                        "Card request for %s (privacy not accepted)", combatant
+                    )
                     send_privacy_policy(combatant)
         else:
             try:
                 combatant = Combatant.objects.get(email=email)
                 if combatant.accepted_privacy_policy:
                     code = combatant.one_time_codes.create_info_update_code()
-                    logger.info(f"Created update code for {combatant}")
+                    logger.info("Created update code for %s", combatant)
                     send_info_update(combatant, code)
                 else:
-                    logger.error(f"Card request for {combatant} (privacy not accepted)")
+                    logger.error(
+                        "Card request for %s (privacy not accepted)", combatant
+                    )
                     send_privacy_policy(combatant)
             except MultipleObjectsReturned:
                 combatants = Combatant.objects.filter(email=email)
                 for combatant in combatants:
                     if combatant.accepted_privacy_policy:
                         code = combatant.one_time_codes.create_info_update_code()
-                        logger.info(f"Created update code for {combatant}")
+                        logger.info("Created update code for %s", combatant)
                         send_info_update(combatant, code)
                     else:
                         send_privacy_policy(combatant)
@@ -172,19 +180,19 @@ def marshal_list(request):
     logger.info("Fetching marshal list")
 
     disciplines = Discipline.objects.all().order_by("name")
-    logger.debug(f"Found {disciplines.count()} disciplines")
+    logger.debug("Found %s disciplines", disciplines.count())
 
     warrants = CombatantWarrant.objects.select_related(
         "card__combatant", "marshal", "marshal__discipline"
     ).order_by("card__combatant__sca_name")
 
-    logger.debug(f"Found {warrants.count()} total warrants")
+    logger.debug("Found %s total warrants", warrants.count())
 
     marshal_lists = {}
     for warrant in warrants:
         try:
             if warrant.marshal is None:
-                logger.warning(f"Warrant {warrant.id} has no associated marshal")
+                logger.warning("Warrant %s has no associated marshal", warrant.id)
                 continue
 
             discipline_id = warrant.marshal.discipline_id
@@ -192,11 +200,11 @@ def marshal_list(request):
                 marshal_lists[discipline_id] = []
             marshal_lists[discipline_id].append(warrant)
         except AttributeError as e:
-            logger.error(f"Missing attribute for warrant {warrant.id}: {str(e)}")
+            logger.error("Missing attribute for warrant %s: %s", warrant.id, str(e))
         except ValueError as e:
-            logger.error(f"Invalid data for warrant {warrant.id}: {str(e)}")
+            logger.error("Invalid data for warrant %s: %s", warrant.id, str(e))
 
-    logger.debug(f"Organized warrants into {len(marshal_lists)} discipline groups")
+    logger.debug("Organized warrants into %s discipline groups", len(marshal_lists))
 
     context = {
         "disciplines": disciplines,

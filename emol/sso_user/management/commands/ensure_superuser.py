@@ -41,7 +41,7 @@ class Command(BaseCommand):
             # Use default email for development/containers
             if os.environ.get("EMOL_DEV"):
                 email = "admin@emol.com"
-                self.stdout.write(f"Using default development email: {email}")
+                self.stdout.write("Using default development email: %s" % email)
             else:
                 self.stdout.write(
                     self.style.ERROR(

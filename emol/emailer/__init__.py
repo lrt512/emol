@@ -74,7 +74,7 @@ class AWSEmailer:
             response = client.send_email(**email_args)
 
         except ClientError as exc:
-            logger.error(f"Error sending mail to {recipient}")
+            logger.error("Error sending mail to %s", recipient)
             logger.exception(exc)
             return False
         else:

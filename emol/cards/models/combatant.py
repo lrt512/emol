@@ -418,7 +418,7 @@ class Combatant(models.Model):
         try:
             send_pin_lockout_notification(self)
         except Exception as e:
-            logger.error(f"Failed to send lockout notification to {self.email}: {e}")
+            logger.error("Failed to send lockout notification to %s: %s", self.email, e)
 
 
 def membership_valid(self, on_date=None):
@@ -445,5 +445,7 @@ def membership_valid(self, on_date=None):
 @receiver(models.signals.post_save, sender=Combatant)
 def send_privacy_policy_email(sender, instance, created, **kwargs):
     if created and not instance.accepted_privacy_policy:
-        logger.debug(f"Sending privacy policy email to {instance} ({instance.email})")
+        logger.debug(
+            "Sending privacy policy email to %s (%s)", instance, instance.email
+        )
         send_privacy_policy(instance)

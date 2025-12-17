@@ -69,7 +69,7 @@ def pin_setup(request: HttpRequest, code: str) -> HttpResponse:
         try:
             combatant.set_pin(pin)
             one_time_code.consume()
-            logger.info(f"PIN set successfully for combatant {combatant.email}")
+            logger.info("PIN set successfully for combatant %s", combatant.email)
             return render(
                 request,
                 "message/message.html",
@@ -159,7 +159,7 @@ def pin_reset(request: HttpRequest, code: str) -> HttpResponse:
         try:
             combatant.set_pin(pin)
             one_time_code.consume()
-            logger.info(f"PIN reset successfully for combatant {combatant.email}")
+            logger.info("PIN reset successfully for combatant %s", combatant.email)
             return render(
                 request,
                 "message/message.html",
@@ -289,7 +289,7 @@ def initiate_pin_reset_for_combatant(combatant: Combatant) -> OneTimeCode:
     """
     one_time_code = combatant.initiate_pin_reset()
     send_pin_reset(combatant, one_time_code)
-    logger.info(f"PIN reset initiated for combatant {combatant.email}")
+    logger.info("PIN reset initiated for combatant %s", combatant.email)
     return one_time_code
 
 
@@ -304,5 +304,5 @@ def send_pin_setup_email(combatant: Combatant) -> OneTimeCode:
     """
     one_time_code = combatant.one_time_codes.create_pin_setup_code()
     send_pin_setup(combatant, one_time_code)
-    logger.info(f"PIN setup email sent to combatant {combatant.email}")
+    logger.info("PIN setup email sent to combatant %s", combatant.email)
     return one_time_code

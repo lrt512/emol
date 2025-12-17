@@ -27,9 +27,9 @@ class Command(BaseCommand):
         django_settings_module = getattr(settings, "DJANGO_SETTINGS_MODULE", "NOT SET")
 
         self.stdout.write("📋 Settings:")
-        self.stdout.write(f"   DJANGO_SETTINGS_MODULE: {django_settings_module}")
-        self.stdout.write(f"   GLOBAL_THROTTLE_LIMIT: {limit}")
-        self.stdout.write(f"   GLOBAL_THROTTLE_WINDOW: {window}")
+        self.stdout.write("   DJANGO_SETTINGS_MODULE: %s" % django_settings_module)
+        self.stdout.write("   GLOBAL_THROTTLE_LIMIT: %s" % limit)
+        self.stdout.write("   GLOBAL_THROTTLE_WINDOW: %s" % window)
 
         # Test middleware initialization
         self.stdout.write("\n🔧 Testing Middleware:")
@@ -38,8 +38,10 @@ class Command(BaseCommand):
             return None
 
         middleware = GlobalThrottleMiddleware(dummy_response)
-        self.stdout.write(f"   Middleware request_limit: {middleware.request_limit}")
-        self.stdout.write(f"   Middleware request_window: {middleware.request_window}")
+        self.stdout.write("   Middleware request_limit: %s" % middleware.request_limit)
+        self.stdout.write(
+            "   Middleware request_window: %s" % middleware.request_window
+        )
 
         # Test with fake request
         factory = RequestFactory()
@@ -53,7 +55,7 @@ class Command(BaseCommand):
 
         self.stdout.write("\n🧪 Testing maybe_throttle:")
         result = middleware.maybe_throttle(request)
-        self.stdout.write(f"   maybe_throttle() returned: {result}")
+        self.stdout.write("   maybe_throttle() returned: %s" % result)
 
         if result is False:
             self.stdout.write(self.style.SUCCESS("✅ Request would NOT be throttled"))
@@ -69,13 +71,13 @@ class Command(BaseCommand):
         test_key = "throttle:global:127.0.0.1"
         cache_value = cache.get(test_key, "NOT FOUND")
         self.stdout.write("\n💾 Cache Test:")
-        self.stdout.write(f"   Test cache key: {test_key}")
-        self.stdout.write(f"   Current value: {cache_value}")
+        self.stdout.write("   Test cache key: %s" % test_key)
+        self.stdout.write("   Current value: %s" % cache_value)
 
         # Test cache operations
         cache.set("test_throttle_cache", "working", 60)
         cache_test = cache.get("test_throttle_cache", "FAILED")
-        self.stdout.write(f"   Cache write/read test: {cache_test}")
+        self.stdout.write("   Cache write/read test: %s" % cache_test)
 
         # Check middleware list
         middleware_list = getattr(settings, "MIDDLEWARE", [])
@@ -84,13 +86,13 @@ class Command(BaseCommand):
         self.stdout.write("\n📝 Middleware Configuration:")
         if throttle_middleware in middleware_list:
             index = middleware_list.index(throttle_middleware)
-            self.stdout.write(f"   GlobalThrottleMiddleware is at position {index}")
+            self.stdout.write("   GlobalThrottleMiddleware is at position %s" % index)
             self.stdout.write("   Full middleware list:")
             for i, mw in enumerate(middleware_list):
                 marker = (
                     " ← GlobalThrottleMiddleware" if mw == throttle_middleware else ""
                 )
-                self.stdout.write(f"     {i}: {mw}{marker}")
+                self.stdout.write("     %s: %s%s" % (i, mw, marker))
         else:
             self.stdout.write(
                 self.style.ERROR("   GlobalThrottleMiddleware NOT FOUND in MIDDLEWARE")

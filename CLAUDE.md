@@ -61,6 +61,7 @@ Code Standards
 - Using `# pylint: disable=broad-exception-caught` is the last resort
 - Wrap strings at 88 characters intelligently (e.g. wrap lines, memoize strings outside of deep indents, etc.)
 - Wrap comments and docstrings at 88 characters intelligently
+- Dealing with wrapping strings using noqa is cheating in almost all cases!
 
 ```
 # Don't do this

@@ -225,7 +225,7 @@ def send_pin_migration_email(combatant, one_time_code, stage="initial"):
     template_key = f"pin_migration_{stage}"
     template = EMAIL_TEMPLATES.get(template_key)
     if not template:
-        logger.error(f"Unknown PIN migration stage: {stage}")
+        logger.error("Unknown PIN migration stage: %s", stage)
         return False
 
     body = template.get("body").format(

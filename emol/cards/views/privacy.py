@@ -45,6 +45,6 @@ def privacy_policy(request, code=None):
     elif request.method == "GET":
         context["code"] = code if combatant is not None else None
         if combatant is not None:
-            logger.debug(f"privacy acceptance for combatant {combatant}")
+            logger.debug("privacy acceptance for combatant %s", combatant)
 
         return render(request, "privacy/privacy_policy.html", context)
