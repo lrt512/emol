@@ -9,8 +9,6 @@ from django.db.models.base import ModelBase
 class ReminderMixinMeta(ABCMeta):
     """Metaclass for ReminderMixin"""
 
-    pass
-
 
 class ReminderMixin:
     """Base class for models that have reminders
@@ -50,5 +48,3 @@ class DirtyModelReminderMeta(
     ):
         ...
     """
-
-    pass

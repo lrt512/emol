@@ -60,7 +60,7 @@ class CombatantWarrantViewSet(GenericViewSet):
             Marshal.objects.filter(discipline=discipline), slug=marshal_slug
         )
 
-        card, created = Card.objects.get_or_create(
+        card, _created = Card.objects.get_or_create(
             combatant=combatant,
             discipline=discipline,
             defaults={"date_issued": today()},

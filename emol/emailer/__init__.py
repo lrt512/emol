@@ -42,8 +42,8 @@ class AWSEmailer:
             logger.info(subject)
             logger.info(body)
             return True
-        else:
-            logger.info("Sending email to %s: %s", recipient, subject)
+
+        logger.info("Sending email to %s: %s", recipient, subject)
 
         from_email = from_email or settings.MAIL_DEFAULT_SENDER
         reply_to = reply_to or settings.MOL_EMAIL
@@ -77,11 +77,11 @@ class AWSEmailer:
             logger.error("Error sending mail to %s", recipient)
             logger.exception(exc)
             return False
-        else:
-            logger.debug(
-                "Email %s sent to %s. Message ID: %s",
-                subject,
-                recipient,
-                response["MessageId"],
-            )
-            return True
+
+        logger.debug(
+            "Email %s sent to %s. Message ID: %s",
+            subject,
+            recipient,
+            response["MessageId"],
+        )
+        return True

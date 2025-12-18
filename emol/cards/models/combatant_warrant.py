@@ -1,9 +1,8 @@
 from uuid import uuid4
 
+from cards.models.card import Card
+from cards.models.marshal import Marshal
 from django.db import models
-
-from .card import Card
-from .marshal import Marshal
 
 
 class CombatantWarrant(models.Model):
@@ -27,8 +26,7 @@ class CombatantWarrant(models.Model):
     uuid = models.UUIDField(default=uuid4, editable=False)
 
     def __str__(self):
-        return "<Warrant: %s => %s/%s>" % (
-            self.card.combatant.name,
-            self.card.discipline.name,
-            self.marshal.name,
+        return (
+            f"<Warrant: {self.card.combatant.name} => "
+            f"{self.marshal.name}/{self.marshal.discipline.name}>"
         )

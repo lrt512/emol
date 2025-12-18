@@ -54,11 +54,11 @@ class SelfServeUpdateSerializer(ModelSerializer):
         "address2",
     ]
 
-    def validate(self, data):
+    def validate(self, attrs):
         """
         Validate that member_expiry requires member_number and province code exists.
         """
-        if data.get("member_expiry") and not data.get("member_number"):
+        if attrs.get("member_expiry") and not attrs.get("member_number"):
             raise serializers.ValidationError(
                 {
                     "member_number": (
@@ -68,8 +68,8 @@ class SelfServeUpdateSerializer(ModelSerializer):
             )
 
         # Validate province code exists in Region table
-        if data.get("province"):
-            province_code = data["province"]
+        if attrs.get("province"):
+            province_code = attrs["province"]
             codes = Region.objects.filter(active=True).values_list("code", flat=True)
             if province_code not in codes:
                 raise serializers.ValidationError(
@@ -79,7 +79,7 @@ class SelfServeUpdateSerializer(ModelSerializer):
                     }
                 )
 
-        return data
+        return attrs
 
     def to_internal_value(self, data):
         """

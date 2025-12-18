@@ -3,8 +3,7 @@
 from typing import Any, cast
 
 from emol.secrets import get_secret
-
-from .defaults import *  # noqa: F403, F401
+from emol.settings.defaults import *  # noqa: F403, F401
 
 AWS_REGION = "ca-central-1"
 

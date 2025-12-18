@@ -6,7 +6,7 @@ import hashlib
 from django.conf import settings
 
 
-class SHA256(object):
+class SHA256:
     """SHA256 hashing class.
 
     Provides hash generation and verification.

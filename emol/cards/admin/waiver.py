@@ -8,5 +8,3 @@ __all__ = ["WaiverAdmin"]
 @admin.register(Waiver)
 class WaiverAdmin(admin.ModelAdmin):
     """Django Admin for Waiver model"""
-
-    pass

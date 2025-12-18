@@ -24,18 +24,17 @@ from typing import TYPE_CHECKING, Any
 from uuid import uuid4
 
 from cards.mail import send_card_expiry, send_card_reminder
+from cards.models.authorization import Authorization
+from cards.models.discipline import Discipline
+from cards.models.marshal import Marshal
+from cards.models.reminder import Reminder
+from cards.models.reminder_mixin import ReminderMixin
 from cards.utility.named_tuples import NameSlugTuple
 from cards.utility.time import DATE_FORMAT, add_years, today
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
-from .authorization import Authorization
-from .discipline import Discipline
-from .marshal import Marshal
-from .reminder import Reminder
-from .reminder_mixin import ReminderMixin
 
 if TYPE_CHECKING:
     from django.db.models import ManyToManyField as DjangoManyToManyField
@@ -219,7 +218,7 @@ class Card(models.Model, DirtyFieldsMixin, ReminderMixin):
 
 
 @receiver(post_save, sender=Card)
-def update_reminders(sender, instance, created, **kwargs):
+def update_reminders(sender, instance, created, **kwargs):  # noqa: ARG001
     """Manage reminders when the card date is updated"""
     if created:
         Reminder.create_or_update_reminders(instance)

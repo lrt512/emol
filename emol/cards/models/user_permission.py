@@ -1,12 +1,11 @@
 import logging
 
+from cards.models.discipline import Discipline
+from cards.models.permission import Permission
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from sso_user.models import SSOUser
-
-from .discipline import Discipline
-from .permission import Permission
 
 logger = logging.getLogger("cards")
 
@@ -31,10 +30,8 @@ class UserPermission(models.Model):
                 f"<UserPermission: {self.user.email} - {self.permission.name} "
                 f"({self.discipline.name})>"
             )
-        else:
-            return (
-                f"<UserPermission: {self.user.email} - {self.permission.name} (global)>"
-            )
+
+        return f"<UserPermission: {self.user.email} - {self.permission.name} (global)>"
 
     def clean(self):
         """Validate that global permissions don't have disciplines assigned"""

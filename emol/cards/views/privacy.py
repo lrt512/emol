@@ -25,7 +25,7 @@ def privacy_policy(request, code=None):
     context = {"policy": PrivacyPolicy.latest_text()}
     if request.method == "POST":
         if combatant is None:
-            raise HttpResponseBadRequest
+            return HttpResponseBadRequest()
 
         if "accept" in request.POST:
             combatant.accept_privacy_policy()
@@ -33,18 +33,21 @@ def privacy_policy(request, code=None):
             if is_enabled("pin_authentication"):
                 pin_code = combatant.one_time_codes.create_pin_setup_code()
                 return redirect("pin-setup", code=pin_code.code)
-            else:
-                context = {
-                    "card_url": combatant.card_url,
-                    "sent_email": True,
-                }
-                return render(request, "privacy/privacy_accepted.html", context)
-        elif "decline" in request.POST:
+
+            context = {
+                "card_url": combatant.card_url,
+                "sent_email": True,
+            }
+            return render(request, "privacy/privacy_accepted.html", context)
+
+        if "decline" in request.POST:
             combatant.delete()
             return render(request, "privacy/privacy_declined.html", {})
-    elif request.method == "GET":
-        context["code"] = code if combatant is not None else None
-        if combatant is not None:
-            logger.debug("privacy acceptance for combatant %s", combatant)
 
-        return render(request, "privacy/privacy_policy.html", context)
+        return HttpResponseBadRequest()
+
+    context["code"] = code if combatant is not None else None
+    if combatant is not None:
+        logger.debug("privacy acceptance for combatant %s", combatant)
+
+    return render(request, "privacy/privacy_policy.html", context)

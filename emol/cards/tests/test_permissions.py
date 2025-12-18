@@ -122,9 +122,6 @@ class CardDatePermissionTests(BasePermissionTestCase):
 
 
 class AuthorizationMarshalPermissionTests(BasePermissionTestCase):
-    def setUp(self):
-        super().setUp()
-
     @patch("cards.api.permissions.UserPermission.user_has_permission")
     def test_combatant_authorization_permission_requires_discipline_permission(
         self, mock_has_perm

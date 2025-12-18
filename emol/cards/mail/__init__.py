@@ -1,9 +1,8 @@
 import logging
 
+from cards.mail.email_templates import EMAIL_TEMPLATES
 from cards.utility.privacy import privacy_policy_url
 from emailer import AWSEmailer
-
-from .email_templates import EMAIL_TEMPLATES
 
 logger = logging.getLogger("cards")
 

@@ -8,10 +8,9 @@ from django.core.management import call_command
 from django.http import HttpResponse
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
-
-from .decorators import admin_required, login_required
-from .google_oauth import GoogleOAuth
-from .models import SSOUser
+from sso_user.decorators import admin_required, login_required
+from sso_user.google_oauth import GoogleOAuth
+from sso_user.models import SSOUser
 
 
 class SSOUserModelTest(TestCase):

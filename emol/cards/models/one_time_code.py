@@ -78,7 +78,7 @@ class OneTimeCodeQuerySet(models.QuerySet):
 
         try:
             compiler = self.query.get_compiler(using=self.db)
-            sql, params = compiler.as_sql()
+            _sql, params = compiler.as_sql()
             if params:
                 for param in params:
                     if isinstance(param, int) and param > 0:

@@ -30,7 +30,7 @@ class MockOAuthClient:
         self.client_kwargs = {"scope": "openid email profile"}
 
     def authorize_redirect(
-        self, request: Any, redirect_uri: str, **kwargs: Any
+        self, request: Any, redirect_uri: str, **kwargs: Any  # noqa: ARG002
     ) -> HttpResponseRedirect:
         """Simulate OAuth redirect by going straight to mock callback."""
         return HttpResponseRedirect(reverse("mock_oauth_callback"))

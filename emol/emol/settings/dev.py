@@ -1,6 +1,5 @@
 from emol.secrets import get_secret
-
-from .defaults import *  # noqa: F401, F403
+from emol.settings.defaults import *  # noqa: F401, F403
 
 AWS_REGION = "ca-central-1"
 

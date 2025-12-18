@@ -22,8 +22,8 @@ class PermissionAdmin(admin.ModelAdmin):
         """
         if obj:
             return ["is_global", "is_default"]
-        else:
-            return ["is_default"]
+
+        return ["is_default"]
 
     def has_delete_permission(self, request, obj=None):
         """

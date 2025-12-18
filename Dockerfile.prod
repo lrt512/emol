@@ -1,4 +1,4 @@
-FROM python:3.13-slim
+FROM python:3.13-slim AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
@@ -10,29 +10,46 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PATH="/opt/poetry/bin:$PATH"
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-    awscli \
     build-essential \
     pkg-config \
     libmariadb-dev \
-    libmariadb3 \
     curl \
-    cron \
-    && rm -rf /var/lib/apt/lists/* \
-    && mkdir -p /opt/emol/emol /var/log/emol /var/run/emol \
-    && chown -R www-data:www-data /var/log/emol /var/run/emol
+    && rm -rf /var/lib/apt/lists/*
 
 RUN curl -sSL https://install.python-poetry.org | python3 - && \
     ln -sf /opt/poetry/bin/poetry /usr/local/bin/poetry
 
-COPY setup_files /opt/emol/setup_files
-RUN chmod +x /opt/emol/setup_files/*.sh
+WORKDIR /opt/emol
 
+# Cache dependency install
+COPY pyproject.toml poetry.lock /opt/emol/
+RUN poetry install --only main --no-root
+
+# Bring the full application in and install the project (main deps only)
 COPY . /opt/emol/
-WORKDIR /opt/emol/emol
+RUN poetry install --only main
 
-RUN cd /opt/emol && \
-    poetry install --only main && \
-    chown -R www-data:www-data /opt/emol
+
+FROM python:3.13-slim AS runtime
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    DEBIAN_FRONTEND=noninteractive \
+    TZ=America/Toronto
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    awscli \
+    cron \
+    libmariadb3 \
+    && rm -rf /var/lib/apt/lists/* \
+    && mkdir -p /opt/emol/emol /var/log/emol /var/run/emol \
+    && chown -R www-data:www-data /var/log/emol /var/run/emol
+
+WORKDIR /opt/emol
+COPY --from=builder /opt/emol /opt/emol
+RUN chown -R www-data:www-data /opt/emol
+
+WORKDIR /opt/emol/emol
 
 EXPOSE 8000
 

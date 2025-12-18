@@ -1,9 +1,8 @@
 """Admin configuration for feature switches."""
 
 from django.contrib import admin
-
-from .helpers import clear_cache
-from .models import FeatureSwitch
+from feature_switches.helpers import clear_cache
+from feature_switches.models import FeatureSwitch
 
 
 @admin.register(FeatureSwitch)

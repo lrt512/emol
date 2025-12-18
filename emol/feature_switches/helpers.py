@@ -4,6 +4,7 @@ import logging
 from typing import Optional
 
 from django.core.cache import cache
+from feature_switches.models import FeatureSwitch
 
 logger = logging.getLogger(__name__)
 
@@ -32,8 +33,6 @@ def is_enabled(switch_name: str, default: bool = False) -> bool:
             return cached_value
         return bool(cached_value)
 
-    from .models import FeatureSwitch
-
     try:
         switch = FeatureSwitch.objects.get(name=switch_name)
         value = bool(switch.enabled)
@@ -56,12 +55,12 @@ def clear_cache(switch_name: Optional[str] = None) -> None:
         switch_name: If provided, clear only this switch's cache.
                      If None, clear all feature switch cache entries.
     """
+    switch: FeatureSwitch
+
     if switch_name:
         cache_key = f"{CACHE_KEY_PREFIX}{switch_name}"
         cache.delete(cache_key)
     else:
-        from .models import FeatureSwitch
-
         for switch in FeatureSwitch.objects.all():
-            cache_key = f"{CACHE_KEY_PREFIX}{switch.name}"  # type: ignore[attr-defined]
+            cache_key = f"{CACHE_KEY_PREFIX}{switch.name}"
             cache.delete(cache_key)

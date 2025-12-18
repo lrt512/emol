@@ -52,7 +52,7 @@ class AbstractBaseUser(models.Model):
     def set_password(self, raw_password):
         pass
 
-    def check_password(self, raw_password):
+    def check_password(self, raw_password):  # noqa: ARG002
         return True
 
     def set_unusable_password(self):

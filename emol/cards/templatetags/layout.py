@@ -31,5 +31,5 @@ def yes_no_warrant(card, marshal):
 
 
 @register.filter
-def card_ordered_auths(self):
+def card_ordered_auths(self):  # noqa: ARG001
     return Authorization.objects.order_by("is_primary", "name")

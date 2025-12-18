@@ -200,7 +200,7 @@ class CombatantPINTestCase(TestCase):
         self.assertIsNone(self.combatant.pin_hash)
         self.assertEqual(self.combatant.pin_failed_attempts, 0)
 
-    @patch("cards.mail.send_pin_lockout_notification")
+    @patch("cards.models.combatant.send_pin_lockout_notification")
     def test_lockout_sends_notification(self, mock_send):
         """Test that lockout triggers email notification."""
         self.combatant.set_pin("1234")

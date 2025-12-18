@@ -1,10 +1,9 @@
 # -*- coding: utf-8 -*-
 """Model for a discipline's marshal."""
 
+from cards.models.discipline import Discipline
 from django.db import models
 from django.utils.text import slugify
-
-from .discipline import Discipline
 
 __all__ = ["Marshal"]
 

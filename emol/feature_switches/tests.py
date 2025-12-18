@@ -2,9 +2,9 @@
 
 from django.core.cache import cache
 from django.test import TestCase
-
-from .helpers import CACHE_KEY_PREFIX, clear_cache, is_enabled
-from .models import FeatureSwitch
+from feature_switches.helpers import CACHE_KEY_PREFIX, clear_cache, is_enabled
+from feature_switches.models import FeatureSwitch
+from feature_switches.templatetags.feature_switches import switch_enabled
 
 
 class FeatureSwitchModelTestCase(TestCase):
@@ -174,8 +174,6 @@ class FeatureSwitchTemplateTagTestCase(TestCase):
         """Test template tag returns True for enabled feature."""
         FeatureSwitch.objects.create(name="template_feature", enabled=True)
 
-        from .templatetags.feature_switches import switch_enabled
-
         result = switch_enabled("template_feature")
         self.assertTrue(result)
 
@@ -183,14 +181,11 @@ class FeatureSwitchTemplateTagTestCase(TestCase):
         """Test template tag returns False for disabled feature."""
         FeatureSwitch.objects.create(name="disabled_template", enabled=False)
 
-        from .templatetags.feature_switches import switch_enabled
-
         result = switch_enabled("disabled_template")
         self.assertFalse(result)
 
     def test_template_tag_with_nonexistent_feature(self):
         """Test template tag returns False for nonexistent feature."""
-        from .templatetags.feature_switches import switch_enabled
 
         result = switch_enabled("nonexistent")
         self.assertFalse(result)

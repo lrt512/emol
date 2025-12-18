@@ -1,14 +1,13 @@
 import logging
 
 from cards.mail import send_waiver_expiry, send_waiver_reminder
+from cards.models.reminder import Reminder
+from cards.models.reminder_mixin import ReminderMixin
 from cards.utility.time import DATE_FORMAT, add_years, today
 from dirtyfields import DirtyFieldsMixin
 from django.db import models
 from django.db.models.signals import post_save
 from django.dispatch import receiver
-
-from .reminder import Reminder
-from .reminder_mixin import ReminderMixin
 
 logger = logging.getLogger("cards")
 
@@ -81,7 +80,7 @@ class Waiver(models.Model, DirtyFieldsMixin, ReminderMixin):
 
 
 @receiver(post_save, sender=Waiver)
-def update_reminders(sender, instance, created, **kwargs):
+def update_reminders(sender, instance, created, **kwargs):  # noqa: ARG001
     if created:
         Reminder.create_or_update_reminders(instance)
     elif "date_signed" in instance.get_dirty_fields(check_relationship=True):

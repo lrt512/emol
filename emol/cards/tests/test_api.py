@@ -1,5 +1,6 @@
 """Tests for the cards API endpoints."""
 
+import uuid
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -412,8 +413,6 @@ class InitiatePinResetAPITestCase(TestCase):
             user=self.user, permission=self.permission, discipline=None
         )
         self.client.force_authenticate(user=self.user)
-
-        import uuid
 
         response = self.client.post(
             reverse("initiate-pin-reset"),

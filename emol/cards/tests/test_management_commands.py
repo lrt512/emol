@@ -1,4 +1,5 @@
 from datetime import timedelta
+from io import StringIO
 from unittest.mock import patch
 
 from cards.management.commands.clean_expired import Command as CleanExpiredCommand
@@ -416,9 +417,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         # Run command with default settings
         call_command("summarize_expiries")
 
-        # The command completed successfully (no exceptions)
-        self.assertTrue(True)
-
     def test_summarize_expiries_custom_days(self):
         """Test custom days parameter"""
         # Create cards with different expiry times
@@ -436,9 +434,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         # Run with 14 days - should include first card only
         call_command("summarize_expiries", "--days=14")
 
-        # The command completed successfully
-        self.assertTrue(True)
-
     def test_summarize_expiries_detailed_mode(self):
         """Test detailed listing mode"""
         # Create card and waiver expiring within a week
@@ -455,9 +450,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         # Run with detailed flag
         call_command("summarize_expiries", "--detailed")
 
-        # The command completed successfully
-        self.assertTrue(True)
-
     def test_summarize_expiries_no_expiries(self):
         """Test when no items are expiring"""
         # Create cards/waivers that expire far in the future
@@ -473,9 +465,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
 
         # Run command
         call_command("summarize_expiries")
-
-        # The command completed successfully
-        self.assertTrue(True)
 
     def test_summarize_expiries_different_periods(self):
         """Test different period options"""
@@ -500,9 +489,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         # Test month period - should include both
         call_command("summarize_expiries", "--period=month")
 
-        # All commands completed successfully
-        self.assertTrue(True)
-
     def test_summarize_expiries_cards_only(self):
         """Test summary with only cards expiring"""
         # Create multiple cards in different disciplines
@@ -525,9 +511,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         # Run detailed summary
         call_command("summarize_expiries", "--detailed")
 
-        # The command completed successfully
-        self.assertTrue(True)
-
     def test_summarize_expiries_waivers_only(self):
         """Test summary with only waivers expiring"""
         # Create multiple waivers
@@ -542,9 +525,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
 
         # Run detailed summary
         call_command("summarize_expiries", "--detailed")
-
-        # The command completed successfully
-        self.assertTrue(True)
 
     def test_summarize_expiries_mixed_cards_and_waivers(self):
         """Test summary with both cards and waivers expiring"""
@@ -561,9 +541,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
 
         # Run detailed summary
         call_command("summarize_expiries", "--detailed")
-
-        # The command completed successfully
-        self.assertTrue(True)
 
     def test_summarize_expiries_command_instantiation(self):
         """Test that command can be instantiated directly"""
@@ -615,9 +592,6 @@ class SummarizeExpiriesCommandTestCase(TestCase):
         # Run with 6 days - should not include the boundary case
         call_command("summarize_expiries", "--days=6")
 
-        # The command completed successfully
-        self.assertTrue(True)
-
 
 class PINMigrationCommandTestCase(TestCase):
     """Test the pin_migration management command."""
@@ -646,8 +620,6 @@ class PINMigrationCommandTestCase(TestCase):
 
     def test_finds_combatants_without_pins(self):
         """Test that command finds combatants without PINs who accepted privacy."""
-        from io import StringIO
-
         out = StringIO()
         call_command("pin_migration", "--dry-run", stdout=out)
 
@@ -697,8 +669,6 @@ class PINMigrationCommandTestCase(TestCase):
 
     def test_stage_options(self):
         """Test that different stages are accepted."""
-        from io import StringIO
-
         for stage in ["initial", "reminder", "final"]:
             out = StringIO()
             call_command("pin_migration", f"--stage={stage}", "--dry-run", stdout=out)
@@ -707,8 +677,6 @@ class PINMigrationCommandTestCase(TestCase):
 
     def test_excludes_combatants_with_pins(self):
         """Test that combatants with PINs are excluded."""
-        from io import StringIO
-
         out = StringIO()
         call_command("pin_migration", "--dry-run", stdout=out)
 
@@ -717,8 +685,6 @@ class PINMigrationCommandTestCase(TestCase):
 
     def test_excludes_combatants_without_privacy_acceptance(self):
         """Test that combatants who haven't accepted privacy are excluded."""
-        from io import StringIO
-
         out = StringIO()
         call_command("pin_migration", "--dry-run", stdout=out)
 

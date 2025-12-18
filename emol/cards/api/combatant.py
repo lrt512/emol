@@ -1,12 +1,11 @@
 import logging
 
+from cards.api.permissions import CombatantInfoPermission
 from cards.models import Combatant, Region
 from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 from rest_framework.serializers import ModelSerializer
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
-
-from .permissions import CombatantInfoPermission
 
 logger = logging.getLogger("cards")
 
@@ -65,18 +64,18 @@ class CombatantSerializer(ModelSerializer):
             "member_expiry": {"format": "%Y-%m-%d", "allow_null": True},
         }
 
-    def validate(self, data):
+    def validate(self, attrs):
         """
         Validate that member_expiry requires member_number and province code exists.
         """
-        if data.get("member_expiry") and not data.get("member_number"):
+        if attrs.get("member_expiry") and not attrs.get("member_number"):
             raise serializers.ValidationError(
                 "If member_expiry is specified, member_number must also be specified."
             )
 
         # Validate province code exists in Region table
-        if data.get("province"):
-            province_code = data["province"]
+        if attrs.get("province"):
+            province_code = attrs["province"]
             codes = Region.objects.filter(active=True).values_list("code", flat=True)
             if province_code not in codes:
                 raise serializers.ValidationError(
@@ -84,7 +83,7 @@ class CombatantSerializer(ModelSerializer):
                     f"Valid codes are: {', '.join(str(code) for code in codes)}"
                 )
 
-        return data
+        return attrs
 
     def to_internal_value(self, data):
         """

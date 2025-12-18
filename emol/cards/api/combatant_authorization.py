@@ -64,7 +64,7 @@ class CombatantAuthorizationViewSet(GenericViewSet):
             slug=authorization_slug,
         )
 
-        card, created = Card.objects.get_or_create(
+        card, _created = Card.objects.get_or_create(
             combatant=combatant,
             discipline=discipline,
             defaults={"date_issued": today()},

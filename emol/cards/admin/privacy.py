@@ -11,8 +11,6 @@ __all__ = ["PrivacyAcceptanceAdmin"]
 class PrivacyAcceptanceAdmin(admin.ModelAdmin):
     """Django Admin for PrivacyAcceptance model"""
 
-    pass
-
 
 class PrivacyPolicyForm(forms.ModelForm):
     class Meta:

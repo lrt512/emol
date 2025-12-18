@@ -2,6 +2,7 @@
 
 import logging
 
+from cards.api.permissions import InitiatePinResetPermission
 from cards.mail import send_pin_reset
 from cards.models.combatant import Combatant
 from django.shortcuts import get_object_or_404
@@ -10,12 +11,12 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .permissions import InitiatePinResetPermission
-
 logger = logging.getLogger("cards")
 
 
-class InitiatePinResetSerializer(serializers.Serializer):
+class InitiatePinResetSerializer(
+    serializers.Serializer
+):  # pylint: disable=abstract-method
     """Serializer for PIN reset initiation requests."""
 
     combatant_uuid = serializers.UUIDField()

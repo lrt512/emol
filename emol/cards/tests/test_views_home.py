@@ -1,6 +1,14 @@
 from unittest.mock import patch
 
-from cards.models import Combatant, OneTimeCode
+from cards.models import (
+    Authorization,
+    Card,
+    Combatant,
+    CombatantWarrant,
+    Discipline,
+    Marshal,
+    OneTimeCode,
+)
 from django.test import TestCase
 from django.urls import reverse
 
@@ -187,14 +195,6 @@ class MarshalListViewTestCase(TestCase):
 
     def setUp(self):
         """Set up test data for marshal list tests"""
-        from cards.models import (
-            Authorization,
-            Card,
-            CombatantWarrant,
-            Discipline,
-            Marshal,
-        )
-
         # Create test data
         self.discipline = Discipline.objects.create(
             name="Test Discipline", slug="test-discipline"

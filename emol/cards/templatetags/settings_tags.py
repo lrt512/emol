@@ -35,7 +35,7 @@ def app_version():
     for version_file in possible_paths:
         if os.path.exists(version_file):
             try:
-                with open(version_file, "r") as f:
+                with open(version_file, "r", encoding="utf-8") as f:
                     version = f.read().strip()
                     return f"v{version}" if version else ""
             except (IOError, OSError):

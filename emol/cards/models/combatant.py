@@ -18,7 +18,12 @@ from uuid import uuid4
 if TYPE_CHECKING:
     from cards.models.one_time_code import OneTimeCode
 
-from cards.mail import send_card_url, send_privacy_policy
+from cards.mail import send_card_url, send_pin_lockout_notification, send_privacy_policy
+from cards.models.permissioned_db_fields import (
+    PermissionedCharField,
+    PermissionedDateField,
+    PermissionedIntegerField,
+)
 from cards.utility.names import generate_name
 from django.conf import settings
 from django.contrib.auth.hashers import check_password, make_password
@@ -26,12 +31,6 @@ from django.db import models
 from django.dispatch import receiver
 from django.urls import reverse
 from django.utils import timezone
-
-from .permissioned_db_fields import (
-    PermissionedCharField,
-    PermissionedDateField,
-    PermissionedIntegerField,
-)
 
 __all__ = ["Combatant"]
 
@@ -214,7 +213,10 @@ class Combatant(models.Model):
         Args:
             value: Date when waiver was signed
         """
-        from .waiver import Waiver  # Import here to avoid circular imports
+        # Import here to avoid circular imports
+        from cards.models.waiver import (  # pylint: disable=import-outside-toplevel
+            Waiver,
+        )
 
         try:
             # Update existing waiver
@@ -233,9 +235,9 @@ class Combatant(models.Model):
         """
         if self.waiver_date and self.waiver_expires:
             return self.waiver_expires - self.waiver_date
-        else:
-            # Default 7-year duration if no waiver exists
-            return timedelta(days=365 * 7)
+
+        # Default 7-year duration if no waiver exists
+        return timedelta(days=365 * 7)
 
     @property
     def waiver_expires(self):
@@ -422,8 +424,6 @@ class Combatant(models.Model):
 
     def _send_lockout_notification(self) -> None:
         """Send an email notification that the account has been locked out."""
-        from cards.mail import send_pin_lockout_notification
-
         try:
             send_pin_lockout_notification(self)
         except Exception as e:

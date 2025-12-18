@@ -627,10 +627,6 @@ class OneTimeCodeModelTestCase(TestCase):
 
     def test_one_time_code_str_expired(self):
         """Test string representation shows EXPIRED status"""
-        from datetime import timedelta
-
-        from django.utils import timezone
-
         one_time_code = OneTimeCode.objects.create(
             combatant=self.combatant,
             url_template="/test/{code}",

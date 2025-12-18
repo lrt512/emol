@@ -2,6 +2,7 @@
 
 from unittest.mock import MagicMock, patch
 
+from botocore.exceptions import ClientError
 from django.test import TestCase, override_settings
 from emailer import AWSEmailer
 
@@ -82,8 +83,6 @@ class AWSEmailerTestCase(TestCase):
     @patch("emailer.get_aws_session")
     def test_send_email_ses_error_returns_false(self, mock_get_session):
         """SES client error returns False."""
-        from botocore.exceptions import ClientError
-
         mock_client = MagicMock()
         mock_client.send_email.side_effect = ClientError(
             {"Error": {"Code": "TestError", "Message": "Test"}}, "send_email"
