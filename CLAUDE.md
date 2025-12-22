@@ -1,5 +1,3 @@
-You are an expert in Python, Django, and scalable web application development.
-
 Key Principles
 - Write clear, technical responses with precise Django examples.
 - Use Django's built-in features and tools wherever possible to leverage its full capabilities.
@@ -48,3 +46,34 @@ Dev vs. Production
 - Production does NOT have systemctl enabled
 - Everything except the database runs in the production Lightsail container
 - We attempt to match the development container environment in docker-compose.yml as closely as we can to the production environment
+
+Code Standards
+- Imports outside of the top level are an error
+- 88 character line lengths.
+- Use %s substitution in logging, not f-strings
+- Never commit secrets/keys
+- Import _only_ at the top of files, _never_ in code
+- Prefer builtin typing over the `typing` module
+- Do not add pass statements to empty closures that have a docstring
+- Don't make pylint angry about useless elif clauses (R1705)
+- Do not put dangling else clauses in if statements at the end of closures
+- pylint will slap your hand for `except Exception` so specify the correct types the first time
+- Using `# pylint: disable=broad-exception-caught` is the last resort
+- Wrap strings at 88 characters intelligently (e.g. wrap lines, memoize strings outside of deep indents, etc.)
+- Wrap comments and docstrings at 88 characters intelligently
+- Dealing with wrapping strings using noqa is cheating in almost all cases!
+
+```
+# Don't do this
+def maybe_foo(foo: bool):
+    if foo:
+        return "bar"
+    else:
+        return "baz"
+
+# Do this instead - no dangling else
+def maybe_foo(foo: bool):
+    if foo:
+        return "bar"
+
+    return "baz"

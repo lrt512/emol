@@ -17,6 +17,7 @@ INSTALLED_APPS = [
     "django.contrib.staticfiles",
     "rest_framework",
     "corsheaders",
+    "feature_switches",
     "cards",
 ]
 
@@ -156,7 +157,7 @@ CORS_ORIGIN_WHITELIST = [
 ]
 
 SECURE_HSTS_SECONDS = 31536000
-PERMISSIONS_POLICY = {
+PERMISSIONS_POLICY: dict[str, list[str]] = {
     "accelerometer": [],
     "autoplay": [],
     "camera": [],
@@ -185,7 +186,7 @@ CSP_STYLE_SRC = (
     "https://maxcdn.bootstrapcdn.com",
     "https://cdn.datatables.net",
 )
-CSP_SCRIPT_SRC = (
+CSP_SCRIPT_SRC: tuple[str, ...] = (
     "'self'",
     "https://cdnjs.cloudflare.com",
     "https://maxcdn.bootstrapcdn.com",

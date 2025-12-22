@@ -2,7 +2,6 @@
 from cards.models import PrivacyAcceptance, PrivacyPolicy
 from django import forms
 from django.contrib import admin, messages
-from django.db import models
 from django.forms import ValidationError
 
 __all__ = ["PrivacyAcceptanceAdmin"]
@@ -11,8 +10,6 @@ __all__ = ["PrivacyAcceptanceAdmin"]
 @admin.register(PrivacyAcceptance)
 class PrivacyAcceptanceAdmin(admin.ModelAdmin):
     """Django Admin for PrivacyAcceptance model"""
-
-    pass
 
 
 class PrivacyPolicyForm(forms.ModelForm):
@@ -31,7 +28,7 @@ class PrivacyPolicyForm(forms.ModelForm):
         cleaned_data = super().clean()
         if self.instance.pk is not None:
             raise ValidationError(
-                "You cannot update an existing Privacy Policy. Create a new one instead."
+                "Cannot update an existing Privacy Policy. Create a new one instead."
             )
 
         return cleaned_data

@@ -1,8 +1,7 @@
 from django.contrib.auth.models import BaseUserManager
 from django.db import models
 from django.utils.crypto import salted_hmac
-
-from .abstract import AbstractBaseUser
+from sso_user.models.abstract import AbstractBaseUser
 
 
 class UserManager(BaseUserManager):
@@ -52,7 +51,7 @@ class SSOUser(AbstractBaseUser):
         return self.email
 
     def get_short_name(self):
-        return self.email.split("@")[0]
+        return self.email.split("@", maxsplit=1)[0]
 
     def get_session_auth_hash(self):
         """
@@ -65,10 +64,10 @@ class SSOUser(AbstractBaseUser):
             algorithm="sha256",
         ).hexdigest()
 
-    def has_module_perms(self, package_name):
+    def has_module_perms(self, package_name):  # noqa: ARG002
         """Unused in this context, we use our own permissions systems"""
         return True
 
-    def has_perm(self, perm, obj=None):
+    def has_perm(self, perm, obj=None):  # noqa: ARG002
         """Unused in this context, we use our own permissions systems"""
         return True

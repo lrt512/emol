@@ -28,8 +28,8 @@ def oauth_login(request: HttpRequest) -> HttpResponse:
 
 @never_cache
 def oauth_callback(request):
-    oauth = GoogleOAuth()
-    token = oauth.google.authorize_access_token(request)
+    oauth_client = GoogleOAuth()
+    token = oauth_client.google.authorize_access_token(request)
 
     userinfo = token.get("userinfo")
     print(userinfo)
@@ -57,13 +57,13 @@ def oauth_logout(request: HttpRequest) -> HttpResponse:
 
 @never_cache
 def admin_oauth(request):
-    oauth = GoogleOAuth()
+    oauth_client = GoogleOAuth()
 
     if all(key not in request.GET for key in ("code", "oauth_token")):
         redirect_uri = request.build_absolute_uri(reverse("admin_oauth"))
-        return oauth.google.authorize_redirect(request, redirect_uri)
+        return oauth_client.google.authorize_redirect(request, redirect_uri)
 
-    token = oauth.google.authorize_access_token(request)
+    token = oauth_client.google.authorize_access_token(request)
 
     userinfo = token.get("userinfo")
     if userinfo is None:
@@ -102,11 +102,13 @@ class GoogleAuthorize(View):
         request.session["google_token"] = token
         user_info = oauth.google.userinfo(token)
         request.session["user_info"] = user_info
+        assert settings.LOGIN_REDIRECT_URL is not None
         return redirect(settings.LOGIN_REDIRECT_URL)
 
 
 def logout_view(request: HttpRequest) -> HttpResponse:
     request.session.clear()
+    assert settings.LOGOUT_REDIRECT_URL is not None
     return redirect(settings.LOGOUT_REDIRECT_URL)
 
 
@@ -121,7 +123,7 @@ def mock_oauth_callback(request: HttpRequest) -> HttpResponse:
     userinfo = token["userinfo"]
 
     # Get or create user
-    user, created = SSOUser.objects.get_or_create(
+    user, _created = SSOUser.objects.get_or_create(
         email=userinfo["email"],
         defaults={
             "is_superuser": settings.MOCK_OAUTH_USER["is_superuser"],

@@ -16,9 +16,7 @@ class CombatantInfoPermission(permissions.BasePermission):
                 request.user, self.READ_PERMISSION
             )
 
-        return UserPermission.user_has_permission(
-            request.user, self.WRITE_PERMISSION
-        )
+        return UserPermission.user_has_permission(request.user, self.WRITE_PERMISSION)
 
     def has_object_permission(self, request, view, obj):
         return self.has_permission(request, view)
@@ -100,3 +98,12 @@ class ResendPrivacyPermission(permissions.BasePermission):
         return UserPermission.user_has_permission(
             request.user, CombatantInfoPermission.READ_PERMISSION
         )
+
+
+class InitiatePinResetPermission(permissions.BasePermission):
+    """Check if user can initiate PIN reset for combatants."""
+
+    PERMISSION = "can_initiate_pin_reset"
+
+    def has_permission(self, request, view):
+        return UserPermission.user_has_permission(request.user, self.PERMISSION)

@@ -1,12 +1,11 @@
 import logging
 
+from cards.models.discipline import Discipline
+from cards.models.permission import Permission
 from django.conf import settings
 from django.core.exceptions import ValidationError
 from django.db import models
 from sso_user.models import SSOUser
-
-from .discipline import Discipline
-from .permission import Permission
 
 logger = logging.getLogger("cards")
 
@@ -27,26 +26,45 @@ class UserPermission(models.Model):
 
     def __str__(self):
         if self.discipline:
-            return f"<UserPermission: {self.user.email} - {self.permission.name} ({self.discipline.name})>"
-        else:
             return (
-                f"<UserPermission: {self.user.email} - {self.permission.name} (global)>"
+                f"<UserPermission: {self.user.email} - {self.permission.name} "
+                f"({self.discipline.name})>"
             )
+
+        return f"<UserPermission: {self.user.email} - {self.permission.name} (global)>"
 
     def clean(self):
         """Validate that global permissions don't have disciplines assigned"""
         super().clean()
-        
-        if self.permission and self.permission.is_global and self.discipline is not None:
-            raise ValidationError({
-                'discipline': f"Global permission '{self.permission.name}' cannot be assigned to a specific discipline. "
-                           f"Global permissions must be discipline-independent."
-            })
-        
-        if self.permission and not self.permission.is_global and self.discipline is None:
-            raise ValidationError({
-                'discipline': f"Non-global permission '{self.permission.name}' requires a discipline to be specified."
-            })
+
+        if (
+            self.permission
+            and self.permission.is_global
+            and self.discipline is not None
+        ):
+            raise ValidationError(
+                {
+                    "discipline": (
+                        f"Global permission '{self.permission.name}' "
+                        "cannot be assigned to a specific discipline. Global "
+                        "permissions must be discipline-independent."
+                    ),
+                }
+            )
+
+        if (
+            self.permission
+            and not self.permission.is_global
+            and self.discipline is None
+        ):
+            raise ValidationError(
+                {
+                    "discipline": (
+                        f"Non-global permission '{self.permission.name}' "
+                        "requires a discipline to be specified."
+                    ),
+                }
+            )
 
     def save(self, *args, **kwargs):
         """Override save to ensure validation is run"""
@@ -71,7 +89,7 @@ class UserPermission(models.Model):
         try:
             permission = Permission.find(permission)
         except Permission.DoesNotExist:
-            logger.error(f"Permission '%s' does not exist", permission)
+            logger.error("Permission '%s' does not exist", permission)
             return False
 
         filters = {

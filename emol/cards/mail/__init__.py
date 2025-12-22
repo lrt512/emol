@@ -1,9 +1,8 @@
 import logging
 
+from cards.mail.email_templates import EMAIL_TEMPLATES
 from cards.utility.privacy import privacy_policy_url
 from emailer import AWSEmailer
-
-from .email_templates import EMAIL_TEMPLATES
 
 logger = logging.getLogger("cards")
 
@@ -151,5 +150,85 @@ def send_privacy_policy(combatant):
     template = EMAIL_TEMPLATES.get("privacy_policy")
     body = template.get("body").format(
         privacy_policy_url=privacy_policy_url(combatant), combatant_name=combatant.name
+    )
+    return AWSEmailer.send_email(combatant.email, template.get("subject"), body)
+
+
+def send_pin_setup(combatant, one_time_code):
+    """Send a PIN setup email to a combatant.
+
+    Args:
+        combatant: The combatant to send notice to
+        one_time_code: The OneTimeCode for PIN setup
+
+    Raises:
+        ValueError: If combatant has not accepted the privacy policy
+    """
+    if not combatant.accepted_privacy_policy:
+        raise ValueError(
+            f"Cannot send PIN setup email to {combatant.email}: "
+            "privacy policy not accepted"
+        )
+
+    template = EMAIL_TEMPLATES.get("pin_setup")
+    body = template.get("body").format(
+        pin_setup_url=one_time_code.url,
+        combatant_name=combatant.name,
+    )
+    return AWSEmailer.send_email(combatant.email, template.get("subject"), body)
+
+
+def send_pin_lockout_notification(combatant):
+    """Send a PIN lockout notification to a combatant.
+
+    Args:
+        combatant: The combatant who has been locked out
+    """
+    template = EMAIL_TEMPLATES.get("pin_lockout")
+    body = template.get("body").format(combatant_name=combatant.name)
+    return AWSEmailer.send_email(combatant.email, template.get("subject"), body)
+
+
+def send_pin_reset(combatant, one_time_code):
+    """Send a PIN reset email to a combatant.
+
+    Args:
+        combatant: The combatant to send notice to
+        one_time_code: The OneTimeCode for PIN reset
+    """
+    template = EMAIL_TEMPLATES.get("pin_reset")
+    body = template.get("body").format(
+        pin_reset_url=one_time_code.url,
+        combatant_name=combatant.name,
+    )
+    return AWSEmailer.send_email(combatant.email, template.get("subject"), body)
+
+
+def send_pin_migration_email(combatant, one_time_code, stage="initial"):
+    """Send a PIN migration campaign email to a combatant.
+
+    Args:
+        combatant: The combatant to send notice to
+        one_time_code: The OneTimeCode for PIN setup
+        stage: One of 'initial', 'reminder', or 'final'
+
+    Raises:
+        ValueError: If combatant has not accepted the privacy policy
+    """
+    if not combatant.accepted_privacy_policy:
+        raise ValueError(
+            f"Cannot send PIN migration email to {combatant.email}: "
+            "privacy policy not accepted"
+        )
+
+    template_key = f"pin_migration_{stage}"
+    template = EMAIL_TEMPLATES.get(template_key)
+    if not template:
+        logger.error("Unknown PIN migration stage: %s", stage)
+        return False
+
+    body = template.get("body").format(
+        pin_setup_url=one_time_code.url,
+        combatant_name=combatant.name,
     )
     return AWSEmailer.send_email(combatant.email, template.get("subject"), body)

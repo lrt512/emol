@@ -113,14 +113,14 @@ class PrivacyAcceptance(models.Model):
                 "card_url": self.combatant.card_url,
                 "sent_email": True,
             }
-        else:
-            # Combatant declined the privacy policy, delete the Combatant
-            # record for them and notify the MoL
-            logger.info("Deleting combatant %s", self.combatant)
-            self.combatant.delete()
-            # TODO: Notify the MoL
 
-            return {"accepted": False}
+        # Combatant declined the privacy policy, delete the Combatant
+        # record for them and notify the MoL
+        logger.info("Deleting combatant %s", self.combatant)
+        self.combatant.delete()
+        # TODO: Notify the MoL
+
+        return {"accepted": False}
 
     def generate_card_id(self):
         """

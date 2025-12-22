@@ -1,10 +1,10 @@
 """URLs for the SSO user, supporting OAuth"""
 
 import os
+
 from django.conf import settings
 from django.urls import path, re_path
-
-from . import views
+from sso_user import views
 
 urlpatterns = [
     path("login", views.oauth_login, name="login"),

@@ -1,17 +1,18 @@
 import logging
 
+from cards.api.permissions import CombatantInfoPermission
 from cards.models import Combatant, Region
 from rest_framework import serializers
 from rest_framework.renderers import JSONRenderer
 from rest_framework.serializers import ModelSerializer
 from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
-from .permissions import CombatantInfoPermission
-
 logger = logging.getLogger("cards")
 
 
 class CombatantListSerializer(ModelSerializer):
+    has_pin = serializers.SerializerMethodField()
+
     class Meta:
         model = Combatant
         fields = [
@@ -20,7 +21,12 @@ class CombatantListSerializer(ModelSerializer):
             "card_id",
             "uuid",
             "accepted_privacy_policy",
+            "has_pin",
         ]
+
+    def get_has_pin(self, obj: Combatant) -> bool:
+        """Return whether the combatant has a PIN set."""
+        return obj.has_pin
 
 
 class CombatantListViewSet(ReadOnlyModelViewSet):
@@ -58,25 +64,26 @@ class CombatantSerializer(ModelSerializer):
             "member_expiry": {"format": "%Y-%m-%d", "allow_null": True},
         }
 
-    def validate(self, data):
+    def validate(self, attrs):
         """
         Validate that member_expiry requires member_number and province code exists.
         """
-        if data.get("member_expiry") and not data.get("member_number"):
+        if attrs.get("member_expiry") and not attrs.get("member_number"):
             raise serializers.ValidationError(
                 "If member_expiry is specified, member_number must also be specified."
             )
-        
+
         # Validate province code exists in Region table
-        if data.get("province"):
-            province_code = data["province"]
-            if not Region.objects.filter(code=province_code, active=True).exists():
+        if attrs.get("province"):
+            province_code = attrs["province"]
+            codes = Region.objects.filter(active=True).values_list("code", flat=True)
+            if province_code not in codes:
                 raise serializers.ValidationError(
                     f"Province code '{province_code}' is not valid. "
-                    f"Valid codes are: {', '.join(Region.objects.filter(active=True).values_list('code', flat=True))}"
+                    f"Valid codes are: {', '.join(str(code) for code in codes)}"
                 )
-        
-        return data
+
+        return attrs
 
     def to_internal_value(self, data):
         """

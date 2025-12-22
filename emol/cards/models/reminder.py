@@ -29,7 +29,10 @@ class Reminder(models.Model):
         )
         if self.content_object is None:
             return f"<Orphaned Reminder: object_id={self.object_id} - {s}>"
-        return f"<{self.content_object.__class__.__name__}: {self.content_object.combatant.name} - {s}>"
+        return (
+            f"<{self.content_object.__class__.__name__}: "
+            f"{self.content_object.combatant.name} - {s}>"
+        )
 
     @classmethod
     def create_or_update_reminders(cls, instance):
@@ -52,9 +55,11 @@ class Reminder(models.Model):
     @property
     def should_send_email(self) -> bool:
         if self.content_object is None:
-            logger.warning("Reminder %s has no content_object (orphaned reminder)", self.id)
+            logger.warning(
+                "Reminder %s has no content_object (orphaned reminder)", self.id
+            )
             return False
-        
+
         combatant = self.content_object.combatant
         if not combatant.accepted_privacy_policy:
             return False
@@ -72,10 +77,13 @@ class Reminder(models.Model):
             return False
 
         model = self.content_type.model_class()
+        content_object = self.content_object
         try:
             if self.days_to_expiry == 0:
-                return self.content_object.send_expiry(self)
-            return self.content_object.send_reminder(self)
-        except model.DoesNotExist:
+                result = content_object.send_expiry(self)  # type: ignore[union-attr]
+            else:
+                result = content_object.send_reminder(self)  # type: ignore[union-attr]
+            return bool(result)
+        except model.DoesNotExist:  # type: ignore[union-attr]
             logger.error("%s instance for ID %s does not exist", model, self.object_id)
             return False

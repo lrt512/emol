@@ -1,18 +1,16 @@
 """Tests for sso_user app."""
 
 from io import StringIO
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-from django.contrib.auth import get_user_model
 from django.contrib.auth.models import AnonymousUser
 from django.core.management import call_command
 from django.http import HttpResponse
 from django.test import Client, RequestFactory, TestCase, override_settings
 from django.urls import reverse
-
-from .decorators import admin_required, login_required
-from .google_oauth import GoogleOAuth
-from .models import SSOUser
+from sso_user.decorators import admin_required, login_required
+from sso_user.google_oauth import GoogleOAuth
+from sso_user.models import SSOUser
 
 
 class SSOUserModelTest(TestCase):
@@ -60,11 +58,11 @@ class OAuthViewsTest(TestCase):
         self.assertEqual(response.status_code, 302)
         # In development/test mode, redirects to mock callback
         # In production, would redirect to Google OAuth
-        if hasattr(response, 'url') and response.url:
+        if hasattr(response, "url") and response.url:
             self.assertTrue(
-                "https://accounts.google.com/o/oauth2/v2/auth" in response.url or
-                "/auth/mock_oauth_callback/" in response.url,
-                f"Unexpected redirect URL: {response.url}"
+                "https://accounts.google.com/o/oauth2/v2/auth" in response.url
+                or "/auth/mock_oauth_callback/" in response.url,
+                f"Unexpected redirect URL: {response.url}",
             )
 
     def test_oauth_logout(self):
@@ -84,11 +82,11 @@ class AdminOAuthViewTest(TestCase):
         """Test admin OAuth redirect."""
         response = self.client.get(reverse("admin_oauth"))
         self.assertEqual(response.status_code, 302)
-        if hasattr(response, 'url') and response.url:
+        if hasattr(response, "url") and response.url:
             self.assertTrue(
-                "https://accounts.google.com/o/oauth2/v2/auth" in response.url or
-                "/auth/mock_oauth_callback/" in response.url,
-                f"Unexpected redirect URL: {response.url}"
+                "https://accounts.google.com/o/oauth2/v2/auth" in response.url
+                or "/auth/mock_oauth_callback/" in response.url,
+                f"Unexpected redirect URL: {response.url}",
             )
 
 
@@ -102,6 +100,7 @@ class LoginRequiredDecoratorTestCase(TestCase):
 
     def test_login_required_allows_authenticated_user(self):
         """Authenticated user can access decorated view."""
+
         @login_required
         def test_view(request):
             return HttpResponse("OK")
@@ -116,6 +115,7 @@ class LoginRequiredDecoratorTestCase(TestCase):
 
     def test_login_required_redirects_anonymous_user(self):
         """Anonymous user is redirected to login."""
+
         @login_required
         def test_view(request):
             return HttpResponse("OK")
@@ -140,6 +140,7 @@ class AdminRequiredDecoratorTestCase(TestCase):
 
     def test_admin_required_allows_superuser(self):
         """Superuser can access decorated view."""
+
         @admin_required
         def test_view(request):
             return HttpResponse("OK")
@@ -154,6 +155,7 @@ class AdminRequiredDecoratorTestCase(TestCase):
 
     def test_admin_required_denies_regular_user(self):
         """Regular user is denied access."""
+
         @admin_required
         def test_view(request):
             return HttpResponse("OK")
@@ -168,6 +170,7 @@ class AdminRequiredDecoratorTestCase(TestCase):
 
     def test_admin_required_denies_anonymous(self):
         """Anonymous user is denied access."""
+
         @admin_required
         def test_view(request):
             return HttpResponse("OK")

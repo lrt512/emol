@@ -1,5 +1,6 @@
 import logging
 
+from cards.api.permissions import CardDatePermission
 from cards.models.card import Card
 from cards.models.combatant import Combatant
 from cards.models.combatant_authorization import CombatantAuthorization
@@ -11,8 +12,6 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.renderers import JSONRenderer
 from rest_framework.response import Response
 from rest_framework.viewsets import GenericViewSet
-
-from .permissions import CardDatePermission
 
 logger = logging.getLogger("cards")
 
@@ -86,6 +85,14 @@ class CardDateSerializer(serializers.Serializer):
     uuid = serializers.UUIDField()
     discipline_slug = serializers.CharField()
     date_issued = serializers.DateField()
+
+    # We never try to save anything but in case we do someday, we have not
+    # implemented these methods.
+    def create(self, validated_data):
+        raise NotImplementedError("This serializer is read-only")
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError("This serializer is read-only")
 
 
 class CardDateViewSet(GenericViewSet):

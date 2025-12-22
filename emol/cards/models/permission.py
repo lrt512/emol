@@ -65,6 +65,11 @@ class Permission(models.Model):
             "slug": "write_officer_info",
             "is_global": False,
         },
+        {
+            "name": "Can initiate PIN reset",
+            "slug": "can_initiate_pin_reset",
+            "is_global": True,
+        },
     ]
 
     # Roles associated with editing combatants.
@@ -82,6 +87,7 @@ class Permission(models.Model):
         "read_combatant_info",
         "write_combatant_info",
         "write_waiver_date",
+        "can_initiate_pin_reset",
     ]
 
     slug = models.CharField(max_length=255, null=False)

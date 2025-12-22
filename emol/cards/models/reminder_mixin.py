@@ -1,6 +1,6 @@
 """Abstract and Metaclass magic for ReminderMixin"""
 
-from abc import ABCMeta, abstractmethod
+from abc import ABCMeta
 
 from dirtyfields import DirtyFieldsMixin
 from django.db.models.base import ModelBase
@@ -8,8 +8,6 @@ from django.db.models.base import ModelBase
 
 class ReminderMixinMeta(ABCMeta):
     """Metaclass for ReminderMixin"""
-
-    pass
 
 
 class ReminderMixin:
@@ -34,7 +32,9 @@ class ReminderMixin:
 
 
 # We need a fancy metaclass for mixing Model, ReminderMixin, and DirtyFieldsMixin
-class DirtyModelReminderMeta(ModelBase, ReminderMixinMeta, type(DirtyFieldsMixin)):
+class DirtyModelReminderMeta(
+    ModelBase, ReminderMixinMeta, type(DirtyFieldsMixin)  # type: ignore[misc]
+):
     """For any model that inherits from both ReminderMixin and DirtyFieldsMixin
 
     This works for solving the metaclass problems if ReminderMixin is abstract,
@@ -48,5 +48,3 @@ class DirtyModelReminderMeta(ModelBase, ReminderMixinMeta, type(DirtyFieldsMixin
     ):
         ...
     """
-
-    pass

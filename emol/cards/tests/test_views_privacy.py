@@ -1,9 +1,9 @@
 """Tests for privacy-related views."""
 
+from cards.models import Combatant, PrivacyPolicy
 from django.test import TestCase, override_settings
 from django.urls import reverse
-
-from cards.models import Combatant, PrivacyPolicy
+from feature_switches.models import FeatureSwitch
 
 
 class PrivacyPolicyViewTestCase(TestCase):
@@ -28,9 +28,7 @@ class PrivacyPolicyViewTestCase(TestCase):
     def test_privacy_policy_get_with_valid_code(self):
         """GET request with valid code shows policy with accept form."""
         code = self.combatant.privacy_acceptance_code
-        response = self.client.get(
-            reverse("privacy-policy", kwargs={"code": code})
-        )
+        response = self.client.get(reverse("privacy-policy", kwargs={"code": code}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Test Privacy Policy")
 
@@ -51,6 +49,21 @@ class PrivacyPolicyViewTestCase(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.combatant.refresh_from_db()
+        self.assertTrue(self.combatant.accepted_privacy_policy)
+
+    @override_settings(SEND_EMAIL=False, SITE_URL="http://test.example.com")
+    def test_privacy_policy_accept_with_pin_enabled(self):
+        """POST with accept redirects to PIN setup when PIN is enabled."""
+        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+
+        code = self.combatant.privacy_acceptance_code
+        response = self.client.post(
+            reverse("privacy-policy", kwargs={"code": code}),
+            {"code": code, "accept": "1"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/pin/setup/", response.url)
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.accepted_privacy_policy)
 

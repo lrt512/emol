@@ -8,5 +8,3 @@ __all__ = ["MarshalAdmin"]
 @admin.register(Marshal)
 class MarshalAdmin(admin.ModelAdmin):
     """Django Admin for Marshal model"""
-
-    pass

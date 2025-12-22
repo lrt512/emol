@@ -1,0 +1,87 @@
+[MAIN]
+ignore=migrations,manage.py
+jobs=0
+limit-inference-results=100
+persistent=yes
+suggestion-mode=yes
+unsafe-load-any-extension=no
+load-plugins=pylint_django,pylint_per_file_ignores
+py-version=3.13
+recursive=yes
+
+[MESSAGES CONTROL]
+# Some things are just dumb generally
+disable=fixme,
+        too-few-public-methods,
+        too-many-public-methods,
+        invalid-name,
+        too-many-ancestors,
+        missing-docstring,
+        protected-access,
+        arguments-differ,
+        too-many-arguments,
+        ungrouped-imports,
+        wrong-import-order,
+        wrong-import-position,
+        line-too-long,
+        too-many-locals,
+        broad-exception-caught,
+        broad-exception-raised,
+        duplicate-code,
+        unused-argument,
+        not-callable,
+        # Django noise
+        django-not-configured,
+        no-member,
+        modelform-uses-exclude,
+enable=c-extension-no-member
+# Some things are just dumb for tests/migrations/settings files
+per-file-ignores=
+    emol/emol/settings/*.py:wildcard-import,unused-wildcard-import,duplicate-code
+    emol/*/tests/*.py:import-outside-toplevel,redefined-outer-name,reimported,protected-access,duplicate-code,redundant-unittest-assert,useless-parent-delegation
+    emol/*/tests.py:import-outside-toplevel,redefined-outer-name,reimported,protected-access,duplicate-code,redundant-unittest-assert,useless-parent-delegation
+    migrations/*.py:duplicate-code,import-outside-toplevel,invalid-name
+
+[REPORTS]
+output-format=text
+reports=no
+score=no
+
+[REFACTORING]
+never-returning-functions=sys.exit
+
+[LOGGING]
+logging-modules=logging
+
+[MISCELLANEOUS]
+notes=FIXME,XXX,TODO
+
+[FORMAT]
+ignore-long-lines=^\s*(# )?<?https?://\S+>?$
+indent-after-paren=4
+indent-string='    '
+max-line-length=88
+max-module-lines=1000
+single-line-class-stmt=no
+single-line-if-stmt=no
+
+[BASIC]
+bad-names=foo,bar,baz,toto,tutu,tata
+good-names=i,j,k,ex,Run,_
+
+[DESIGN]
+max-args=5
+max-attributes=7
+max-bool-expr=5
+max-branches=15
+max-returns=9
+max-locals=15
+max-parents=7
+max-public-methods=20
+max-statements=50
+min-public-methods=0
+max-positional-arguments=6
+
+[TYPECHECK]
+# common Django dynamic attributes (prevents some "no-member" / inference weirdness)
+generated-members=objects,DoesNotExist,MultipleObjectsReturned

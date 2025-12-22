@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from cards.api.urls import urlpatterns as api_urlpatterns
-from cards.views import combatant, home, privacy, self_serve_update
+from cards.views import combatant, home, pin, privacy, self_serve_update
 from django.conf import settings
 from django.conf.urls.static import static
 from django.contrib.admin import site
@@ -30,7 +30,19 @@ urlpatterns = [
     ),
     path("privacy-policy", privacy.privacy_policy, name="privacy-policy"),
     path("privacy-policy/<str:code>", privacy.privacy_policy, name="privacy-policy"),
-    path("api/", include(api_urlpatterns)),
+    # PIN authentication URLs
+    re_path(
+        r"^pin/setup/(?P<code>[a-zA-Z0-9-]+)$",
+        pin.pin_setup,
+        name="pin-setup",
+    ),
+    re_path(
+        r"^pin/reset/(?P<code>[a-zA-Z0-9-]+)$",
+        pin.pin_reset,
+        name="pin-reset",
+    ),
+    path("pin/verify/<str:card_id>", pin.pin_verify, name="pin-verify"),
+    path("api/", include(api_urlpatterns)),  # type: ignore[arg-type]
 ]
 
 # Custom error handlers

@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+
+{% block title %}Reset Your PIN - eMoL{% endblock %}
+
+{% block body %}
+<div class="row top-space-xl">
+  <div class="col-md-2"></div>
+  <div class="col-md-8">
+    <h2>Reset Your PIN</h2>
+    <p>Hello, {{ combatant_name }}!</p>
+    <p>
+      A PIN reset has been initiated for your account.
+      Please create a new PIN to protect access to your authorization card.
+    </p>
+    <p>
+      Your PIN must be 4-6 numeric digits. Choose something you can remember,
+      but don't use obvious numbers like your birth year or 1234.
+    </p>
+  </div>
+</div>
+<form method="post">
+  {% csrf_token %}
+  <div class="row top-space-lg">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <input id="pin" name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,6}"
+        placeholder="Enter new PIN (4-6 digits)" class="input-round" required maxlength="6" minlength="4"
+        autocomplete="new-password" />
+    </div>
+  </div>
+  <div class="row top-space-sm">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <input id="pin_confirm" name="pin_confirm" type="password" inputmode="numeric" pattern="[0-9]{4,6}"
+        placeholder="Confirm new PIN" class="input-round" required maxlength="6" minlength="4"
+        autocomplete="new-password" />
+    </div>
+  </div>
+  {% if error %}
+  <div class="row top-space-sm">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <div class="error message-text">{{ error }}</div>
+    </div>
+  </div>
+  {% endif %}
+  <div class="row top-space-sm">
+    <div class="col-md-2"></div>
+    <div class="col-md-8 content-centered">
+      <input type="submit" class="btn btn-lg btn-lg-width btn-primary" value="Reset PIN" />
+    </div>
+  </div>
+</form>
+{% endblock %}
+

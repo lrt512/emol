@@ -1,10 +1,9 @@
-from random import randint
-
-"""
-Simple name generator based on heraldic terms
+"""Simple name generator based on heraldic terms.
 
 Generates random name identifiers of the form "argent-base-charge"
 """
+
+from random import randint
 
 TINCTURES = [
     "or",

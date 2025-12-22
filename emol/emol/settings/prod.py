@@ -1,9 +1,9 @@
 """Production settings for eMoL."""
 
-import os
+from typing import Any, cast
 
-from .defaults import *  # noqa: F403, F401
 from emol.secrets import get_secret
+from emol.settings.defaults import *  # noqa: F403, F401
 
 AWS_REGION = "ca-central-1"
 
@@ -23,7 +23,7 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 SESSION_COOKIE_SECURE = False  # Allow HTTP for internal testing (behind proxy)
-CSRF_COOKIE_SECURE = False     # Allow HTTP for internal testing
+CSRF_COOKIE_SECURE = False  # Allow HTTP for internal testing
 
 TIME_ZONE = "America/Toronto"
 
@@ -68,23 +68,24 @@ GLOBAL_THROTTLE_LIMIT = 1000
 GLOBAL_THROTTLE_WINDOW = 3600
 
 # Production logging goes to files
-LOGGING["handlers"]["file"]["filename"] = "/var/log/emol/emol.log"  # noqa: F405
+LOGGING["handlers"]["file"]["filename"] = "/var/log/emol/emol.log"  # type: ignore[index]  # noqa: F405 E501
 
 # Static files in production
 STATIC_ROOT = "/opt/emol/static/"
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
 # Cache configuration for production
-CACHES = {
-    "default": {
+CACHES["default"] = cast(  # type: ignore[index]  # noqa: F405
+    dict[str, Any],
+    {
         "BACKEND": "django.core.cache.backends.db.DatabaseCache",
         "LOCATION": "emol_cache",
         "TIMEOUT": 300,
         "OPTIONS": {
             "MAX_ENTRIES": 10000,
-        }
-    }
-}
+        },
+    },
+)
 
 # Production performance settings
-USE_TZ = True 
+USE_TZ = True

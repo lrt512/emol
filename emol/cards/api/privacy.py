@@ -1,5 +1,6 @@
 import logging
 
+from cards.api.permissions import ResendPrivacyPermission
 from cards.mail import send_privacy_policy
 from cards.models.combatant import Combatant
 from django.shortcuts import get_object_or_404
@@ -7,13 +8,19 @@ from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .permissions import ResendPrivacyPermission
-
 logger = logging.getLogger("cards")
 
 
 class ResendPrivacySerializer(serializers.Serializer):
     combatant_uuid = serializers.UUIDField()
+
+    # We never try to save anything but in case we do someday, we have not
+    # implemented these methods.
+    def create(self, validated_data):
+        raise NotImplementedError("This serializer is read-only")
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError("This serializer is read-only")
 
 
 class ResendPrivacyView(APIView):
@@ -42,9 +49,7 @@ class ResendPrivacyView(APIView):
                 "Combatant %s has already accepted the privacy policy", combatant
             )
             return Response(
-                {
-                    "message": f"{combatant.name} has already accepted the privacy policy"
-                },
+                {"message": f"{combatant.name} has accepted the privacy policy"},
                 status=status.HTTP_208_ALREADY_REPORTED,
             )
 

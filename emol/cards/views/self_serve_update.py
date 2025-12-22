@@ -1,8 +1,8 @@
 import logging
 
-from cards.models import Combatant, Region, UpdateCode
+from cards.models import Combatant, OneTimeCode, Region
 from django.core.exceptions import ValidationError
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import render
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.http import require_http_methods
 from rest_framework import serializers
@@ -54,29 +54,32 @@ class SelfServeUpdateSerializer(ModelSerializer):
         "address2",
     ]
 
-    def validate(self, data):
+    def validate(self, attrs):
         """
         Validate that member_expiry requires member_number and province code exists.
         """
-        if data.get("member_expiry") and not data.get("member_number"):
+        if attrs.get("member_expiry") and not attrs.get("member_number"):
             raise serializers.ValidationError(
                 {
-                    "member_number": "Member number is required when specifying an expiry date."
+                    "member_number": (
+                        "Member number is required when specifying an expiry date."
+                    )
                 }
             )
-        
+
         # Validate province code exists in Region table
-        if data.get("province"):
-            province_code = data["province"]
-            if not Region.objects.filter(code=province_code, active=True).exists():
+        if attrs.get("province"):
+            province_code = attrs["province"]
+            codes = Region.objects.filter(active=True).values_list("code", flat=True)
+            if province_code not in codes:
                 raise serializers.ValidationError(
                     {
                         "province": f"Province code '{province_code}' is not valid. "
-                                   f"Valid codes are: {', '.join(Region.objects.filter(active=True).values_list('code', flat=True))}"
+                        f"Valid codes are: {', '.join(codes)}"
                     }
                 )
-        
-        return data
+
+        return attrs
 
     def to_internal_value(self, data):
         """
@@ -107,11 +110,23 @@ def serializer_errors_to_strings(serializer):
 def self_serve_update(request, code):
     """Handle self-serve updates"""
     try:
-        update_code = UpdateCode.objects.get(code=code)
+        one_time_code = OneTimeCode.objects.get(code=code)
+
+        if not one_time_code.is_valid:
+            return render(
+                request,
+                "message/message.html",
+                {
+                    "message": (
+                        "The update code provided is invalid or has already been used."
+                    )
+                },
+            )
+
         context = {
             "self_serve": True,
             "code": code,
-            "combatant": update_code.combatant,
+            "combatant": one_time_code.combatant,
             "regions": Region.objects.all(),
         }
 
@@ -119,7 +134,7 @@ def self_serve_update(request, code):
             return render(request, "combatant/self_serve_update.html", context)
 
         serializer = SelfServeUpdateSerializer(
-            instance=update_code.combatant, data=request.POST, partial=True
+            instance=one_time_code.combatant, data=request.POST, partial=True
         )
 
         if not serializer.is_valid():
@@ -136,23 +151,25 @@ def self_serve_update(request, code):
         logger.info(
             "Successfully updated combatant information for code %s, combatant_id: %s",
             code,
-            update_code.combatant.id,
+            one_time_code.combatant.id,
         )
-        update_code.delete()
+        one_time_code.consume()
         return render(
             request,
             "message/message.html",
             {"message": "Your information has been updated successfully."},
         )
-    except (UpdateCode.DoesNotExist, ValueError, ValidationError):
+    except (OneTimeCode.DoesNotExist, ValueError, ValidationError):
         return render(
             request,
             "message/message.html",
             {
-                "message": "The update code provided is invalid or has already been used."
+                "message": (
+                    "The update code provided is invalid or has already been used."
+                )
             },
         )
-    except Exception as e:
+    except Exception:
         logger.exception("Unexpected error in self_serve_update for code %s", code)
         return render(
             request,

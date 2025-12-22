@@ -19,11 +19,15 @@ _thread_locals = local()
 def _set_current_user(user_func):
     # setattr(_thread_locals, USER_ATTR_NAME, user_func)
     # Maybe we don't need to make a bound method here
-    setattr(_thread_locals, USER_ATTR_NAME, user_func.__get__(user_func, local))
+    setattr(
+        _thread_locals,
+        USER_ATTR_NAME,
+        getattr(user_func, "__get__", lambda: user_func)(user_func, local),
+    )
 
 
-class ThreadLocalUserMiddleware(object):
-    """"""
+class ThreadLocalUserMiddleware:
+    """Middleware to store current user in thread-local storage."""
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -47,6 +51,6 @@ def get_current_user():
         return None
 
     if callable(current_user):
-        return current_user()
+        return current_user()  # type: ignore[misc,operator]
 
     return current_user

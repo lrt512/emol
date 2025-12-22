@@ -6,28 +6,27 @@ from django.db import migrations
 def fix_global_permissions(apps, schema_editor):
     """
     Fix global permissions that were incorrectly assigned to specific disciplines.
-    
+
     For each user/global_permission combination:
-    1. Find all UserPermissions where permission.is_global=True and discipline is not None
+    1. Find all UserPermissions where permission.is_global=True and discipline not None
     2. Keep only one UserPermission and set its discipline to None
     3. Delete the rest
     """
-    UserPermission = apps.get_model('cards', 'UserPermission')
-    Permission = apps.get_model('cards', 'Permission')
-    
+    UserPermission = apps.get_model("cards", "UserPermission")
+    Permission = apps.get_model("cards", "Permission")
+
     # Get all global permissions
     global_permissions = Permission.objects.filter(is_global=True)
-    
+
     fixed_count = 0
     deleted_count = 0
-    
+
     for permission in global_permissions:
-        # Find all incorrect UserPermissions for this global permission (those with disciplines)
+        # Find all incorrect UserPermissions for this global permission
         incorrect_assignments = UserPermission.objects.filter(
-            permission=permission,
-            discipline__isnull=False
-        ).select_related('user', 'discipline')
-        
+            permission=permission, discipline__isnull=False
+        ).select_related("user", "discipline")
+
         # Group by user to handle each user separately
         user_assignments = {}
         for user_perm in incorrect_assignments:
@@ -35,39 +34,56 @@ def fix_global_permissions(apps, schema_editor):
             if user_id not in user_assignments:
                 user_assignments[user_id] = []
             user_assignments[user_id].append(user_perm)
-        
+
         for user_id, user_perms in user_assignments.items():
             if len(user_perms) > 0:
                 user = user_perms[0].user
-                
-                # Check if user already has a correct global permission (discipline=None)
+
+                # Check if user already has a correct global permission
                 correct_global_exists = UserPermission.objects.filter(
-                    user=user,
-                    permission=permission,
-                    discipline=None
+                    user=user, permission=permission, discipline=None
                 ).exists()
-                
+
                 if correct_global_exists:
-                    # User already has correct global permission, delete all discipline-specific ones
+                    # User already has correct global permission,
+                    # delete all discipline-specific ones
                     for user_perm in user_perms:
-                        print(f"Deleted redundant {permission.name} for {user.email} (discipline: {user_perm.discipline.name})")
+                        print(
+                            "Deleted redundant %s for %s (discipline: %s)",
+                            permission.name,
+                            user.email,
+                            user_perm.discipline.name,
+                        )
                         user_perm.delete()
                         deleted_count += 1
                 else:
-                    # Keep the first one but fix it to be properly global (discipline=None)
+                    # Keep the first one but fix it to be properly global
                     first_perm = user_perms[0]
                     first_perm.discipline = None
                     first_perm.save()
-                    print(f"Fixed {permission.name} for {user.email} (converted to global)")
+                    print(
+                        "Fixed %s for %s (converted to global)",
+                        permission.name,
+                        user.email,
+                    )
                     fixed_count += 1
-                    
+
                     # Delete the rest
                     for user_perm in user_perms[1:]:
-                        print(f"Deleted duplicate {permission.name} for {user.email} (discipline: {user_perm.discipline.name})")
+                        print(
+                            "Deleted duplicate %s for %s (discipline: %s)",
+                            permission.name,
+                            user.email,
+                            user_perm.discipline.name,
+                        )
                         user_perm.delete()
                         deleted_count += 1
-    
-    print(f"Migration completed: {fixed_count} permissions fixed, {deleted_count} permissions deleted")
+
+    print(
+        "Migration completed: %s permissions fixed, %s permissions deleted",
+        fixed_count,
+        deleted_count,
+    )
 
 
 def reverse_fix_global_permissions(apps, schema_editor):
@@ -81,7 +97,7 @@ def reverse_fix_global_permissions(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('cards', '0010_alter_region_options_and_more'),
+        ("cards", "0010_alter_region_options_and_more"),
     ]
 
     operations = [

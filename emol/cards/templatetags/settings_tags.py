@@ -1,4 +1,5 @@
 import os
+
 from django import template
 from django.conf import settings
 from django.utils.safestring import mark_safe
@@ -23,13 +24,18 @@ def app_version():
     # Try multiple possible locations for flexibility
     possible_paths = [
         "/opt/emol/VERSION",  # Container path
-        os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))), "VERSION"),  # Dev path
+        os.path.join(
+            os.path.dirname(
+                os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
+            ),
+            "VERSION",
+        ),  # Dev path
     ]
-    
+
     for version_file in possible_paths:
         if os.path.exists(version_file):
             try:
-                with open(version_file, "r") as f:
+                with open(version_file, "r", encoding="utf-8") as f:
                     version = f.read().strip()
                     return f"v{version}" if version else ""
             except (IOError, OSError):

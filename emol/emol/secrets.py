@@ -24,8 +24,9 @@ def get_aws_credentials():
             "aws_access_key_id": os.environ["AWS_ACCESS_KEY_ID"],
             "aws_secret_access_key": os.environ["AWS_SECRET_ACCESS_KEY"],
         }
-    elif os.path.exists("/opt/emol/emol_credentials.json"):
-        with open("/opt/emol/emol_credentials.json", "r") as f:
+
+    if os.path.exists("/opt/emol/emol_credentials.json"):
+        with open("/opt/emol/emol_credentials.json", "r", encoding="utf-8") as f:
             return json.load(f)
 
     logger.error("No AWS credentials found")
@@ -70,8 +71,8 @@ def get_secret(name):
         response = ssm.get_parameter(Name=name, WithDecryption=True)
         return response["Parameter"]["Value"]
     except ssm.exceptions.ParameterNotFound as exc:
-        logger.error(f"Parameter '{name}' not found: {exc}")
+        logger.error("Parameter '%s' not found: %s", name, exc)
         return None
     except Exception as e:
-        logger.error(f"Error retrieving parameter '{name}': {str(e)}")
+        logger.error("Error retrieving parameter '%s': %s", name, str(e))
         return None

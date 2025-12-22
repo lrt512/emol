@@ -1,8 +1,7 @@
 """Seed a default privacy policy for development."""
 
-from django.core.management.base import BaseCommand
-
 from cards.models import PrivacyPolicy
+from django.core.management.base import BaseCommand
 
 
 class Command(BaseCommand):
@@ -35,7 +34,7 @@ Your information is used solely to:
 
 ## Data Retention
 
-Records are retained while your card is active and for a reasonable period after expiration.
+Records are retained while your card is active and for a reasonable period after expiry.
 
 ## Your Rights
 
@@ -44,4 +43,3 @@ Contact the Kingdom Earl Marshal to request access to or deletion of your data.
 
         PrivacyPolicy.objects.create(text=policy_text)
         self.stdout.write(self.style.SUCCESS("Privacy policy created"))
-

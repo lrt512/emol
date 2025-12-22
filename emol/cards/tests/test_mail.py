@@ -1,22 +1,22 @@
 """Tests for email sending functions."""
 
-from datetime import timedelta
-from unittest.mock import patch
-
-from django.contrib.contenttypes.models import ContentType
-from django.test import TestCase, override_settings
-
 from cards.mail import (
     send_card_expiry,
     send_card_reminder,
     send_card_url,
     send_info_update,
+    send_pin_lockout_notification,
+    send_pin_migration_email,
+    send_pin_reset,
+    send_pin_setup,
     send_privacy_policy,
     send_waiver_expiry,
     send_waiver_reminder,
 )
-from cards.models import Card, Combatant, Discipline, Reminder, UpdateCode, Waiver
+from cards.models import Card, Combatant, Discipline, OneTimeCode, Reminder, Waiver
 from cards.utility.time import today
+from django.contrib.contenttypes.models import ContentType
+from django.test import TestCase, override_settings
 
 
 class SendCardReminderTestCase(TestCase):
@@ -177,9 +177,12 @@ class SendInfoUpdateTestCase(TestCase):
     @override_settings(SEND_EMAIL=False)
     def test_send_info_update_success(self):
         """send_info_update sends email and returns True."""
-        update_code = UpdateCode.objects.create(combatant=self.combatant)
+        one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/self-serve-update/{code}",
+        )
 
-        result = send_info_update(self.combatant, update_code)
+        result = send_info_update(self.combatant, one_time_code)
 
         self.assertTrue(result)
 
@@ -232,3 +235,145 @@ class SendPrivacyPolicyTestCase(TestCase):
 
         self.assertTrue(result)
 
+
+class SendPINSetupTestCase(TestCase):
+    """Tests for send_pin_setup."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.combatant = Combatant.objects.create(
+            sca_name="Test Fighter",
+            legal_name="Test Legal",
+            email="test@example.com",
+            accepted_privacy_policy=True,
+        )
+        self.one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/pin/setup/{code}",
+        )
+
+    @override_settings(SEND_EMAIL=False)
+    def test_send_pin_setup_success(self):
+        """send_pin_setup sends email and returns True."""
+        result = send_pin_setup(self.combatant, self.one_time_code)
+
+        self.assertTrue(result)
+
+    def test_send_pin_setup_requires_privacy_acceptance(self):
+        """send_pin_setup raises ValueError if privacy policy not accepted."""
+        self.combatant.accepted_privacy_policy = False
+        self.combatant.save()
+
+        with self.assertRaises(ValueError) as cm:
+            send_pin_setup(self.combatant, self.one_time_code)
+
+        self.assertIn("privacy policy not accepted", str(cm.exception))
+
+
+class SendPINLockoutNotificationTestCase(TestCase):
+    """Tests for send_pin_lockout_notification."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.combatant = Combatant.objects.create(
+            sca_name="Test Fighter",
+            legal_name="Test Legal",
+            email="test@example.com",
+            accepted_privacy_policy=True,
+        )
+
+    @override_settings(SEND_EMAIL=False)
+    def test_send_pin_lockout_notification_success(self):
+        """send_pin_lockout_notification sends email and returns True."""
+        result = send_pin_lockout_notification(self.combatant)
+
+        self.assertTrue(result)
+
+
+class SendPINResetTestCase(TestCase):
+    """Tests for send_pin_reset."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.combatant = Combatant.objects.create(
+            sca_name="Test Fighter",
+            legal_name="Test Legal",
+            email="test@example.com",
+            accepted_privacy_policy=True,
+        )
+        self.one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/pin/reset/{code}",
+        )
+
+    @override_settings(SEND_EMAIL=False)
+    def test_send_pin_reset_success(self):
+        """send_pin_reset sends email and returns True."""
+        result = send_pin_reset(self.combatant, self.one_time_code)
+
+        self.assertTrue(result)
+
+
+class SendPINMigrationEmailTestCase(TestCase):
+    """Tests for send_pin_migration_email."""
+
+    def setUp(self):
+        """Set up test fixtures."""
+        self.combatant = Combatant.objects.create(
+            sca_name="Test Fighter",
+            legal_name="Test Legal",
+            email="test@example.com",
+            accepted_privacy_policy=True,
+        )
+        self.one_time_code = OneTimeCode.objects.create(
+            combatant=self.combatant,
+            url_template="/pin/setup/{code}",
+        )
+
+    @override_settings(SEND_EMAIL=False)
+    def test_send_pin_migration_initial(self):
+        """send_pin_migration_email sends initial email."""
+        result = send_pin_migration_email(
+            self.combatant, self.one_time_code, stage="initial"
+        )
+
+        self.assertTrue(result)
+
+    @override_settings(SEND_EMAIL=False)
+    def test_send_pin_migration_reminder(self):
+        """send_pin_migration_email sends reminder email."""
+        result = send_pin_migration_email(
+            self.combatant, self.one_time_code, stage="reminder"
+        )
+
+        self.assertTrue(result)
+
+    @override_settings(SEND_EMAIL=False)
+    def test_send_pin_migration_final(self):
+        """send_pin_migration_email sends final email."""
+        result = send_pin_migration_email(
+            self.combatant, self.one_time_code, stage="final"
+        )
+
+        self.assertTrue(result)
+
+    @override_settings(SEND_EMAIL=False)
+    def test_send_pin_migration_invalid_stage(self):
+        """send_pin_migration_email returns False for invalid stage."""
+        result = send_pin_migration_email(
+            self.combatant, self.one_time_code, stage="invalid"
+        )
+
+        self.assertFalse(result)
+
+    def test_send_pin_migration_requires_privacy_acceptance(self):
+        """send_pin_migration_email raises ValueError if privacy policy not accepted."""
+        self.combatant.accepted_privacy_policy = False
+        self.combatant.save()
+
+        with self.assertRaises(ValueError) as cm:
+            send_pin_migration_email(
+                self.combatant, self.one_time_code, stage="initial"
+            )
+
+        self.assertIn("privacy policy not accepted", str(cm.exception))

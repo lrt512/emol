@@ -1,1 +1,1 @@
-from .middleware import get_current_user  # noqa: F401
+from current_user.middleware import get_current_user  # noqa: F401

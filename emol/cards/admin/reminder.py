@@ -1,6 +1,5 @@
 from cards.models.card import Card
 from cards.models.reminder import Reminder
-from cards.models.waiver import Waiver
 from django.contrib import admin
 from django.contrib.contenttypes.models import ContentType
 from django.forms import ModelChoiceField, ModelForm

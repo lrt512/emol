@@ -1,7 +1,6 @@
 import logging
 
 from cards.models.user_permission import UserPermission
-from current_user import get_current_user
 from django import template
 
 logger = logging.getLogger("cards")
@@ -25,10 +24,19 @@ def has_global_permission(user, permission_slug, override=None, reason=None):
     """
     if override:
         if not reason:
-            logger.error(f"has_global_permission: {permission_slug} override: {override} but no reason provided")
+            logger.error(
+                "has_global_permission: %s override: %s but no reason provided",
+                permission_slug,
+                override,
+            )
             return False
 
-        logger.info(f"has_global_permission: {permission_slug} override: {override} reason: {reason}")
+        logger.info(
+            "has_global_permission: %s override: %s reason: %s",
+            permission_slug,
+            override,
+            reason,
+        )
         return override
 
     if not user.is_authenticated:

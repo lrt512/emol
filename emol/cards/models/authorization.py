@@ -1,7 +1,6 @@
+from cards.models.discipline import Discipline
 from django.db import models
 from django.utils.text import slugify
-
-from .discipline import Discipline
 
 
 class Authorization(models.Model):
@@ -43,8 +42,8 @@ class Authorization(models.Model):
         """Look up an authorization.
 
         Args:
-            discipline: A discipline slug (string) or id (int) or Discipline object
-            authorization: An authorization slug (string) or id (int) or Authorization object
+            discipline: A discipline slug, id, or Discipline object
+            authorization: An authorization slug, id, or Authorization object
 
         Returns:
             Authorization object

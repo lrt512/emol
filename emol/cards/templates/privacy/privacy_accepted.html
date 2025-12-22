@@ -7,6 +7,21 @@
   </div>
 </div>
 
+{% if requires_pin_setup %}
+<div class="row form-group">
+  <div class="col-md-12">
+    <p>Thank you for accepting the privacy policy!</p>
+    <p>
+      Before you can access your authorization card, you need to set up a PIN
+      for security purposes. We've sent you an email with a link to set your PIN.
+    </p>
+    <p>
+      Please check your email and follow the instructions to complete the setup.
+      Your PIN will be required each time you view your card.
+    </p>
+  </div>
+</div>
+{% else %}
 <div class="row form-group">
   <div class="col-md-12">
     You can now access your authorization card here:
@@ -23,5 +38,6 @@
     We've also sent you an email with your card's URL.
   </div>
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

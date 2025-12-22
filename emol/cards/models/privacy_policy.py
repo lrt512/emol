@@ -25,6 +25,6 @@ class PrivacyPolicy(models.Model):
         """Policies are write-once"""
         if self.pk is not None:
             raise ValidationError(
-                "You cannot update an existing Privacy Policy. Create a new one instead."
+                "Cannot update an existing Privacy Policy. Create a new one instead."
             )
         super().save(*args, **kwargs)
