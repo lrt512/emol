@@ -1,12 +1,22 @@
-# eMoL System Architecture
+# eMoL System Overview
 
-## Overview
+## What is eMoL?
 
-eMoL (Electronic Minister of Lists) is the system used to manage combat authorizations and other lists for the Kingdom of Ealdormere. This document explains how the system is hosted and structured.
+eMoL (Electronic Minister of Lists) is the online system used to manage combat authorizations and related records for the Kingdom of Ealdormere. Combatants can view their authorization cards online, and authorized marshals and officers can update authorization information securely.
 
-The system runs on **AWS (Amazon Web Services)** and is funded by **Techsoup credits**, making it extremely cost-effective for the kingdom. We share some infrastructure with the main kingdom website to further reduce costs.
+## System Capabilities
 
-## Architecture Diagram
+eMoL allows:
+- **Combatants** to view their authorization cards online using a secure link
+- **Marshals and Officers** to update authorization dates, add new authorizations, and manage combatant information
+- **Kingdom Officers** to generate reports and rosters
+- **Automatic reminders** to be sent when authorizations are approaching expiration
+
+All sensitive information (legal names, addresses, phone numbers) is encrypted and only accessible to authorized personnel.
+
+## System Architecture
+
+The following diagram shows how the different components of the system work together:
 
 ```mermaid
 graph TB
@@ -73,208 +83,99 @@ graph TB
     style TestStack fill:#ffccbc,stroke:#d84315
 ```
 
-## Component Details
+### Component Overview
 
-### External: Techsoup
-- Non-profit technology provider
-- Provides AWS credits for eligible organizations
+**Techsoup (Funding Provider)**
+- Non-profit organization that provides cloud computing credits to eligible organizations
+- Covers the hosting costs for eMoL
 
-### External: Development Environment
-- **Developer Workstation**: Local development machine
-- **Git Repository**: Source code with semantic version tags (v1.3.0, v1.3.1, etc.)
-- **build-and-push.sh**: Builds Docker images and pushes to ECR
-- **Workflow**: Tag → Build → Push → Deploy
+**Development Environment**
+- Where volunteers develop and test new features and improvements
+- Changes are prepared and packaged before being deployed to the live system
 
-### AWS Account (ca-central-1 Region)
+**Container Registry (Software Storage)**
+- Stores all versions of the eMoL software
+- Allows the system to keep track of different versions and roll back if needed
 
-#### IAM (Identity and Access Management)
-- **Instance Role**: Attached to eMoL Lightsail instance via instance profile
-- **ECR Access Policy**: Allows pulling Docker images from ECR
-- **SSM Access Policy**: Allows reading secrets from Parameter Store
-- **Security**: No static credentials needed on instance
+**Secure Configuration (Password Storage)**
+- Encrypted storage for all passwords and security keys
+- Ensures sensitive configuration data is never stored in code or exposed
 
-#### ECR (Elastic Container Registry)
-- Stores versioned Docker images of the eMoL application
-- Tags: `emol:latest`, `emol:v1.3.0`, `emol:v1.3.1`, etc.
-- Images built with `Dockerfile.prod`
-- Automatic vulnerability scanning enabled
+**Database Server**
+- Stores all combatant data, authorizations, and system information
+- Shared between eMoL and the kingdom website to reduce costs
+- Only accessible by the application servers (not from the internet)
 
-#### SSM Parameter Store
-- Securely stores application secrets:
-  - `/emol/db_name` - Database name
-  - `/emol/db_user` - Database username
-  - `/emol/db_password` - Database password
-  - `/emol/db_host` - Database host
-  - `/emol/secret_key` - Django secret key
-  - `/emol/oauth_client_id` - Google OAuth client ID
-  - `/emol/oauth_client_secret` - Google OAuth secret
-- Encrypted at rest
-- Accessed via AWS SDK using IAM role
+**Kingdom Website Server (ealdormere.ca)**
+- Hosts the main Kingdom of Ealdormere website
+- Shares the database server with eMoL for cost efficiency
 
-#### Lightsail VPC
+**eMoL Application Server**
+- **Live Version**: The production system that combatants and officers use daily
+- **Test Version**: A separate copy used to test updates before they go live
+- Both versions can run simultaneously, allowing safe testing without disrupting service
 
-##### MySQL Lightsail Instance
-- **Cost**: $7/month
-- **Specs**: 1GB RAM, 2 vCPUs
-- **Database**: MySQL 8.0
-- **Port**: 3306 (accessible only within VPC)
-- **Purpose**: Shared database server
-- **Databases**:
-  - `emol` - eMoL application database
-  - `wordpress` - ealdormere.ca WordPress database
-  - Additional databases for other services as needed
-- **Management**: Separate instance for easier backup/restore and shared use
+## Hosting and Reliability
 
-##### WordPress Lightsail Instance (ealdormere.ca)
-- **Cost**: $10/month
-- **Specs**: 1GB RAM, 1 vCPU, 40GB SSD
-- **Stack**: Apache + PHP + WordPress
-- **Domain**: ealdormere.ca
-- **Database**: Uses shared MySQL instance
-- **Purpose**: Kingdom of Ealdormere main website
-- **Note**: $10/month is overkill for traffic but not our decision
+eMoL runs on **Amazon Web Services (AWS)**, a major cloud provider. This means:
+- The system is available 24/7 from anywhere with internet access
+- Data is automatically backed up and stored securely
+- The system can handle traffic spikes without interruption
+- Updates can be deployed without downtime
 
-##### eMoL Lightsail Instance
-- **Cost**: $7/month
-- **Specs**: 1GB RAM, 2 vCPUs, 40GB SSD
-- **OS**: Ubuntu 22.04
-- **Components**:
-  - Docker Engine
-  - deploy-docker.sh script
-  - Production and Test stacks
+The system is hosted in Canada (Toronto region) to ensure data stays within Canadian borders and complies with privacy regulations.
 
-###### Production Stack (Port 80)
-- **Compose File**: `docker-compose.prod.yml`
-- **Container Image**: `emol:latest`
-- **Components**:
-  - Nginx: Serves static files, reverse proxy to Gunicorn
-  - Gunicorn: 2 workers, WSGI server
-  - Django: Application code
-- **Volumes**: `static`, `emol_logs`, `nginx_logs`
-- **Purpose**: Serves production traffic
+## Funding and Costs
 
-###### Test Stack (Port 8080)
-- **Compose File**: `docker-compose.test.yml`
-- **Container Image**: Specific version (e.g., `emol:v1.3.0`)
-- **Components**:
-  - Nginx: Serves static files, reverse proxy to Gunicorn
-  - Gunicorn: 2 workers, WSGI server
-  - Django: Application code
-- **Volumes**: `static_test`, `emol_logs_test`, `nginx_logs_test` (separate from prod)
-- **Purpose**: Test new versions before cutover
-- **Can run simultaneously with production**
+eMoL is funded through **Techsoup**, a non-profit technology provider that offers cloud computing credits to eligible organizations. This makes the system extremely cost-effective for the kingdom.
 
-## Deployment Flow
+**Monthly Operating Costs:**
+- Database server (shared with kingdom website): $7/month
+- eMoL application server: $7/month
+- Kingdom website server: $10/month
+- Cloud storage and services: ~$1/month
 
-### 1. Local Development → ECR
+**Total: Approximately $25/month**
 
-```bash
-# Developer tags a release
-git tag v1.3.0
-git push --tags
+All costs are covered by Techsoup AWS credits, meaning **the kingdom pays nothing** for hosting the system.
 
-# Build and push to ECR
-./setup_files/build-and-push.sh --account-id <id>
-```
+### Cost Efficiency
 
-**Process**:
-- Reads latest git tag (e.g., `v1.3.0`)
-- Builds Docker image from `Dockerfile.prod`
-- Tags image as `emol:v1.3.0` and `emol:latest`
-- Pushes both tags to ECR
-- Updates local `VERSION` file
-
-### 2. ECR → Lightsail Instance (Test)
-
-```bash
-# On Lightsail instance
-cd ~/emol
-./setup_files/host/deploy-docker.sh --registry <url> --test
-```
-
-**Process**:
-- Queries ECR for latest version
-- Pulls image from ECR
-- Creates/updates `docker-compose.test.yml`
-- Starts container on port 8080
-- Production on port 80 remains running
-- Reads secrets from SSM Parameter Store
-- Connects to MySQL database
-
-### 3. Test → Production (Cutover)
-
-```bash
-# After testing looks good
-./setup_files/host/deploy-docker.sh --registry <url> --cutover
-```
-
-**Process**:
-- Pulls latest image from ECR
-- Stops old systemd service (if running)
-- Stops test container on port 8080
-- Creates/updates `docker-compose.prod.yml`
-- Starts container on port 80
-- Cleans up old Docker images
-
-### Container Startup Sequence
-
-1. Container starts with `docker-entrypoint-prod.sh`
-2. Reads secrets from SSM Parameter Store using IAM role
-3. Connects to MySQL database
-4. Runs Django migrations (`python manage.py migrate`)
-5. Collects static files (`python manage.py collectstatic`)
-6. Creates cache table if needed
-7. Creates superuser if specified
-8. Starts Nginx
-9. Starts Gunicorn with 2 workers
-10. Container marked as healthy
-
-## Network Flow
-
-### External Request Flow
-```
-Internet → Port 80/8080 → Nginx (in container)
-                        → Gunicorn (WSGI server)
-                        → Django Application
-                        → MySQL Database (separate instance)
-```
-
-### Internal Service Flow
-```
-Container → IAM Role → SSM Parameter Store (read secrets)
-Container → VPC → MySQL Instance (database queries)
-```
+The system is designed to minimize costs:
+- The database server is shared between eMoL and the kingdom website, reducing overall expenses
+- Resources are sized appropriately for our traffic levels
+- All services are located in the same region to avoid additional fees
 
 ## Security
 
-- **Secrets**: Stored in SSM Parameter Store, never in code or environment variables
-- **IAM Roles**: Instance uses IAM role for AWS service access (no static credentials)
-- **Network**: Database only accessible from localhost
-- **HTTPS**: Handled by external reverse proxy (if configured)
+eMoL takes security seriously:
+- All passwords and sensitive configuration data are stored in encrypted, secure storage
+- The database is only accessible from the application server (not directly from the internet)
+- User access is controlled through Google OAuth (the same login system used by many organizations)
+- Sensitive combatant information (legal names, addresses) is encrypted in the database
+- Only authorized personnel can view or modify sensitive data
 
-## Cost Structure
+## System Updates
 
-### Monthly Costs
-- **MySQL Lightsail Instance**: $7/month (1GB RAM, 2 vCPUs) - Shared
-- **WordPress Lightsail Instance**: $10/month (1GB RAM, 1 vCPU, 40GB SSD) - ealdormere.ca
-- **eMoL Lightsail Instance**: $7/month (1GB RAM, 2 vCPUs, 40GB SSD) - emol.ealdormere.ca
-- **ECR Storage**: ~$0.50/month (minimal, <5GB)
-- **ECR Data Transfer**: Free within same region
-- **SSM Parameter Store**: Free tier (< 10,000 parameters)
-- **Data Transfer**: Minimal (mostly within VPC)
+When improvements or fixes are needed:
+1. Changes are tested on a separate test version of the system
+2. After testing confirms everything works correctly, the update is applied to the live system
+3. The system remains available during updates (no downtime)
+4. Previous versions are kept available in case a rollback is needed
 
-**Total**: ~$25/month before credits
+This process ensures that updates don't disrupt service and can be safely tested before going live.
 
-### Cost Optimization
-- **Techsoup AWS Credits**: Covers most/all costs for eligible non-profits
-- **Single Region**: All resources in ca-central-1 (no cross-region charges)
-- **Shared MySQL**: Database instance serves both eMoL and WordPress
-- **Efficient Instance Sizing**: Right-sized for low-traffic applications
-- **Docker Volumes**: Reuse static files between deployments
-- **VPC Peering**: Database connections within VPC (no data transfer charges)
+## Data Management
 
-### Notes on Costs
-- WordPress instance is oversized for current traffic but maintained for consistency
-- Shared MySQL instance reduces overall cost vs. separate databases
-- All costs covered by Techsoup AWS credits
+- All combatant data is stored in a secure database
+- The database is automatically backed up as part of the hosting service
+- Data can be exported for reporting or backup purposes
+- The system maintains a complete history of changes
 
+## Support and Maintenance
+
+The system is maintained by volunteer developers. Technical documentation is available for future maintainers, and the system is designed to be reliable and require minimal ongoing maintenance.
+
+## Summary
+
+eMoL provides a secure, reliable, and cost-effective way to manage combat authorizations for the Kingdom of Ealdormere. The system runs on professional cloud infrastructure, costs the kingdom nothing thanks to Techsoup credits, and provides the security and reliability needed to manage sensitive combatant information.
