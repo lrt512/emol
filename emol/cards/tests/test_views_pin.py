@@ -10,6 +10,7 @@ from django.utils import timezone
 from feature_switches.models import (
     ACCESS_MODE_DISABLED,
     ACCESS_MODE_GLOBAL,
+    ACCESS_MODE_LIST,
     FeatureSwitch,
 )
 
@@ -75,14 +76,16 @@ class PINSetupViewTestCase(TestCase):
         self.assertContains(response, "expired or already been used")
 
     def test_post_valid_pin(self):
-        """Test POST with valid PIN sets the PIN."""
+        """Test POST with valid PIN sets the PIN and shows privacy accepted page."""
         response = self.client.post(
             reverse("pin-setup", args=[str(self.one_time_code.code)]),
             {"pin": "1234", "pin_confirm": "1234"},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "PIN has been set successfully")
+        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.assertContains(response, "Welcome!")
+        self.assertContains(response, self.combatant.card_url)
 
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.has_pin)
@@ -114,8 +117,8 @@ class PINSetupViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "4-6 numeric digits")
 
-    def test_feature_disabled_redirects(self):
-        """Test that disabled feature shows message."""
+    def test_feature_disabled_shows_expired_message(self):
+        """Test that disabled feature shows expired message (transparent to user)."""
         FeatureSwitch.objects.filter(name="pin_authentication").update(
             access_mode=ACCESS_MODE_DISABLED
         )
@@ -125,7 +128,34 @@ class PINSetupViewTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "not currently enabled")
+        self.assertContains(response, "expired or already been used")
+
+    def test_list_mode_combatant_in_list_allows_setup(self):
+        """Test that combatant in list can access PIN setup."""
+        switch = FeatureSwitch.objects.filter(name="pin_authentication").first()
+        switch.access_mode = ACCESS_MODE_LIST
+        switch.save()
+        switch.allowed_users.add(self.combatant)
+
+        response = self.client.get(
+            reverse("pin-setup", args=[str(self.one_time_code.code)])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Set Your PIN")
+
+    def test_list_mode_combatant_not_in_list_shows_expired(self):
+        """Test that combatant not in list sees expired message."""
+        switch = FeatureSwitch.objects.filter(name="pin_authentication").first()
+        switch.access_mode = ACCESS_MODE_LIST
+        switch.save()
+
+        response = self.client.get(
+            reverse("pin-setup", args=[str(self.one_time_code.code)])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "expired or already been used")
 
 
 class PINResetViewTestCase(TestCase):
@@ -158,14 +188,16 @@ class PINResetViewTestCase(TestCase):
         self.assertContains(response, "Reset Your PIN")
 
     def test_post_valid_new_pin(self):
-        """Test POST with valid PIN resets the PIN."""
+        """Test POST with valid PIN resets the PIN and shows privacy accepted page."""
         response = self.client.post(
             reverse("pin-reset", args=[str(self.one_time_code.code)]),
             {"pin": "5678", "pin_confirm": "5678"},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "PIN has been reset successfully")
+        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.assertContains(response, "Welcome!")
+        self.assertContains(response, self.combatant.card_url)
 
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.check_pin("5678"))

@@ -164,10 +164,11 @@ def pin_reset(request: HttpRequest, code: str) -> HttpResponse:
             logger.info("PIN reset successfully for combatant %s", combatant.email)
             return render(
                 request,
-                "message/message.html",
+                "privacy/privacy_accepted.html",
                 {
-                    "message": "Your PIN has been reset successfully. "
-                    "You can now access your authorization card."
+                    "card_url": combatant.card_url,
+                    "sent_email": True,
+                    "requires_pin_setup": False,
                 },
             )
         except ValueError as e:

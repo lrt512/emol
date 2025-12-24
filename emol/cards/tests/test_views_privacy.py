@@ -3,7 +3,11 @@
 from cards.models import Combatant, PrivacyPolicy
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from feature_switches.models import ACCESS_MODE_GLOBAL, FeatureSwitch
+from feature_switches.models import (
+    ACCESS_MODE_GLOBAL,
+    ACCESS_MODE_LIST,
+    FeatureSwitch,
+)
 
 
 class PrivacyPolicyViewTestCase(TestCase):
@@ -80,3 +84,38 @@ class PrivacyPolicyViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "privacy/privacy_declined.html")
         self.assertFalse(Combatant.objects.filter(id=combatant_id).exists())
+
+    @override_settings(SEND_EMAIL=False, SITE_URL="http://test.example.com")
+    def test_privacy_policy_accept_with_pin_list_mode_combatant_in_list(self):
+        """POST with accept redirects to PIN setup when combatant is in list."""
+        switch = FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_LIST
+        )
+        switch.allowed_users.add(self.combatant)
+
+        code = self.combatant.privacy_acceptance_code
+        response = self.client.post(
+            reverse("privacy-policy", kwargs={"code": code}),
+            {"code": code, "accept": "1"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn("/pin/setup/", response.url)
+        self.combatant.refresh_from_db()
+        self.assertTrue(self.combatant.accepted_privacy_policy)
+
+    @override_settings(SEND_EMAIL=False, SITE_URL="http://test.example.com")
+    def test_privacy_policy_accept_with_pin_list_mode_combatant_not_in_list(self):
+        """POST with accept shows accepted page when combatant not in list."""
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_LIST
+        )
+
+        code = self.combatant.privacy_acceptance_code
+        response = self.client.post(
+            reverse("privacy-policy", kwargs={"code": code}),
+            {"code": code, "accept": "1"},
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.combatant.refresh_from_db()
+        self.assertTrue(self.combatant.accepted_privacy_policy)
