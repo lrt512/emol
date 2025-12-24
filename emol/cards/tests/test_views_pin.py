@@ -7,7 +7,11 @@ from cards.utility.time import today
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from feature_switches.models import FeatureSwitch
+from feature_switches.models import (
+    ACCESS_MODE_DISABLED,
+    ACCESS_MODE_GLOBAL,
+    FeatureSwitch,
+)
 
 
 class PINSetupViewTestCase(TestCase):
@@ -25,7 +29,9 @@ class PINSetupViewTestCase(TestCase):
             combatant=self.combatant,
             url_template="/pin/setup/{code}",
         )
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_get_setup_page(self):
         """Test GET request returns setup form."""
@@ -110,7 +116,9 @@ class PINSetupViewTestCase(TestCase):
 
     def test_feature_disabled_redirects(self):
         """Test that disabled feature shows message."""
-        FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
+        FeatureSwitch.objects.filter(name="pin_authentication").update(
+            access_mode=ACCESS_MODE_DISABLED
+        )
 
         response = self.client.get(
             reverse("pin-setup", args=[str(self.one_time_code.code)])
@@ -136,7 +144,9 @@ class PINResetViewTestCase(TestCase):
             combatant=self.combatant,
             url_template="/pin/reset/{code}",
         )
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_get_reset_page(self):
         """Test GET request returns reset form."""
@@ -175,7 +185,9 @@ class PINVerifyViewTestCase(TestCase):
             card_id="test-card-123",
         )
         self.combatant.set_pin("1234")
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_get_verify_page(self):
         """Test GET request returns verify form."""
@@ -250,7 +262,9 @@ class PINVerifyViewTestCase(TestCase):
 
     def test_feature_disabled_redirects_to_card(self):
         """Test that disabled feature redirects to card."""
-        FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
+        FeatureSwitch.objects.filter(name="pin_authentication").update(
+            access_mode=ACCESS_MODE_DISABLED
+        )
 
         response = self.client.get(reverse("pin-verify", args=["test-card-123"]))
 
@@ -285,7 +299,9 @@ class CombatantCardWithPINTestCase(TestCase):
             combatant=self.combatant,
             date_signed=today(),
         )
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_card_without_pin_accessible(self):
         """Test that card without PIN set is directly accessible."""
@@ -322,7 +338,9 @@ class CombatantCardWithPINTestCase(TestCase):
     def test_feature_disabled_card_accessible(self):
         """Test that card is accessible when feature is disabled."""
         self.combatant.set_pin("1234")
-        FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
+        FeatureSwitch.objects.filter(name="pin_authentication").update(
+            access_mode=ACCESS_MODE_DISABLED
+        )
 
         response = self.client.get(reverse("combatant-card", args=["protected-card"]))
 

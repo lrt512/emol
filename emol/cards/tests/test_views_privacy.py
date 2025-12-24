@@ -3,7 +3,7 @@
 from cards.models import Combatant, PrivacyPolicy
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from feature_switches.models import FeatureSwitch
+from feature_switches.models import ACCESS_MODE_GLOBAL, FeatureSwitch
 
 
 class PrivacyPolicyViewTestCase(TestCase):
@@ -55,7 +55,9 @@ class PrivacyPolicyViewTestCase(TestCase):
     @override_settings(SEND_EMAIL=False, SITE_URL="http://test.example.com")
     def test_privacy_policy_accept_with_pin_enabled(self):
         """POST with accept redirects to PIN setup when PIN is enabled."""
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
         code = self.combatant.privacy_acceptance_code
         response = self.client.post(

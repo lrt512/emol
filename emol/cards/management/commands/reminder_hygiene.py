@@ -4,6 +4,7 @@ from cards.models import Card, Reminder, Waiver
 from django.conf import settings
 from django.contrib.contenttypes.models import ContentType
 from django.core.management.base import BaseCommand
+from django.db.models import QuerySet
 from django.utils import timezone
 
 
@@ -114,12 +115,10 @@ class Command(BaseCommand):
         """
         self.stdout.write("Checking for orphaned reminders...")
 
-        reminders = Reminder.objects.all().select_related("content_type")
-        orphaned = [
-            r
-            for r in reminders
-            if r.content_object is None  # type: ignore[attr-defined]
-        ]
+        reminders: QuerySet[Reminder, Reminder] = Reminder.objects.all().select_related(
+            "content_type"
+        )
+        orphaned = [r for r in reminders if r.content_object is None]
 
         if orphaned:
             self.stdout.write(
@@ -127,8 +126,7 @@ class Command(BaseCommand):
             )
             for r in orphaned[:10]:
                 self.stdout.write(
-                    "    - Reminder ID %s (object_id=%s)"
-                    % (r.id, r.object_id)  # type: ignore[attr-defined]
+                    "    - Reminder ID %s (object_id=%s)" % (r.id, r.object_id)
                 )
             if len(orphaned) > 10:
                 self.stdout.write("    ... and %s more" % (len(orphaned) - 10))

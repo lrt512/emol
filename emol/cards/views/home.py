@@ -6,6 +6,7 @@ from cards.mail import send_card_url, send_info_update, send_privacy_policy
 from cards.models import Combatant, CombatantWarrant, Discipline
 from current_user import get_current_user
 from django.core.exceptions import MultipleObjectsReturned
+from django.db.models import QuerySet
 from django.shortcuts import render
 from django.template.defaulttags import register
 from django.views.decorators.csrf import csrf_protect
@@ -38,12 +39,12 @@ def _find_combatants_by_email_and_pin(email: str, pin: str) -> list:
     Returns:
         List of combatants that match both email and PIN
     """
-    combatants = Combatant.objects.filter(email=email)
+    combatants: QuerySet[Combatant, Combatant] = Combatant.objects.filter(email=email)
     matching = []
     for combatant in combatants:
-        if combatant.has_pin and combatant.check_pin(pin):  # type: ignore[attr-defined]
+        if combatant.has_pin and combatant.check_pin(pin):
             matching.append(combatant)
-        elif not combatant.has_pin:  # type: ignore[attr-defined]
+        elif not combatant.has_pin:
             matching.append(combatant)
     return matching
 

@@ -36,7 +36,7 @@ class InitiatePinResetView(APIView):
         Returns:
             Response with success message or error details.
         """
-        if not is_enabled("pin_authentication"):
+        if not is_enabled("pin_authentication", user=request.user):
             return Response(
                 {"message": "PIN authentication is not enabled"},
                 status=status.HTTP_400_BAD_REQUEST,

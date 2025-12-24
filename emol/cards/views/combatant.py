@@ -19,7 +19,7 @@ def combatant_list(request):
     DataTables will use the combatant API to get combatant data via AJAX
 
     """
-    pin_enabled = is_enabled("pin_authentication")
+    pin_enabled = is_enabled("pin_authentication", user=request.user)
     can_reset_pin = UserPermission.user_has_permission(
         request.user, "can_initiate_pin_reset"
     )

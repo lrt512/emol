@@ -81,13 +81,18 @@ db-restore: ## Restore database from dump file
 	@read -p "Dump file: " f && \
 	docker compose exec -T db mysql -u $(DB_USER) -p$(DB_PASSWORD) $(DB_NAME) < $$f
 
+db-destroy: ## Destroy database
+	docker compose exec -T db mysql -u $(DB_USER) -p$(DB_PASSWORD) -e "DROP DATABASE IF EXISTS $(DB_NAME); CREATE DATABASE $(DB_NAME);"
+
 # =============================================================================
 # Code Quality (runs in Docker)
+# chown after formatting because permissions get messed up in the container
 # =============================================================================
 
 format: ensure-up
 	docker compose exec -w $(APP_WORKDIR) app poetry run black .
 	docker compose exec -w $(APP_WORKDIR) app poetry run isort .
+	@docker compose exec app chown -R $$(id -u):$$(id -g) $(APP_WORKDIR)
 
 lint: ensure-up
 	docker compose exec -w $(APP_WORKDIR) app poetry run flake8 .
@@ -101,6 +106,7 @@ types: ensure-up
 check: ensure-up
 	docker compose exec -w $(APP_WORKDIR) app poetry run black .
 	docker compose exec -w $(APP_WORKDIR) app poetry run isort .
+	@docker compose exec app chown -R $$(id -u):$$(id -g) $(APP_WORKDIR)
 	docker compose exec -w $(APP_WORKDIR) app poetry run flake8 .
 	docker compose exec -w $(APP_WORKDIR) app poetry run pylint --recursive=yes .
 	docker compose exec -w $(APP_WORKDIR) app poetry run mypy .

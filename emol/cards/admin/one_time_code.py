@@ -27,9 +27,8 @@ class OneTimeCodeAdmin(admin.ModelAdmin):
         ("Timestamps", {"fields": ["created_at"], "classes": ["collapse"]}),
     ]
 
+    @admin.display(description="Code")
     def code_preview(self, obj) -> str:
         """Show truncated code for display."""
         code_str = str(obj.code)
         return f"{code_str[:4]}...{code_str[-4:]}"
-
-    code_preview.short_description = "Code"  # type: ignore[attr-defined]
