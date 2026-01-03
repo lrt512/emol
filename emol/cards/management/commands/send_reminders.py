@@ -95,9 +95,7 @@ class Command(BaseCommand):
         for reminder in due_reminders:
             if reminder.content_object is None:
                 if debug:
-                    logger.debug(
-                        "Skipping reminder ID %s (orphaned)", reminder.id
-                    )
+                    logger.debug("Skipping reminder ID %s (orphaned)", reminder.id)
                 continue
             key = (reminder.content_type_id, reminder.object_id)
             if key not in content_object_reminders:
@@ -171,7 +169,8 @@ class Command(BaseCommand):
                 )
                 if debug:
                     logger.debug(
-                        "  Email criteria not met - checking content_object and privacy policy"
+                        "  Email criteria not met - checking content_object and "
+                        "privacy policy"
                     )
 
             if not email_sent:

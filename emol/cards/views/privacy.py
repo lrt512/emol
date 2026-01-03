@@ -28,18 +28,18 @@ def privacy_policy(request, code=None):
             return HttpResponseBadRequest()
 
         if "accept" in request.POST:
-            combatant.accept_privacy_policy()
-
             if is_enabled("pin_authentication", user=combatant):
+                combatant.accept_privacy_policy(send_email=False)
                 pin_code = combatant.one_time_codes.create_pin_setup_code()
                 return redirect("pin-setup", code=pin_code.code)
 
+            combatant.accept_privacy_policy()
             context = {
                 "card_url": combatant.card_url,
                 "sent_email": True,
-                "requires_pin_setup": False,
+                "is_new_combatant": True,
             }
-            return render(request, "privacy/privacy_accepted.html", context)
+            return render(request, "home/registration_completed.html", context)
 
         if "decline" in request.POST:
             combatant.delete()

@@ -108,20 +108,14 @@ class Command(BaseCommand):
             )
 
             if debug:
-                self.stdout.write(
-                    "[DEBUG]   Existing reminders: %s" % sorted(existing)
-                )
+                self.stdout.write("[DEBUG]   Existing reminders: %s" % sorted(existing))
 
             expected = set(reminder_days)
             missing = expected - existing
 
             if debug:
-                self.stdout.write(
-                    "[DEBUG]   Expected reminders: %s" % sorted(expected)
-                )
-                self.stdout.write(
-                    "[DEBUG]   Missing reminders: %s" % sorted(missing)
-                )
+                self.stdout.write("[DEBUG]   Expected reminders: %s" % sorted(expected))
+                self.stdout.write("[DEBUG]   Missing reminders: %s" % sorted(missing))
 
             if not missing:
                 if debug:
@@ -144,17 +138,15 @@ class Command(BaseCommand):
             days_until_expiry = (expiration_date - today).days
 
             if debug:
-                self.stdout.write(
-                    "[DEBUG]   Days until expiry: %s" % days_until_expiry
-                )
+                self.stdout.write("[DEBUG]   Days until expiry: %s" % days_until_expiry)
 
             missing_that_should_exist = []
             for days in sorted(missing, reverse=True):
                 should_exist = days_until_expiry > days
                 if debug:
                     self.stdout.write(
-                        "[DEBUG]   %s-day reminder: days_until_expiry (%s) > days (%s) = %s"
-                        % (days, days_until_expiry, days, should_exist)
+                        "[DEBUG]   %s-day reminder: days_to_expiry (%s) > "
+                        "days (%s) = %s" % (days, days_until_expiry, days, should_exist)
                     )
                 if should_exist:
                     missing_that_should_exist.append(days)
@@ -163,7 +155,7 @@ class Command(BaseCommand):
                 issues += 1
                 self.stdout.write(
                     self.style.WARNING(
-                        "  %s: missing reminders for days %s (still >%s days from expiry)"
+                        "  %s: missing reminders for days %s (>%s days from expiry)"
                         % (
                             item,
                             sorted(missing_that_should_exist),

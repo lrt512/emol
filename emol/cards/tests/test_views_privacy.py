@@ -3,11 +3,7 @@
 from cards.models import Combatant, PrivacyPolicy
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from feature_switches.models import (
-    ACCESS_MODE_GLOBAL,
-    ACCESS_MODE_LIST,
-    FeatureSwitch,
-)
+from feature_switches.models import ACCESS_MODE_GLOBAL, ACCESS_MODE_LIST, FeatureSwitch
 
 
 class PrivacyPolicyViewTestCase(TestCase):
@@ -52,7 +48,7 @@ class PrivacyPolicyViewTestCase(TestCase):
             {"code": code, "accept": "1"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.assertTemplateUsed(response, "home/registration_completed.html")
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.accepted_privacy_policy)
 
@@ -116,6 +112,6 @@ class PrivacyPolicyViewTestCase(TestCase):
             {"code": code, "accept": "1"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.assertTemplateUsed(response, "home/registration_completed.html")
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.accepted_privacy_policy)

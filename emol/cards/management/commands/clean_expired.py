@@ -32,7 +32,9 @@ class Command(BaseCommand):
         if debug:
             logger.debug("Clean up OneTimeCodes - Debug mode enabled")
             logger.debug("Current time: %s", now)
-            logger.debug("Purge cutoff (older than %s days): %s", PURGE_AFTER_DAYS, purge_cutoff)
+            logger.debug(
+                "Purge cutoff (older than %s days): %s", PURGE_AFTER_DAYS, purge_cutoff
+            )
             total_codes = OneTimeCode.objects.count()
             logger.debug("Total OneTimeCodes in database: %s", total_codes)
 
@@ -49,7 +51,7 @@ class Command(BaseCommand):
             if expired_count > 0:
                 for code in expired_one_time_codes[:5]:
                     logger.debug(
-                        "  Expired code: ID=%s, created_at=%s, expires_at=%s, consumed=%s",
+                        "  Expired: ID=%s, created_at=%s, expires_at=%s, consumed=%s",
                         code.id,
                         code.created_at,
                         code.expires_at,
@@ -60,7 +62,7 @@ class Command(BaseCommand):
             if consumed_count > 0:
                 for code in consumed_one_time_codes[:5]:
                     logger.debug(
-                        "  Consumed code: ID=%s, created_at=%s, expires_at=%s",
+                        "  Consumed: ID=%s, created_at=%s, expires_at=%s",
                         code.id,
                         code.created_at,
                         code.expires_at,
@@ -88,9 +90,7 @@ class Command(BaseCommand):
         old_codes = OneTimeCode.objects.filter(created_at__lt=purge_cutoff)
         old_count = old_codes.count()
         if debug:
-            logger.debug(
-                "Old codes (created_at < %s): %s", purge_cutoff, old_count
-            )
+            logger.debug("Old codes (created_at < %s): %s", purge_cutoff, old_count)
             if old_count > 0:
                 for code in old_codes[:5]:
                     logger.debug(

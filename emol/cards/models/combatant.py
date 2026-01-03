@@ -285,8 +285,13 @@ class Combatant(models.Model):
             settings.BASE_URL, reverse("combatant-card", args=[self.card_id])
         )
 
-    def accept_privacy_policy(self):
-        """Combatant accepted the privacy policy"""
+    def accept_privacy_policy(self, send_email: bool = True):
+        """Combatant accepted the privacy policy.
+
+        Args:
+            send_email: Whether to send the card URL email. Set to False if
+                        PIN setup is required (email will be sent after PIN is set).
+        """
         self.accepted_privacy_policy = True
         self.privacy_acceptance_code = None
         while True:
@@ -296,7 +301,9 @@ class Combatant(models.Model):
                 break
 
         self.save()
-        return send_card_url(self)
+        if send_email:
+            return send_card_url(self)
+        return True
 
     # PIN Authentication Methods
 

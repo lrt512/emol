@@ -3,7 +3,7 @@
 import logging
 from typing import cast
 
-from cards.mail import send_pin_reset, send_pin_setup
+from cards.mail import send_card_url, send_pin_reset, send_pin_setup
 from cards.models import Combatant, OneTimeCode
 from django.core.exceptions import ValidationError
 from django.http import HttpRequest, HttpResponse
@@ -20,9 +20,13 @@ logger = logging.getLogger("cards")
 def pin_setup(request: HttpRequest, code: str) -> HttpResponse:
     """Handle initial PIN setup after privacy policy acceptance.
 
+    This view should only be accessed via redirect from the privacy policy
+    acceptance flow. The one-time code is created in privacy.py when a new
+    combatant accepts the privacy policy and PIN authentication is enabled.
+
     Args:
         request: The HTTP request
-        code: The one-time code for PIN setup
+        code: The one-time code for PIN setup (created in privacy.py)
 
     Returns:
         Rendered template or redirect
@@ -39,7 +43,21 @@ def pin_setup(request: HttpRequest, code: str) -> HttpResponse:
 
         combatant = one_time_code.combatant
 
+        if "/pin/setup/" not in one_time_code.url_template:
+            return render(
+                request,
+                "message/message.html",
+                {"message": "This PIN setup link has expired or already been used."},
+            )
+
         if not is_enabled("pin_authentication", user=combatant):
+            return render(
+                request,
+                "message/message.html",
+                {"message": "This PIN setup link has expired or already been used."},
+            )
+
+        if combatant.has_pin:
             return render(
                 request,
                 "message/message.html",
@@ -71,13 +89,14 @@ def pin_setup(request: HttpRequest, code: str) -> HttpResponse:
             combatant.set_pin(pin)
             one_time_code.consume()
             logger.info("PIN set successfully for combatant %s", combatant.email)
+            send_card_url(combatant)
             return render(
                 request,
-                "privacy/privacy_accepted.html",
+                "home/registration_completed.html",
                 {
                     "card_url": combatant.card_url,
                     "sent_email": True,
-                    "requires_pin_setup": False,
+                    "is_new_combatant": True,
                 },
             )
         except ValueError as e:
@@ -130,6 +149,13 @@ def pin_reset(request: HttpRequest, code: str) -> HttpResponse:
 
         combatant = one_time_code.combatant
 
+        if "/pin/reset/" not in one_time_code.url_template:
+            return render(
+                request,
+                "message/message.html",
+                {"message": "This PIN reset link has expired or already been used."},
+            )
+
         if not is_enabled("pin_authentication", user=combatant):
             return render(
                 request,
@@ -164,11 +190,11 @@ def pin_reset(request: HttpRequest, code: str) -> HttpResponse:
             logger.info("PIN reset successfully for combatant %s", combatant.email)
             return render(
                 request,
-                "privacy/privacy_accepted.html",
+                "home/registration_completed.html",
                 {
                     "card_url": combatant.card_url,
-                    "sent_email": True,
-                    "requires_pin_setup": False,
+                    "sent_email": False,
+                    "is_new_combatant": False,
                 },
             )
         except ValueError as e:
@@ -297,10 +323,14 @@ def initiate_pin_reset_for_combatant(combatant: Combatant) -> OneTimeCode:
 
 
 def send_pin_setup_email(combatant: Combatant) -> OneTimeCode:
-    """Send PIN setup email to combatant.
+    """Send PIN setup email to new combatant (after privacy acceptance).
+
+    This function should only be used for new combatants who have just
+    accepted the privacy policy and need to set up their PIN for the first time.
+    For existing combatants, use initiate_pin_reset_for_combatant() instead.
 
     Args:
-        combatant: The combatant to send setup email to
+        combatant: The new combatant to send setup email to
 
     Returns:
         OneTimeCode for the PIN setup

@@ -352,7 +352,7 @@ class SendRemindersEmailFailureTestCase(TestCase):
     @patch("cards.models.card.send_card_reminder")
     @patch("cards.models.card.send_card_expiry")
     def test_reminders_deleted_on_email_success(self, mock_expiry, mock_reminder):
-        """Reminders are deleted when email sending succeeds."""
+        """Only the sent reminder is deleted when email sending succeeds."""
         mock_reminder.return_value = True
         mock_expiry.return_value = True
         card = Card.objects.create(
@@ -361,6 +361,9 @@ class SendRemindersEmailFailureTestCase(TestCase):
             date_issued=today() - timedelta(days=365 * 2 - 30),
         )
         card_ct = ContentType.objects.get_for_model(Card)
+        initial_count = Reminder.objects.filter(
+            content_type=card_ct, object_id=card.id
+        ).count()
         Reminder.objects.filter(content_type=card_ct, object_id=card.id).update(
             due_date=today()
         )
@@ -370,7 +373,7 @@ class SendRemindersEmailFailureTestCase(TestCase):
         final_count = Reminder.objects.filter(
             content_type=card_ct, object_id=card.id
         ).count()
-        self.assertEqual(final_count, 0)
+        self.assertEqual(final_count, initial_count - 1)
 
 
 class ReminderHygieneCommandTestCase(TestCase):

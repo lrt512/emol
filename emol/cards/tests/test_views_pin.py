@@ -25,6 +25,7 @@ class PINSetupViewTestCase(TestCase):
             legal_name="Test Legal",
             email="test@example.com",
             accepted_privacy_policy=True,
+            card_id="setup-test-card",
         )
         self.one_time_code = OneTimeCode.objects.create(
             combatant=self.combatant,
@@ -83,9 +84,10 @@ class PINSetupViewTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.assertTemplateUsed(response, "home/registration_completed.html")
         self.assertContains(response, "Welcome!")
         self.assertContains(response, self.combatant.card_url)
+        self.assertContains(response, "sent you an email")
 
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.has_pin)
@@ -168,6 +170,7 @@ class PINResetViewTestCase(TestCase):
             legal_name="Test Legal",
             email="test@example.com",
             accepted_privacy_policy=True,
+            card_id="reset-test-card",
         )
         self.combatant.set_pin("9999")
         self.one_time_code = OneTimeCode.objects.create(
@@ -195,9 +198,10 @@ class PINResetViewTestCase(TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
-        self.assertContains(response, "Welcome!")
+        self.assertTemplateUsed(response, "home/registration_completed.html")
+        self.assertContains(response, "PIN Updated")
         self.assertContains(response, self.combatant.card_url)
+        self.assertNotContains(response, "sent you an email")
 
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.check_pin("5678"))

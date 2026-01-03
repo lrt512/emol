@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block body %}
+<div class="row form-group">
+  <div class="col-md-12">
+    {% if is_new_combatant %}
+    <h2>Welcome!</h2>
+    {% else %}
+    <h2>PIN Updated</h2>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row form-group">
+  <div class="col-md-12">
+    {% if is_new_combatant %}
+    <p>Thank you for completing your registration.</p>
+    {% else %}
+    <p>Your PIN has been successfully updated.</p>
+    {% endif %}
+  </div>
+</div>
+
+<div class="row form-group">
+  <div class="col-md-12">
+    You can access your authorization card here:
+  </div>
+</div>
+
+<div class="row form-group">
+  <div class="col-md-12">
+    <a href="{{ card_url }}" target="_blank">{{ card_url }}</a>
+  </div>
+</div>
+
+{% if sent_email %}
+<div class="row form-group">
+  <div class="col-md-12">
+    We've also sent you an email with your card's URL for your records.
+  </div>
+</div>
+{% endif %}
+{% endblock %}
