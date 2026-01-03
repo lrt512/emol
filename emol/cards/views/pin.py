@@ -27,13 +27,6 @@ def pin_setup(request: HttpRequest, code: str) -> HttpResponse:
     Returns:
         Rendered template or redirect
     """
-    if not is_enabled("pin_authentication"):
-        return render(
-            request,
-            "message/message.html",
-            {"message": "PIN authentication is not currently enabled."},
-        )
-
     try:
         one_time_code = OneTimeCode.objects.get(code=code)
 
@@ -45,6 +38,13 @@ def pin_setup(request: HttpRequest, code: str) -> HttpResponse:
             )
 
         combatant = one_time_code.combatant
+
+        if not is_enabled("pin_authentication", user=combatant):
+            return render(
+                request,
+                "message/message.html",
+                {"message": "This PIN setup link has expired or already been used."},
+            )
 
         if request.method == "GET":
             return render(
@@ -73,10 +73,11 @@ def pin_setup(request: HttpRequest, code: str) -> HttpResponse:
             logger.info("PIN set successfully for combatant %s", combatant.email)
             return render(
                 request,
-                "message/message.html",
+                "privacy/privacy_accepted.html",
                 {
-                    "message": "Your PIN has been set successfully. "
-                    "You can now access your authorization card."
+                    "card_url": combatant.card_url,
+                    "sent_email": True,
+                    "requires_pin_setup": False,
                 },
             )
         except ValueError as e:
@@ -117,13 +118,6 @@ def pin_reset(request: HttpRequest, code: str) -> HttpResponse:
     Returns:
         Rendered template or redirect
     """
-    if not is_enabled("pin_authentication"):
-        return render(
-            request,
-            "message/message.html",
-            {"message": "PIN authentication is not currently enabled."},
-        )
-
     try:
         one_time_code = OneTimeCode.objects.get(code=code)
 
@@ -135,6 +129,13 @@ def pin_reset(request: HttpRequest, code: str) -> HttpResponse:
             )
 
         combatant = one_time_code.combatant
+
+        if not is_enabled("pin_authentication", user=combatant):
+            return render(
+                request,
+                "message/message.html",
+                {"message": "This PIN reset link has expired or already been used."},
+            )
 
         if request.method == "GET":
             return render(
@@ -163,10 +164,11 @@ def pin_reset(request: HttpRequest, code: str) -> HttpResponse:
             logger.info("PIN reset successfully for combatant %s", combatant.email)
             return render(
                 request,
-                "message/message.html",
+                "privacy/privacy_accepted.html",
                 {
-                    "message": "Your PIN has been reset successfully. "
-                    "You can now access your authorization card."
+                    "card_url": combatant.card_url,
+                    "sent_email": True,
+                    "requires_pin_setup": False,
                 },
             )
         except ValueError as e:

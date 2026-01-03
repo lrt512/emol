@@ -9,14 +9,20 @@ from feature_switches.models import FeatureSwitch
 class FeatureSwitchAdmin(admin.ModelAdmin):
     """Admin interface for FeatureSwitch model."""
 
-    list_display = ["name", "enabled", "description", "updated_at"]
-    list_filter = ["enabled"]
+    list_display = ["name", "access_mode", "description", "updated_at"]
+    list_filter = ["access_mode"]
     search_fields = ["name", "description"]
     readonly_fields = ["created_at", "updated_at"]
     ordering = ["name"]
+    filter_horizontal = ["allowed_users"]
 
     fieldsets = [
-        (None, {"fields": ["name", "description", "enabled"]}),
+        (
+            None,
+            {
+                "fields": ["name", "description", "access_mode", "allowed_users"],
+            },
+        ),
         (
             "Timestamps",
             {"fields": ["created_at", "updated_at"], "classes": ["collapse"]},

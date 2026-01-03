@@ -45,12 +45,10 @@ class UserPermissionAdmin(admin.ModelAdmin):
     list_filter = ("permission__is_global", "discipline")
     search_fields = ("user__email", "permission__name", "discipline__name")
 
+    @admin.display(boolean=True, description="Global Permission")
     def is_global(self, obj):
         """Display whether the permission is global in the list view"""
         return obj.permission.is_global
-
-    is_global.boolean = True  # type: ignore[attr-defined]
-    is_global.short_description = "Global Permission"  # type: ignore[attr-defined]
 
     def add_view(self, request, form_url="", extra_context=None):
         """Add permission data to the context for JavaScript"""

@@ -6,8 +6,8 @@ from feature_switches.helpers import is_enabled
 register = template.Library()
 
 
-@register.simple_tag
-def switch_enabled(switch_name: str) -> bool:
+@register.simple_tag(takes_context=True)
+def switch_enabled(context, switch_name: str) -> bool:
     """Check if a feature switch is enabled.
 
     Usage in templates:
@@ -18,12 +18,18 @@ def switch_enabled(switch_name: str) -> bool:
         {% endif %}
 
     Args:
+        context: Template context (automatically provided)
         switch_name: The name of the switch to check
 
     Returns:
         True if enabled, False otherwise
     """
-    return is_enabled(switch_name)
+    user = context.get("user")
+    if not user:
+        request = context.get("request")
+        if request and hasattr(request, "user"):
+            user = request.user
+    return is_enabled(switch_name, user=user)
 
 
 class IfSwitchNode(template.Node):
@@ -45,7 +51,12 @@ class IfSwitchNode(template.Node):
             if hasattr(self.switch_name, "resolve")
             else self.switch_name
         )
-        if is_enabled(switch_name):
+        user = context.get("user")
+        if not user:
+            request = context.get("request")
+            if request and hasattr(request, "user"):
+                user = request.user
+        if is_enabled(switch_name, user=user):
             return self.nodelist_true.render(context)
         return self.nodelist_false.render(context)
 

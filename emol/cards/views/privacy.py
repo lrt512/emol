@@ -30,13 +30,14 @@ def privacy_policy(request, code=None):
         if "accept" in request.POST:
             combatant.accept_privacy_policy()
 
-            if is_enabled("pin_authentication"):
+            if is_enabled("pin_authentication", user=combatant):
                 pin_code = combatant.one_time_codes.create_pin_setup_code()
                 return redirect("pin-setup", code=pin_code.code)
 
             context = {
                 "card_url": combatant.card_url,
                 "sent_email": True,
+                "requires_pin_setup": False,
             }
             return render(request, "privacy/privacy_accepted.html", context)
 

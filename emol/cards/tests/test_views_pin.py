@@ -7,7 +7,12 @@ from cards.utility.time import today
 from django.test import TestCase
 from django.urls import reverse
 from django.utils import timezone
-from feature_switches.models import FeatureSwitch
+from feature_switches.models import (
+    ACCESS_MODE_DISABLED,
+    ACCESS_MODE_GLOBAL,
+    ACCESS_MODE_LIST,
+    FeatureSwitch,
+)
 
 
 class PINSetupViewTestCase(TestCase):
@@ -25,7 +30,9 @@ class PINSetupViewTestCase(TestCase):
             combatant=self.combatant,
             url_template="/pin/setup/{code}",
         )
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_get_setup_page(self):
         """Test GET request returns setup form."""
@@ -69,14 +76,16 @@ class PINSetupViewTestCase(TestCase):
         self.assertContains(response, "expired or already been used")
 
     def test_post_valid_pin(self):
-        """Test POST with valid PIN sets the PIN."""
+        """Test POST with valid PIN sets the PIN and shows privacy accepted page."""
         response = self.client.post(
             reverse("pin-setup", args=[str(self.one_time_code.code)]),
             {"pin": "1234", "pin_confirm": "1234"},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "PIN has been set successfully")
+        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.assertContains(response, "Welcome!")
+        self.assertContains(response, self.combatant.card_url)
 
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.has_pin)
@@ -108,16 +117,45 @@ class PINSetupViewTestCase(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "4-6 numeric digits")
 
-    def test_feature_disabled_redirects(self):
-        """Test that disabled feature shows message."""
-        FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
+    def test_feature_disabled_shows_expired_message(self):
+        """Test that disabled feature shows expired message (transparent to user)."""
+        FeatureSwitch.objects.filter(name="pin_authentication").update(
+            access_mode=ACCESS_MODE_DISABLED
+        )
 
         response = self.client.get(
             reverse("pin-setup", args=[str(self.one_time_code.code)])
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "not currently enabled")
+        self.assertContains(response, "expired or already been used")
+
+    def test_list_mode_combatant_in_list_allows_setup(self):
+        """Test that combatant in list can access PIN setup."""
+        switch = FeatureSwitch.objects.filter(name="pin_authentication").first()
+        switch.access_mode = ACCESS_MODE_LIST
+        switch.save()
+        switch.allowed_users.add(self.combatant)
+
+        response = self.client.get(
+            reverse("pin-setup", args=[str(self.one_time_code.code)])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Set Your PIN")
+
+    def test_list_mode_combatant_not_in_list_shows_expired(self):
+        """Test that combatant not in list sees expired message."""
+        switch = FeatureSwitch.objects.filter(name="pin_authentication").first()
+        switch.access_mode = ACCESS_MODE_LIST
+        switch.save()
+
+        response = self.client.get(
+            reverse("pin-setup", args=[str(self.one_time_code.code)])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "expired or already been used")
 
 
 class PINResetViewTestCase(TestCase):
@@ -136,7 +174,9 @@ class PINResetViewTestCase(TestCase):
             combatant=self.combatant,
             url_template="/pin/reset/{code}",
         )
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_get_reset_page(self):
         """Test GET request returns reset form."""
@@ -148,14 +188,16 @@ class PINResetViewTestCase(TestCase):
         self.assertContains(response, "Reset Your PIN")
 
     def test_post_valid_new_pin(self):
-        """Test POST with valid PIN resets the PIN."""
+        """Test POST with valid PIN resets the PIN and shows privacy accepted page."""
         response = self.client.post(
             reverse("pin-reset", args=[str(self.one_time_code.code)]),
             {"pin": "5678", "pin_confirm": "5678"},
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "PIN has been reset successfully")
+        self.assertTemplateUsed(response, "privacy/privacy_accepted.html")
+        self.assertContains(response, "Welcome!")
+        self.assertContains(response, self.combatant.card_url)
 
         self.combatant.refresh_from_db()
         self.assertTrue(self.combatant.check_pin("5678"))
@@ -175,7 +217,9 @@ class PINVerifyViewTestCase(TestCase):
             card_id="test-card-123",
         )
         self.combatant.set_pin("1234")
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_get_verify_page(self):
         """Test GET request returns verify form."""
@@ -250,7 +294,9 @@ class PINVerifyViewTestCase(TestCase):
 
     def test_feature_disabled_redirects_to_card(self):
         """Test that disabled feature redirects to card."""
-        FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
+        FeatureSwitch.objects.filter(name="pin_authentication").update(
+            access_mode=ACCESS_MODE_DISABLED
+        )
 
         response = self.client.get(reverse("pin-verify", args=["test-card-123"]))
 
@@ -285,7 +331,9 @@ class CombatantCardWithPINTestCase(TestCase):
             combatant=self.combatant,
             date_signed=today(),
         )
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_card_without_pin_accessible(self):
         """Test that card without PIN set is directly accessible."""
@@ -322,7 +370,9 @@ class CombatantCardWithPINTestCase(TestCase):
     def test_feature_disabled_card_accessible(self):
         """Test that card is accessible when feature is disabled."""
         self.combatant.set_pin("1234")
-        FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
+        FeatureSwitch.objects.filter(name="pin_authentication").update(
+            access_mode=ACCESS_MODE_DISABLED
+        )
 
         response = self.client.get(reverse("combatant-card", args=["protected-card"]))
 

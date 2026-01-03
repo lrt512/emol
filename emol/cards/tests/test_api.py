@@ -20,7 +20,11 @@ from cards.models import (
 from cards.utility.time import today
 from django.test import TestCase, override_settings
 from django.urls import reverse
-from feature_switches.models import FeatureSwitch
+from feature_switches.models import (
+    ACCESS_MODE_DISABLED,
+    ACCESS_MODE_GLOBAL,
+    FeatureSwitch,
+)
 from rest_framework import status
 from rest_framework.test import APIClient
 from sso_user.models import SSOUser
@@ -333,7 +337,9 @@ class InitiatePinResetAPITestCase(TestCase):
             accepted_privacy_policy=True,
         )
 
-        FeatureSwitch.objects.create(name="pin_authentication", enabled=True)
+        FeatureSwitch.objects.create(
+            name="pin_authentication", access_mode=ACCESS_MODE_GLOBAL
+        )
 
     def test_pin_reset_requires_authentication(self):
         """Anonymous users cannot initiate PIN reset."""
@@ -355,7 +361,9 @@ class InitiatePinResetAPITestCase(TestCase):
 
     def test_pin_reset_requires_feature_enabled(self):
         """PIN reset fails when feature is disabled."""
-        FeatureSwitch.objects.filter(name="pin_authentication").update(enabled=False)
+        FeatureSwitch.objects.filter(name="pin_authentication").update(
+            access_mode=ACCESS_MODE_DISABLED
+        )
 
         UserPermission.objects.create(
             user=self.user, permission=self.permission, discipline=None

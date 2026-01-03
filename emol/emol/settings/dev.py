@@ -9,6 +9,7 @@ SECRET_KEY = "super-secret-development-key-1234"
 DEBUG = True
 NO_ENFORCE_PERMISSIONS = True
 ALLOWED_HOSTS = ["localhost"]
+DEBUG_LEVEL = "DEBUG"
 
 # Override CSP settings for development to allow inline scripts (for debugging)
 CSP_SCRIPT_SRC = (  # type: ignore[no-redef]
@@ -38,7 +39,7 @@ LOGGING = {
             "class": "logging.StreamHandler",
             "stream": "ext://sys.stdout",
             "formatter": "console",
-            "level": "INFO",
+            "level": DEBUG_LEVEL,
         },
         "file": {
             "class": "logging.FileHandler",
@@ -49,17 +50,22 @@ LOGGING = {
     "loggers": {
         "django": {
             "handlers": ["console", "file"],
-            "level": "INFO",
+            "level": DEBUG_LEVEL,
             "propagate": False,
         },
         "django.request": {
             "handlers": ["console", "file"],
-            "level": "WARNING",
+            "level": DEBUG_LEVEL,
+            "propagate": False,
+        },
+        "django.template": {
+            "handlers": ["console", "file"],
+            "level": "INFO",
             "propagate": False,
         },
         "django.db.backends": {
             "handlers": ["file"],
-            "level": "INFO",
+            "level": DEBUG_LEVEL,
             "propagate": False,
         },
         "global_throttle": {
@@ -69,18 +75,18 @@ LOGGING = {
         },
         "cards": {
             "handlers": ["console", "file"],
-            "level": "INFO",
+            "level": DEBUG_LEVEL,
             "propagate": False,
         },
         "sso_user": {
             "handlers": ["console", "file"],
-            "level": "INFO",
+            "level": DEBUG_LEVEL,
             "propagate": False,
         },
     },
     "root": {
         "handlers": ["console", "file"],
-        "level": "INFO",
+        "level": DEBUG_LEVEL,
     },
 }
 
