@@ -17,18 +17,32 @@ class Command(BaseCommand):
             action="store_true",
             help="Show what would happen, do not send emails or delete reminders",
         )
+        parser.add_argument(
+            "--debug",
+            action="store_true",
+            help="Show detailed debug information",
+        )
 
     def handle(self, *args, **options):
         dry_run = options["dry_run"]
+        debug = options["debug"]
 
         if dry_run:
             logger.info(
                 "🔍 DRY RUN MODE - No emails will be sent, no reminders will be deleted"
             )
 
+        if debug:
+            logger.debug("Debug mode enabled")
+
         # 1. Clean up ALL orphaned reminders first
         all_reminders = Reminder.objects.all().select_related("content_type")
+        if debug:
+            logger.debug("Total reminders in database: %s", all_reminders.count())
+
         orphaned_reminders = [r for r in all_reminders if r.content_object is None]
+        if debug:
+            logger.debug("Found %s orphaned reminders", len(orphaned_reminders))
 
         if orphaned_reminders:
             orphaned_count = len(orphaned_reminders)
@@ -50,6 +64,9 @@ class Command(BaseCommand):
         # 2. Process DUE reminders
         # Compare against today's date using the same helper used to set due_date
         current_date = today()
+        if debug:
+            logger.debug("Current date for processing: %s", current_date)
+
         due_reminders = Reminder.objects.filter(due_date__lte=current_date)
         due_count = due_reminders.count()
 
@@ -59,17 +76,39 @@ class Command(BaseCommand):
             due_count,
         )
 
+        if debug:
+            for reminder in due_reminders:
+                logger.debug(
+                    "Due reminder: ID=%s, days_to_expiry=%s, due_date=%s, "
+                    "content_type=%s, object_id=%s",
+                    reminder.id,
+                    reminder.days_to_expiry,
+                    reminder.due_date,
+                    reminder.content_type_id,
+                    reminder.object_id,
+                )
+
         if due_count == 0:
             return
 
         content_object_reminders = {}
         for reminder in due_reminders:
             if reminder.content_object is None:
+                if debug:
+                    logger.debug(
+                        "Skipping reminder ID %s (orphaned)", reminder.id
+                    )
                 continue
             key = (reminder.content_type_id, reminder.object_id)
             if key not in content_object_reminders:
                 content_object_reminders[key] = []
             content_object_reminders[key].append(reminder)
+
+        if debug:
+            logger.debug(
+                "Grouped reminders into %s content objects",
+                len(content_object_reminders),
+            )
 
         sent_count = 0
         expired_count = 0
@@ -78,8 +117,28 @@ class Command(BaseCommand):
             reminders_group.sort(key=lambda r: r.days_to_expiry)
             most_urgent = reminders_group[0]
 
+            if debug:
+                logger.debug(
+                    "Processing content object: content_type_id=%s, object_id=%s",
+                    key[0],
+                    key[1],
+                )
+                logger.debug(
+                    "  Found %s reminders for this object: %s",
+                    len(reminders_group),
+                    [r.days_to_expiry for r in reminders_group],
+                )
+                logger.debug(
+                    "  Most urgent: %s-day reminder (ID: %s, due_date: %s)",
+                    most_urgent.days_to_expiry,
+                    most_urgent.id,
+                    most_urgent.due_date,
+                )
+
             email_sent = False
             if most_urgent.should_send_email:
+                if debug:
+                    logger.debug("  Email criteria met, attempting to send")
                 if dry_run:
                     email_sent = True
                     logger.info(
@@ -110,26 +169,36 @@ class Command(BaseCommand):
                     most_urgent.days_to_expiry,
                     most_urgent.content_object,
                 )
+                if debug:
+                    logger.debug(
+                        "  Email criteria not met - checking content_object and privacy policy"
+                    )
 
             if not email_sent:
                 logger.info("   - Keeping reminders for retry tomorrow.")
+                if debug:
+                    logger.debug("  Email send failed, keeping all reminders for retry")
                 continue
 
             if dry_run:
-                expired_count += len(reminders_group)
+                expired_count += 1
                 logger.info(
-                    "   - [DRY RUN] Would delete %s reminders for this object.",
-                    len(reminders_group),
+                    "   - [DRY RUN] Would delete the %s-day reminder that was sent.",
+                    most_urgent.days_to_expiry,
                 )
+                if debug:
+                    logger.debug(
+                        "  [DRY RUN] Would delete reminder ID %s",
+                        most_urgent.id,
+                    )
             else:
-                content_type_id, object_id = key
-                deleted_count, _ = Reminder.objects.filter(
-                    content_type_id=content_type_id, object_id=object_id
-                ).delete()
-                expired_count += deleted_count
+                if debug:
+                    logger.debug("  Deleting reminder ID %s", most_urgent.id)
+                most_urgent.delete()
+                expired_count += 1
                 logger.info(
-                    "   - Cleaned up %s reminders for this object.",
-                    deleted_count,
+                    "   - Deleted the %s-day reminder that was sent.",
+                    most_urgent.days_to_expiry,
                 )
 
         if dry_run:

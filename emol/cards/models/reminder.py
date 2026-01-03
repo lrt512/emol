@@ -31,7 +31,7 @@ class Reminder(models.Model):
             return f"<Orphaned Reminder: object_id={self.object_id} - {s}>"
         return (
             f"<{self.content_object.__class__.__name__}: "
-            f"{self.content_object.combatant.name} - {s}>"
+            f"{self.content_object.combatant.name} - {s} - {self.due_date}>"
         )
 
     @classmethod
