@@ -41,7 +41,12 @@ def is_enabled(switch_name: str, default: bool = False, user=None) -> bool:
     cached_value = cache.get(cache_key)
     if cached_value is not None:
         if isinstance(cached_value, bool):
-            logger.debug("cached feature switch %s is %s for %s", switch_name, cached_value, user_email)
+            logger.debug(
+                "cached feature switch %s is %s for %s",
+                switch_name,
+                cached_value,
+                user_email,
+            )
             return cached_value
         return bool(cached_value)
 
@@ -86,7 +91,9 @@ def is_enabled(switch_name: str, default: bool = False, user=None) -> bool:
         )
         value = bool(default)
 
-    logger.debug("setting feature switch %s to %s for %s", switch_name, value, user_email)
+    logger.debug(
+        "setting feature switch %s to %s for %s", switch_name, value, user_email
+    )
     cache.set(cache_key, value, CACHE_TIMEOUT)
     return value
 

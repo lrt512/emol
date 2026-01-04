@@ -70,7 +70,7 @@ class Command(BaseCommand):
                 continue
 
             try:
-                one_time_code = combatant.one_time_codes.create_pin_setup_code()
+                one_time_code = combatant.one_time_codes.create_pin_reset_code()
                 send_pin_migration_email(combatant, one_time_code, stage=stage)
                 sent_count += 1
                 logger.info("Sent %s PIN migration email to %s", stage, combatant.email)

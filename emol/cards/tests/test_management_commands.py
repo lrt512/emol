@@ -233,16 +233,18 @@ class SendRemindersCommandTestCase(TestCase):
         reminder_60 = card_reminders.get(days_to_expiry=60)
         reminder_30 = card_reminders.get(days_to_expiry=30)
 
+        reminder_14 = card_reminders.get(days_to_expiry=14)
+
         # Mock email sending to verify which reminder gets processed
-        with patch("cards.models.reminder.Reminder.send_email"):
+        with patch("cards.models.reminder.Reminder.send_email") as mock_send:
+            mock_send.return_value = True
             call_command("send_reminders")
 
-        # Verify most urgent reminder was processed
-        # The 14-day reminder should have been kept and processed
-        # The 60-day and 30-day reminders should have been expired
-        self.assertFalse(Reminder.objects.filter(id=reminder_60.id).exists())
-        self.assertFalse(Reminder.objects.filter(id=reminder_30.id).exists())
-        # The 14-day reminder might be deleted after sending, that's OK
+        # Verify most urgent reminder (14-day) was processed and deleted
+        # The 60-day and 30-day reminders should remain (not deleted until sent)
+        self.assertTrue(Reminder.objects.filter(id=reminder_60.id).exists())
+        self.assertTrue(Reminder.objects.filter(id=reminder_30.id).exists())
+        self.assertFalse(Reminder.objects.filter(id=reminder_14.id).exists())
 
     @override_settings(REMINDER_DAYS=[60, 30, 14, 0])
     def test_send_reminders_privacy_policy_not_accepted(self):
