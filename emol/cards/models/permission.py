@@ -70,6 +70,11 @@ class Permission(models.Model):
             "slug": "can_initiate_pin_reset",
             "is_global": True,
         },
+        {
+            "name": "Can edit privacy policy",
+            "slug": "can_edit_privacy_policy",
+            "is_global": True,
+        },
     ]
 
     # Roles associated with editing combatants.
@@ -88,6 +93,7 @@ class Permission(models.Model):
         "write_combatant_info",
         "write_waiver_date",
         "can_initiate_pin_reset",
+        "can_edit_privacy_policy",
     ]
 
     slug = models.CharField(max_length=255, null=False)

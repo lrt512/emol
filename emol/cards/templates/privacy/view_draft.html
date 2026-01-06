@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% load markdown %}
+
+{% block title %}Privacy Policy Draft{% endblock %}
+
+{% block body %}
+<div class="row">
+  <div class="col-md-12">
+    <h1>Privacy Policy Draft</h1>
+    <div class="alert alert-warning">
+      <strong>Note:</strong> This is a draft version and has not been approved yet.
+    </div>
+  </div>
+</div>
+
+{% if changelog %}
+<div class="row">
+  <div class="col-md-12">
+    <h2>Changelog</h2>
+    <div class="well">
+      {{ changelog|linebreaks }}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="row">
+  <div class="col-md-12">
+    <h2>Policy Text</h2>
+    <div class="well">
+      {{ policy|markdown|safe }}
+    </div>
+  </div>
+</div>
+{% endblock %}
+

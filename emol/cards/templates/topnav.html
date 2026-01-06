@@ -24,6 +24,13 @@
             <span class="collapsed">Combatant List</span>
           </a></li>
         {% endif %}
+        {% has_global_permission request.user "can_edit_privacy_policy" as can_edit_privacy_policy %}
+        {% if can_edit_privacy_policy %}
+        <li><a href="/privacy-policy/edit" title="Edit Privacy Policy">
+            <i class="fa fa-shield fa-1-5x" aria-hidden="true"></i>
+            <span class="collapsed">Privacy Policy</span>
+          </a></li>
+        {% endif %}
         {% endif %}
       </ul>
 

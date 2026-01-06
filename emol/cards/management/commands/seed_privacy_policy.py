@@ -1,5 +1,7 @@
 """Seed a default privacy policy for development."""
 
+from datetime import datetime
+
 from cards.models import PrivacyPolicy
 from django.core.management.base import BaseCommand
 
@@ -41,5 +43,12 @@ Records are retained while your card is active and for a reasonable period after
 Contact the Kingdom Earl Marshal to request access to or deletion of your data.
 """
 
-        PrivacyPolicy.objects.create(text=policy_text)
+        year = datetime.now().year
+        PrivacyPolicy.objects.create(
+            text=policy_text,
+            version=f"{year}.1",
+            approved=True,
+            changelog="Initial policy version (seeded)",
+            draft_uuid=None,
+        )
         self.stdout.write(self.style.SUCCESS("Privacy policy created"))
