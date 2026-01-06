@@ -31,12 +31,12 @@ def permission_required(permission, related=None):
             """Perform the check."""
             current_user = get_current_user()
             if current_user is None:
-                return HttpResponse(401)
+                return HttpResponse(status=401)
 
             if not UserPermission.user_has_permission(
                 current_user, permission, related
             ):
-                return HttpResponse(401)
+                return HttpResponse(status=401)
 
             return handler_method(*args, **kwargs)
 

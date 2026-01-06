@@ -1,0 +1,224 @@
+{% extends "base.html" %}
+
+{% load markdown %}
+
+{% block title %}Edit Privacy Policy{% endblock %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.css">
+<script src="https://cdn.jsdelivr.net/npm/easymde/dist/easymde.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+  .markdown-tabs {
+    margin-bottom: 15px;
+  }
+  .markdown-tabs .nav-tabs {
+    border-bottom: 2px solid #ddd;
+  }
+  .markdown-tabs .nav-tabs > li > a {
+    padding: 10px 20px;
+    cursor: pointer;
+  }
+  .markdown-tabs .nav-tabs > li.disabled > a {
+    color: #999;
+    cursor: not-allowed;
+    pointer-events: none;
+  }
+  .markdown-tabs .tab-content {
+    border: 1px solid #ddd;
+    border-top: none;
+    padding: 0;
+    min-height: 400px;
+  }
+  .markdown-tabs #write-tab {
+    padding: 15px;
+  }
+  .markdown-preview {
+    min-height: 400px;
+    padding: 15px;
+  }
+  .markdown-preview .well {
+    margin-bottom: 0;
+  }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="row">
+  <div class="col-md-12">
+    <h1>Edit Privacy Policy</h1>
+  </div>
+</div>
+
+{% if error %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="alert alert-danger">{{ error }}</div>
+  </div>
+</div>
+{% endif %}
+
+{% if saved %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="alert alert-success">Draft saved successfully!</div>
+  </div>
+</div>
+{% endif %}
+
+{% if draft and draft.draft_uuid %}
+<div class="row">
+  <div class="col-md-12">
+    <div class="alert alert-info">
+      <strong>Shareable Draft URL:</strong>
+      <input type="text" class="form-control" value="{{ draft_url }}" readonly onclick="this.select();">
+      <small>This URL can be shared with anyone to view the draft (no authentication required).</small>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<form method="post" action="{% url 'edit-privacy-policy' %}" id="draft-form">
+  {% csrf_token %}
+  
+  <div class="row">
+    <div class="col-md-12">
+      <h2>Policy Text (Markdown)</h2>
+      <div class="markdown-tabs">
+        <ul class="nav nav-tabs" role="tablist">
+          <li role="presentation" {% if draft %}class="active"{% else %}class="disabled"{% endif %}>
+            <a href="#write-tab" aria-controls="write-tab" role="tab" data-toggle="tab" {% if not draft %}onclick="return false;"{% endif %}>Write</a>
+          </li>
+          <li role="presentation" {% if not draft %}class="active"{% endif %}>
+            <a href="#preview-tab" aria-controls="preview-tab" role="tab" data-toggle="tab" id="preview-tab-link">Preview</a>
+          </li>
+        </ul>
+        <div class="tab-content">
+          <div role="tabpanel" class="tab-pane {% if draft %}active{% endif %}" id="write-tab">
+            <textarea id="policy-text" name="text" rows="20" class="form-control" {% if not draft %}readonly{% endif %}>{{ text }}</textarea>
+          </div>
+          <div role="tabpanel" class="tab-pane markdown-preview {% if not draft %}active{% endif %}" id="preview-tab">
+            <div class="well">
+              <div id="markdown-preview-content">
+                {% if not draft and latest_text %}
+                  {{ latest_text|markdown|safe }}
+                {% elif draft %}
+                  {% if draft.text %}
+                    {{ draft.text|markdown|safe }}
+                  {% else %}
+                    <em class="text-muted">Nothing to preview</em>
+                  {% endif %}
+                {% else %}
+                  <em class="text-muted">No policy available</em>
+                {% endif %}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="row" style="margin-top: 20px;">
+    <div class="col-md-12">
+      <h2>Changelog</h2>
+      <p class="help-block">Describe what changed in this version of the policy.</p>
+      <textarea name="changelog" rows="5" class="form-control" {% if not draft %}readonly{% endif %} id="changelog-text">{{ changelog }}</textarea>
+    </div>
+  </div>
+  
+  {% if draft %}
+  <div class="row" style="margin-top: 20px;">
+    <div class="col-md-12">
+      <button type="submit" class="btn btn-primary">Save Draft</button>
+      <button type="submit" name="delete_draft" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this draft? This action cannot be undone.');">Delete Draft</button>
+    </div>
+  </div>
+  {% endif %}
+</form>
+
+{% if not draft %}
+<div class="row" style="margin-top: 20px;">
+  <div class="col-md-12">
+    <form method="post" action="{% url 'edit-privacy-policy' %}">
+      {% csrf_token %}
+      <button type="submit" name="create_draft" class="btn btn-primary">Create Draft</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+{% if draft and draft.draft_uuid %}
+<div class="row" style="margin-top: 10px;">
+  <div class="col-md-12">
+    <form method="post" action="{% url 'approve-policy' draft.draft_uuid %}" style="display: inline;">
+      {% csrf_token %}
+      <button type="submit" id="approve-button" class="btn btn-success" disabled onclick="return confirm('Are you sure you want to approve this policy? This will generate a version number and make it the active policy.');">Approve Policy</button>
+    </form>
+  </div>
+</div>
+{% endif %}
+
+<script>
+var easyMDE;
+var draftExists = {% if draft %}true{% else %}false{% endif %};
+
+if (draftExists) {
+  easyMDE = new EasyMDE({
+    element: document.getElementById('policy-text'),
+    spellChecker: false,
+    renderingConfig: {
+      singleLineBreaks: false,
+      codeSyntaxHighlighting: true,
+    },
+    toolbar: ['bold', 'italic', 'heading', '|', 'quote', 'unordered-list', 'ordered-list', '|', 'link', 'image', '|', 'fullscreen', '|', 'guide'],
+    initialValue: document.getElementById('policy-text').value
+  });
+}
+
+function updatePreview() {
+  var previewContent = document.getElementById('markdown-preview-content');
+  if (draftExists && easyMDE) {
+    var markdownText = easyMDE.value();
+    if (markdownText && markdownText.trim()) {
+      previewContent.innerHTML = marked.parse(markdownText);
+    } else {
+      previewContent.innerHTML = '<em class="text-muted">Nothing to preview</em>';
+    }
+  }
+}
+
+function updateApproveButton() {
+  var approveButton = document.getElementById('approve-button');
+  if (!approveButton) return;
+  
+  var textValue = draftExists && easyMDE ? easyMDE.value().trim() : '';
+  var changelogValue = document.getElementById('changelog-text').value.trim();
+  
+  if (textValue && changelogValue) {
+    approveButton.disabled = false;
+  } else {
+    approveButton.disabled = true;
+  }
+}
+
+$('a[href="#preview-tab"]').on('shown.bs.tab', function() {
+  updatePreview();
+});
+
+if (draftExists) {
+  if (easyMDE) {
+    easyMDE.codemirror.on('change', function() {
+      updatePreview();
+      updateApproveButton();
+    });
+  }
+  var changelogTextarea = document.getElementById('changelog-text');
+  if (changelogTextarea) {
+    changelogTextarea.addEventListener('input', updateApproveButton);
+    changelogTextarea.addEventListener('keyup', updateApproveButton);
+  }
+  updateApproveButton();
+}
+</script>
+{% endblock %}

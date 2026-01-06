@@ -13,12 +13,8 @@ DEBUG_LEVEL = "DEBUG"
 
 # Override CSP settings for development to allow inline scripts (for debugging)
 CSP_SCRIPT_SRC = (  # type: ignore[no-redef]
-    "'self'",
-    "https://cdnjs.cloudflare.com",
-    "https://maxcdn.bootstrapcdn.com",
-    "https://cdn.datatables.net",
-    "sha256-PhCsD9cDmNHcYlaLal8yHa4TGyayjyPy1/u4cyvSojQ=",
-    "'unsafe-inline'",  # Temporarily allow inline scripts
+    *CSP_SCRIPT_SRC,
+    "'unsafe-inline'",  # Temporarily allow inline scripts for debugging
 )
 
 LOGGING = {

@@ -29,6 +29,26 @@ urlpatterns = [
         name="combatant-detail",
     ),
     path("privacy-policy", privacy.privacy_policy, name="privacy-policy"),
+    path(
+        "privacy-policy/edit",
+        privacy.edit_privacy_policy,
+        name="edit-privacy-policy",
+    ),
+    path(
+        "privacy-policy/draft/<uuid:draft_uuid>",
+        privacy.view_draft,
+        name="view-draft",
+    ),
+    path(
+        "privacy-policy/approve/<uuid:draft_uuid>",
+        privacy.approve_policy,
+        name="approve-policy",
+    ),
+    path(
+        "privacy-policy/version/<str:version>",
+        privacy.view_version,
+        name="view-version",
+    ),
     path("privacy-policy/<str:code>", privacy.privacy_policy, name="privacy-policy"),
     # PIN authentication URLs
     re_path(

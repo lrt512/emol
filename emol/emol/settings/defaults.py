@@ -183,15 +183,23 @@ CSP_STYLE_SRC = (
     "'self'",
     "'unsafe-inline'",  # needed for datatables
     "https://cdnjs.cloudflare.com",
+    "https://cdn.jsdelivr.net",
     "https://maxcdn.bootstrapcdn.com",
     "https://cdn.datatables.net",
 )
 CSP_SCRIPT_SRC: tuple[str, ...] = (
     "'self'",
     "https://cdnjs.cloudflare.com",
+    "https://cdn.jsdelivr.net",
     "https://maxcdn.bootstrapcdn.com",
     "https://cdn.datatables.net",
     "sha256-PhCsD9cDmNHcYlaLal8yHa4TGyayjyPy1/u4cyvSojQ=",
+)
+CSP_CONNECT_SRC = (
+    "'self'",
+    "https://cdnjs.cloudflare.com",
+    "https://cdn.jsdelivr.net",
+    "https://maxcdn.bootstrapcdn.com",
 )
 
 # Reminder configuration
